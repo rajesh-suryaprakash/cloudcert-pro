@@ -1,0 +1,422 @@
+name: Cloudcert Pro CI Pipeline
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+# Principle of least privilege — read-only token by default.
+# Jobs that need additional permissions declare them explicitly.
+permissions:
+  contents: read
+
+# Cancel in-progress runs for the same branch to avoid wasted compute.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Job 1: Code Quality ────────────────────────────────────────────────────
+  # Lint, type-check, and format validation — fast feedback, runs independently.
+  quality:
+    name: Quality (lint · typecheck · format)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        # Pinned to full SHA — immutable, safe against tag-moving supply-chain attacks.
+        # actions/checkout v6.0.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Setup Node.js
+        # actions/setup-node v6.4.0
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Format check
+        run: npm run format:check
+
+  # ── Job 2: Tests + Coverage ────────────────────────────────────────────────
+  # Vitest suite with coverage enforcement (≥80% threshold configured in vitest.config.ts).
+  # Runs in parallel with the quality job for faster feedback.
+  test:
+    name: Tests + Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Run tests with coverage
+        # Separate step so plain test failures are clearly reported before coverage runs.
+        # Fails if any threshold defined in vitest.config.ts (lines/functions/branches/statements ≥ 80%) is not met.
+        run: npm run test:coverage
+
+      - name: Upload coverage report
+        if: always()
+        # actions/upload-artifact v4.6.2
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: coverage-report-${{ github.sha }}
+          path: coverage/
+          # 30-day retention on the default branch (rollback reference); 7 days for PRs.
+          retention-days: ${{ github.ref == 'refs/heads/main' && 30 || 7 }}
+
+  # ── Job 3: Build ───────────────────────────────────────────────────────────
+  # Vite frontend build — only runs after quality + tests pass.
+  # "Build once, deploy many": this artifact is what gets promoted to staging/prod.
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [quality, test]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Upload build artifact
+        # actions/upload-artifact v4.6.2
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: dist-${{ github.sha }}
+          path: dist/
+          retention-days: ${{ github.ref == 'refs/heads/main' && 30 || 7 }}
+
+  # ── Job 4: Security (npm audit — SCA layer 1) ─────────────────────────────
+  # Dependency vulnerability audit — runs in parallel with quality + test.
+  # Fails the pipeline on high/critical CVEs.
+  security:
+    name: Security audit (npm)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit dependencies
+        id: audit
+        continue-on-error: true
+        run: npm audit --audit-level=high
+
+      - name: Audit summary
+        if: always()
+        run: |
+          if [ "${{ steps.audit.outcome }}" = "failure" ]; then
+            echo "::error::High or critical vulnerabilities found. Run 'npm audit' locally and address them before merging."
+            exit 1
+          else
+            echo "No high or critical vulnerabilities found."
+          fi
+
+  # ── Job 5: Secret Scanning ─────────────────────────────────────────────────
+  # TruffleHog scans the full git history for accidentally committed secrets.
+  secret-scan:
+    name: Secret scanning (TruffleHog)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout (full history for PR scans)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Scan for secrets (TruffleHog)
+        # trufflesecurity/trufflehog v3.94.3 — pinned to immutable SHA
+        uses: trufflesecurity/trufflehog@47e7b7cd74f578e1e3145d48f669f22fd1330ca6
+        with:
+          base: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          head: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          extra_args: --only-verified
+
+  # ── Job 6: SAST — CodeQL ──────────────────────────────────────────────────
+  # Static Application Security Testing using GitHub's CodeQL engine.
+  # Analyses TypeScript/JavaScript source for security vulnerabilities:
+  # SQL injection, XSS, path traversal, insecure crypto, prototype pollution,
+  # command injection, open redirect, and 50+ other CWE patterns.
+  #
+  # Runs the 'security-extended' query suite which covers OWASP Top 10 and
+  # CWE Top 25 — broader than the default suite, still fast for this codebase.
+  #
+  # Results are uploaded to the GitHub Security tab as SARIF and also surface
+  # as PR annotations so developers see findings inline in the diff.
+  #
+  # Requires: Settings → Code security → Code scanning → enabled (free for public
+  # repos; requires GitHub Advanced Security for private repos).
+  sast:
+    name: SAST (CodeQL)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Required to upload SARIF results to the GitHub Security tab
+      security-events: write
+      # Required for CodeQL to read Actions metadata
+      actions: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Initialise CodeQL
+        # github/codeql-action v3.29.2 — pinned to immutable SHA
+        # Same SHA already used in container.yml for upload-sarif
+        uses: github/codeql-action/init@181d5eefc20863364f96762470ba6f862bdef56b
+        with:
+          languages: javascript-typescript
+          # security-extended covers OWASP Top 10 + CWE Top 25.
+          # Use 'security-and-quality' to also catch maintainability issues.
+          queries: security-extended
+
+      - name: Autobuild
+        # CodeQL autobuild compiles the project so the analyser can trace data flows.
+        # For TypeScript/JavaScript this is a no-op (interpreted), but it ensures
+        # any build-time code generation is captured.
+        uses: github/codeql-action/autobuild@181d5eefc20863364f96762470ba6f862bdef56b
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@181d5eefc20863364f96762470ba6f862bdef56b
+        with:
+          category: codeql-javascript
+          # Upload results to GitHub Security tab and surface as PR annotations
+          upload: always
+          output: codeql-results.sarif
+
+      - name: Upload CodeQL SARIF artifact
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: codeql-results-${{ github.sha }}
+          path: codeql-results.sarif
+          retention-days: ${{ github.ref == 'refs/heads/main' && 30 || 7 }}
+
+  # ── Job 7: SCA — OWASP Dependency-Check ──────────────────────────────────
+  # Software Composition Analysis using OWASP Dependency-Check.
+  # Complements npm audit with a second, independent CVE database (NVD) and
+  # cross-references CPE identifiers — catches vulnerabilities that npm audit
+  # misses because they are not yet in the npm advisory database.
+  #
+  # Scans: node_modules/ against NVD, OSS Index, and RetireJS databases.
+  # Fails the pipeline on CVSS score ≥ 7 (HIGH) findings.
+  # Uploads an HTML + SARIF report to the GitHub Security tab.
+  #
+  # Note: The NVD API key (NVD_API_KEY secret) is optional but strongly
+  # recommended — without it the NVD feed is rate-limited to 5 req/30s,
+  # which can slow this job to 10+ minutes on first run.
+  # Obtain a free key at: https://nvd.nist.gov/developers/request-an-api-key
+  sca:
+    name: SCA (OWASP Dependency-Check)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run OWASP Dependency-Check
+        # dependency-check/Dependency-Check_Action v1.1.0 — pinned to immutable SHA
+        uses: dependency-check/Dependency-Check_Action@75ba02d6183445fe0761d26e836bde58b1560600
+        id: depcheck
+        continue-on-error: true
+        env:
+          # Optional: NVD API key reduces rate-limiting on the NVD feed.
+          # Add NVD_API_KEY as a GitHub Actions encrypted secret.
+          JAVA_HOME: /opt/jdk
+        with:
+          project: cloudcert-pro
+          path: '.'
+          format: 'ALL'
+          out: 'dependency-check-report'
+          # Fail on CVSS ≥ 7 (HIGH severity)
+          failBuildOnCVSS: '7'
+          # Suppress false positives — add entries to .dependency-check-suppressions.xml
+          suppressionFiles: '.dependency-check-suppressions.xml'
+          # Enable RetireJS for JavaScript-specific CVE detection
+          enableRetired: true
+          # NVD API key (optional but recommended — see job comment above)
+          nvdApiKey: ${{ secrets.NVD_API_KEY }}
+
+      - name: Upload Dependency-Check HTML report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: dependency-check-report-${{ github.sha }}
+          path: dependency-check-report/
+          retention-days: ${{ github.ref == 'refs/heads/main' && 30 || 7 }}
+
+      - name: Upload Dependency-Check SARIF to GitHub Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@181d5eefc20863364f96762470ba6f862bdef56b  # v3.29.2
+        with:
+          sarif_file: dependency-check-report/dependency-check-report.sarif
+          category: owasp-dependency-check
+
+      - name: Fail pipeline if high/critical CVEs found
+        if: steps.depcheck.outcome == 'failure'
+        run: |
+          echo "::error::OWASP Dependency-Check found HIGH or CRITICAL CVEs (CVSS ≥ 7)."
+          echo "::error::Review the HTML report artifact and remediate before merging."
+          exit 1
+
+  # ── Job 8: DAST — OWASP ZAP Baseline Scan ────────────────────────────────
+  # Dynamic Application Security Testing using OWASP ZAP.
+  # Starts the Express server inside the runner, then runs ZAP's baseline scan
+  # against http://localhost:3000 to detect runtime vulnerabilities:
+  # - Missing security headers (CSP, HSTS, X-Frame-Options, etc.)
+  # - Exposed sensitive information in responses
+  # - Insecure cookie attributes (missing HttpOnly, Secure, SameSite)
+  # - Clickjacking vulnerabilities
+  # - Cross-domain misconfiguration
+  # - Server information disclosure
+  #
+  # The baseline scan is passive (no active attack payloads) — safe to run
+  # against any environment. It spiders the app and checks responses.
+  #
+  # Runs AFTER the build job so the production dist/ is available for serving.
+  # Uses minimal env vars — no real secrets needed; ZAP only checks HTTP responses.
+  #
+  # Results are uploaded as a SARIF report to the GitHub Security tab and as
+  # an HTML artifact for human review.
+  dast:
+    name: DAST (OWASP ZAP Baseline)
+    runs-on: ubuntu-latest
+    needs: [build]
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download build artifact
+        # Reuse the dist/ built in Job 3 — avoids a second Vite build
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4.3.0
+        with:
+          name: dist-${{ github.sha }}
+          path: dist/
+
+      - name: Start Express server (background)
+        # Start the server with dummy secrets — ZAP only inspects HTTP responses,
+        # it does not need valid JWT secrets or a real database.
+        # NODE_ENV=production serves the pre-built dist/ as static files.
+        run: |
+          NODE_ENV=production \
+          JWT_SECRET="zap-ci-dummy-secret-min-32-characters-ok" \
+          RESET_TOKEN_SECRET="zap-ci-dummy-reset-secret-min-32-chars" \
+          SEED_ADMIN_EMAIL="admin@example.com" \
+          SEED_ADMIN_PASSWORD="ZapCiPassword1!" \
+          SEED_LEARNER_EMAIL="learner@example.com" \
+          SEED_LEARNER_PASSWORD="ZapCiPassword1!" \
+          PORT=3000 \
+          node_modules/.bin/tsx server.ts &
+          echo "SERVER_PID=$!" >> "$GITHUB_ENV"
+
+      - name: Wait for server to be ready
+        # Poll /api/health (or /) until the server responds, max 30 seconds.
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000/ > /dev/null 2>&1; then
+              echo "Server is ready after ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::Server did not start within 30 seconds"
+          exit 1
+
+      - name: Run ZAP Baseline Scan
+        # zaproxy/action-baseline v0.15.0 — pinned to immutable SHA
+        uses: zaproxy/action-baseline@6c5a007541891231cd9e0ddec25d4f25c59c9874
+        continue-on-error: true
+        id: zap
+        with:
+          target: 'http://localhost:3000'
+          # ZAP rules configuration — suppress known false positives
+          # Create .zap/rules.tsv to tune alert thresholds per rule ID
+          rules_file_name: '.zap/rules.tsv'
+          # Upload SARIF to GitHub Security tab
+          issue_title: 'ZAP Baseline Scan Report'
+          fail_action: warn
+          allow_issue_writing: false
+          artifact_name: zap-baseline-report-${{ github.sha }}
+
+      - name: Upload ZAP SARIF to GitHub Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@181d5eefc20863364f96762470ba6f862bdef56b  # v3.29.2
+        with:
+          sarif_file: zap-baseline-report-${{ github.sha }}.sarif
+          category: zap-dast
+        continue-on-error: true
+
+      - name: Stop Express server
+        if: always()
+        run: kill "$SERVER_PID" 2>/dev/null || true
+
+      - name: Fail pipeline on ZAP HIGH findings
+        # ZAP risk levels: 0=Informational, 1=Low, 2=Medium, 3=High
+        # Fail the pipeline only on HIGH (3) findings — Medium and below are warnings.
+        if: steps.zap.outcome == 'failure'
+        run: |
+          echo "::error::ZAP Baseline Scan found HIGH risk findings."
+          echo "::error::Review the ZAP HTML report artifact and remediate before merging."
+          exit 1

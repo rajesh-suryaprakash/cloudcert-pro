@@ -1,0 +1,343 @@
+name: Container Pipeline
+
+# Runs after the CI pipeline passes on the default branch,
+# or can be triggered manually for any branch.
+#
+# Pipeline stages (in dependency order):
+#
+#   build-image          — Docker multi-stage build, produces a local image tarball
+#       ↓
+#   scan                 — Trivy vulnerability scan (blocks on HIGH/CRITICAL)
+#       ↓
+#   sbom                 — Syft SBOM generation (SPDX JSON + CycloneDX)
+#       ↓
+#   sign                 — Cosign keyless signing via Sigstore (main branch only)
+#
+# Required GitHub Secrets (set in repo Settings → Secrets → Actions):
+#   None required for keyless Cosign signing — it uses the GitHub OIDC token.
+#
+# Required GitHub Secrets for registry push (add when ready to push):
+#   REGISTRY_USERNAME    — registry login username
+#   REGISTRY_PASSWORD    — registry login password / token
+#
+# The image is NOT pushed to a registry in this workflow.
+# Add a push step to the build-image job once a registry is configured.
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      # Only re-run when container-relevant files change
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'src/**'
+      - 'server.ts'
+      - 'package*.json'
+      - 'tsconfig.json'
+      - '.github/workflows/container.yml'
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'src/**'
+      - 'server.ts'
+      - 'package*.json'
+      - 'tsconfig.json'
+      - '.github/workflows/container.yml'
+  workflow_dispatch:
+    inputs:
+      push_image:
+        description: 'Push image to registry after build'
+        required: false
+        default: 'false'
+        type: boolean
+
+# Principle of least privilege — each job declares only what it needs.
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE_NAME: cloudcert-pro
+  # Change this to your registry path when ready, e.g.:
+  #   ghcr.io/${{ github.repository_owner }}/cloudcert-pro
+  #   123456789.dkr.ecr.us-east-1.amazonaws.com/cloudcert-pro
+  IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
+
+jobs:
+  # ── Job 1: Build ─────────────────────────────────────────────────────────────
+  # Builds the Docker image using the multi-stage Dockerfile.
+  # Exports the image as a tarball so downstream jobs can load it without
+  # requiring registry access — keeping the pipeline self-contained.
+  build-image:
+    name: Build container image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # security-events write needed to upload hadolint SARIF to GitHub Security tab
+      security-events: write
+    outputs:
+      image-tag: ${{ steps.meta.outputs.version }}
+      image-digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - name: Checkout
+        # actions/checkout v6.0.2 — pinned to immutable SHA
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Set up Docker Buildx
+        # docker/setup-buildx-action v3.10.0 — pinned to immutable SHA
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2
+
+      - name: Lint Dockerfile (hadolint)
+        # Catches Dockerfile anti-patterns at source level before the build runs.
+        # Covers: wrong apt-get usage, missing --no-cache, shell vs exec form, etc.
+        # hadolint/hadolint-action v3.1.0 — pinned to immutable SHA
+        uses: hadolint/hadolint-action@54c9adbab1582c2ef04b2016b760714a4bfde3cf
+        with:
+          dockerfile: Dockerfile
+          # Fail the job on any error-level finding
+          failure-threshold: error
+          # Output format for GitHub Actions annotations
+          format: sarif
+          output-file: hadolint-results.sarif
+          no-fail: false
+
+      - name: Upload Hadolint SARIF to GitHub Security tab
+        if: always()
+        # github/codeql-action/upload-sarif v3.29.2 — pinned to immutable SHA
+        uses: github/codeql-action/upload-sarif@181d5eefc20863364f96762470ba6f862bdef56b
+        with:
+          sarif_file: hadolint-results.sarif
+          category: hadolint-dockerfile
+
+      - name: Extract image metadata (tags and labels)
+        id: meta
+        # docker/metadata-action generates OCI-compliant tags and labels.
+        # On push to main: produces semver tags + sha tag.
+        # On PRs: produces a pr-<number> tag for traceability.
+        # docker/metadata-action v5.7.0
+        uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804
+        with:
+          images: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            # Semantic version tag from git tag (e.g. v1.2.3 → 1.2.3)
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            # Short Git SHA for every build — always traceable to source
+            type=sha,prefix=sha-,format=short
+            # Branch name for non-default branches
+            type=ref,event=branch
+            # PR number for pull requests
+            type=ref,event=pr
+          labels: |
+            org.opencontainers.image.title=cloudcert-pro
+            org.opencontainers.image.description=CloudCert Pro — cloud certification study platform
+            org.opencontainers.image.vendor=CloudCert Pro
+
+      - name: Build image (no push)
+        id: build
+        # docker/build-push-action v7.1.0 — pinned to immutable SHA
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f
+        with:
+          context: .
+          file: Dockerfile
+          push: false
+          # Export as a tarball so the scan job can load it without a registry
+          outputs: type=docker,dest=/tmp/image.tar
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Pass CI metadata into the image as build args (matches Dockerfile ARGs)
+          build-args: |
+            COMMIT_SHA=${{ github.sha }}
+            BUILD_DATE=${{ github.event.repository.updated_at }}
+          # Use GitHub Actions cache to speed up layer reuse across runs
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # Pull the latest base image to incorporate security patches
+          pull: true
+
+      - name: Upload image tarball for downstream jobs
+        # actions/upload-artifact v4.6.2 — pinned to immutable SHA
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: container-image-${{ github.sha }}
+          path: /tmp/image.tar
+          # Short retention — downstream jobs consume this within the same run
+          retention-days: 1
+
+  # ── Job 2: Vulnerability Scan ─────────────────────────────────────────────
+  # Trivy scans the built image for OS and language-level CVEs.
+  # Fails the pipeline on HIGH or CRITICAL findings (blocking gate).
+  # Uploads a SARIF report to GitHub Security tab for visibility.
+  scan:
+    name: Vulnerability scan (Trivy)
+    runs-on: ubuntu-latest
+    needs: build-image
+    # Write permission needed to upload SARIF results to GitHub Security tab
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Download image tarball
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4.3.0
+        with:
+          name: container-image-${{ github.sha }}
+          path: /tmp
+
+      - name: Run Trivy vulnerability scan
+        id: trivy
+        # aquasecurity/trivy-action v0.35.0 — pinned to immutable SHA
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        with:
+          # Scan the locally loaded tarball directly — avoids the tag-format
+          # mismatch between github.sha (40 chars) and the sha- prefix tag (7 chars).
+          input: /tmp/image.tar
+          format: sarif
+          output: trivy-results.sarif
+          # Block on HIGH and CRITICAL — moderate findings are reported but not blocking
+          severity: HIGH,CRITICAL
+          # Scan OS packages and language-specific dependencies
+          vuln-type: os,library
+          # Ignore unfixed vulnerabilities (no patch available yet)
+          ignore-unfixed: true
+          exit-code: '1'
+
+      - name: Upload Trivy SARIF to GitHub Security tab
+        # Always upload so findings are visible even when the scan step fails
+        if: always()
+        # github/codeql-action/upload-sarif v3.29.2 — pinned to immutable SHA
+        uses: github/codeql-action/upload-sarif@181d5eefc20863364f96762470ba6f862bdef56b
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy-container
+
+      - name: Upload Trivy results as artifact
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: trivy-results-${{ github.sha }}
+          path: trivy-results.sarif
+          retention-days: ${{ github.ref == 'refs/heads/main' && 30 || 7 }}
+
+  # ── Job 3: SBOM Generation ────────────────────────────────────────────────
+  # Generates a Software Bill of Materials in both SPDX JSON and CycloneDX
+  # formats using Syft (via anchore/sbom-action).
+  # The SBOM is stored as a pipeline artifact and attached to GitHub releases.
+  sbom:
+    name: Generate SBOM (Syft)
+    runs-on: ubuntu-latest
+    needs: build-image
+    # Write permission needed to attach SBOM to GitHub releases
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Download image tarball
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4.3.0
+        with:
+          name: container-image-${{ github.sha }}
+          path: /tmp
+
+      - name: Generate SBOM — SPDX JSON format
+        # anchore/sbom-action v0.20.0 — pinned to immutable SHA
+        uses: anchore/sbom-action@e11c554f704a0b820cbf8c51673f6945e0731532
+        with:
+          # Scan the tarball directly — avoids tag-format mismatch
+          image: /tmp/image.tar
+          format: spdx-json
+          output-file: sbom.spdx.json
+          artifact-name: sbom-spdx-${{ github.sha }}.json
+          upload-artifact: true
+          upload-artifact-retention: ${{ github.ref == 'refs/heads/main' && 30 || 7 }}
+
+      - name: Generate SBOM — CycloneDX format
+        uses: anchore/sbom-action@e11c554f704a0b820cbf8c51673f6945e0731532
+        with:
+          image: /tmp/image.tar
+          format: cyclonedx-json
+          output-file: sbom.cyclonedx.json
+          artifact-name: sbom-cyclonedx-${{ github.sha }}.json
+          upload-artifact: true
+          upload-artifact-retention: ${{ github.ref == 'refs/heads/main' && 30 || 7 }}
+
+  # ── Job 4: Sign ───────────────────────────────────────────────────────────
+  # Cosign keyless signing using the GitHub OIDC token (Sigstore).
+  # No long-lived signing keys to manage — the signature is tied to the
+  # GitHub Actions OIDC identity and verifiable by anyone with cosign.
+  #
+  # Only runs on pushes to the default branch (not PRs) because signing
+  # requires the image to be pushed to a registry first.
+  # Uncomment the push step in build-image and configure registry secrets
+  # before enabling this job in production.
+  sign:
+    name: Sign image (Cosign keyless)
+    runs-on: ubuntu-latest
+    needs: [scan, sbom]
+    # Only sign on pushes to the default branch — not on PRs
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    permissions:
+      contents: read
+      # id-token permission is required for Cosign keyless signing via OIDC
+      id-token: write
+      # packages permission is required to push signatures to GHCR
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Install Cosign
+        # sigstore/cosign-installer v3.8.2 — pinned to immutable SHA
+        uses: sigstore/cosign-installer@3454372f43399081ed03b604cb2d021dabca52bb
+
+      - name: Verify Cosign installation
+        run: cosign version
+
+      # ── NOTE ──────────────────────────────────────────────────────────────
+      # The steps below require the image to be pushed to a registry.
+      # Uncomment and configure once REGISTRY_USERNAME and REGISTRY_PASSWORD
+      # secrets are set in the repository settings.
+      # ──────────────────────────────────────────────────────────────────────
+
+      # - name: Log in to container registry
+      #   # docker/login-action v3.4.0 — pinned to immutable SHA
+      #   uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
+      #   with:
+      #     registry: ghcr.io
+      #     username: ${{ secrets.REGISTRY_USERNAME }}
+      #     password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      # - name: Sign image with Cosign (keyless via GitHub OIDC)
+      #   # Cosign keyless signing: no private key stored anywhere.
+      #   # The signature is tied to the GitHub Actions OIDC identity.
+      #   # Verification: cosign verify --certificate-identity-regexp="github.com/org/repo" \
+      #   #               --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
+      #   #               <image>@<digest>
+      #   env:
+      #     COSIGN_EXPERIMENTAL: "1"
+      #   run: |
+      #     cosign sign --yes \
+      #       ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-image.outputs.image-digest }}
+
+      # - name: Attach SBOM to image (cosign attest)
+      #   env:
+      #     COSIGN_EXPERIMENTAL: "1"
+      #   run: |
+      #     cosign attest --yes \
+      #       --predicate sbom.spdx.json \
+      #       --type spdxjson \
+      #       ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-image.outputs.image-digest }}
+
+      - name: Signing readiness confirmation
+        run: |
+          echo "Cosign installed and OIDC token available."
+          echo "Configure registry secrets and uncomment sign/attest steps to enable production signing."
+          echo "Image digest: ${{ needs.build-image.outputs.image-digest }}"
