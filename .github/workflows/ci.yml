@@ -264,6 +264,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Ensure output directory exists
+        run: mkdir -p dependency-check-report
+
       - name: Run OWASP Dependency-Check
         # dependency-check/Dependency-Check_Action v1.1.0 — pinned to immutable SHA
         uses: dependency-check/Dependency-Check_Action@75ba02d6183445fe0761d26e836bde58b1560600
@@ -297,6 +300,18 @@ jobs:
 
       - name: Upload Dependency-Check SARIF to GitHub Security tab
         if: always()
+        run: |
+          SARIF="dependency-check-report/dependency-check-report.sarif"
+          if [ -f "$SARIF" ]; then
+            echo "SARIF report found — uploading to GitHub Security tab."
+          else
+            echo "::warning::SARIF file not found at $SARIF — scan may have failed before writing output. Skipping upload."
+            exit 0
+          fi
+        shell: bash
+
+      - name: Upload Dependency-Check SARIF (upload-sarif)
+        if: always() && hashFiles('dependency-check-report/dependency-check-report.sarif') != ''
         uses: github/codeql-action/upload-sarif@181d5eefc20863364f96762470ba6f862bdef56b  # v3.29.2
         with:
           sarif_file: dependency-check-report/dependency-check-report.sarif
