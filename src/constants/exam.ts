@@ -1,0 +1,2 @@
+export const DEFAULT_QUESTION_COUNT = 10;
+export const DEFAULT_EXAM_DURATION_MINUTES = 120;
