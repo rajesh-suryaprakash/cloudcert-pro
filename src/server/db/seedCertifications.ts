@@ -464,7 +464,7 @@ function seedOneCertification(
           q.questionType,
           JSON.stringify(q.options),
           JSON.stringify(q.correctAnswers),
-          q.explanation != null
+          q.explanation !== null && q.explanation !== undefined
             ? (typeof q.explanation === 'string' ? q.explanation : JSON.stringify(q.explanation))
             : null,
           q.distractorExplanations ? JSON.stringify(q.distractorExplanations) : null,
