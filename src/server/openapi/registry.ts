@@ -57,6 +57,9 @@ const registry = new OpenAPIRegistry();
  */
 const registeredOperationIds = new Map<string, string>();
 
+/** Track registered component names to validate $ref references */
+const registeredComponentNames = new Set<string>();
+
 /**
  * API Metadata Configuration
  *
@@ -189,7 +192,7 @@ function validateZodSchema(name: string, schema: ZodSchema): void {
     if (error instanceof Error && error.message.includes('Unsupported')) {
       throw error;
     }
-    logger.warn(`Could not fully validate schema "${name}" type`, error);
+    logger.warn({ err: error }, `Could not fully validate schema "${name}" type`);
   }
 }
 
@@ -238,6 +241,7 @@ function validateZodSchema(name: string, schema: ZodSchema): void {
 export function registerComponent(name: string, schema: ZodSchema): void {
   validateZodSchema(name, schema);
   registry.register(name, schema);
+  registeredComponentNames.add(name);
 }
 
 /**
@@ -326,16 +330,22 @@ export function registerPath(config: RouteConfig): void {
   // All $ref references must point to registered components
   // Requirement: 13.3
   if (config.request?.body?.content?.['application/json']?.schema) {
-    validateSchemaReferences(config.request.body.content['application/json'].schema, config.path);
+    validateSchemaReferences(
+      config.request.body.content['application/json'].schema as Record<string, unknown>,
+      config.path,
+    );
   }
 
   if (config.responses) {
-    Object.values(config.responses).forEach((response: Record<string, unknown>) => {
+    Object.values(config.responses).forEach((response) => {
       const responseContent = (
         response as { content?: { 'application/json'?: { schema?: unknown } } }
       ).content;
       if (responseContent?.['application/json']?.schema) {
-        validateSchemaReferences(responseContent['application/json'].schema, config.path);
+        validateSchemaReferences(
+          responseContent['application/json'].schema as Record<string, unknown>,
+          config.path,
+        );
       }
     });
   }
@@ -365,10 +375,7 @@ function validateSchemaReferences(schema: Record<string, unknown>, routePath: st
   // Check if this is a reference to a component
   if (schema.$ref) {
     const componentName = (schema.$ref as string).split('/').pop();
-    const registeredComponents =
-      (registry.definitions.components?.schemas as Record<string, unknown>) || {};
-
-    if (!registeredComponents[componentName as string]) {
+    if (componentName && !registeredComponentNames.has(componentName)) {
       throw new Error(
         `Route "${routePath}" references unregistered schema component "${componentName}". ` +
           `Please register this component using registerComponent() before registering the route.`,

@@ -32,7 +32,7 @@ router.get('/certifications', authenticate, (_req, res) => {
 
 router.get('/certifications/:id', authenticate, (req: Request, res: Response, next: NextFunction) => {
   try {
-    const cert = certRepo.findById(req.params.id);
+    const cert = certRepo.findAll().find((c) => c.id === req.params.id);
     if (!cert) {
       throw new NotFoundError('Certification not found');
     }
@@ -222,13 +222,13 @@ router.put(
       }
 
       // Update topic weights in a transaction
-      const updateStmt = certRepo.db.prepare(`
+      const updateStmt = db.prepare(`
         UPDATE topics 
         SET weightPercentage = ?, updatedAt = ?
         WHERE id = ? AND certificationId = ?
       `);
 
-      const transaction = certRepo.db.transaction(
+      const transaction = db.transaction(
         (topics: { id: string; weightPercentage: number }[]) => {
           const now = new Date().toISOString();
           for (const topic of topics) {
@@ -637,10 +637,10 @@ router.get(
 
       // For custom quizzes, allow users to retake questions for practice
       // Don't exclude seen questions - users should be able to practice repeatedly
-      const questions = questionRepo.findByCertification(
-        certificationId,
-        difficulty ? (difficulty as string) : null,
-      );
+      const allQuestions = questionRepo.findByCertification(certificationId);
+      const questions = difficulty
+        ? allQuestions.filter((q) => q.difficulty === (difficulty as string))
+        : allQuestions;
 
       // Only check if there are any questions at all for this certification/difficulty
       if (questions.length === 0) {

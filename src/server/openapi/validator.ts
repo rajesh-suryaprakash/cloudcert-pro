@@ -15,10 +15,17 @@ export async function validateOpenAPISpec(
       return { valid: true };
     }
 
-    return {
-      valid: false,
-      errors: result.errors,
-    };
+    // result.errors can be string | ErrorObject[] depending on the validator version
+    const rawErrors = result.errors;
+    const errors: { message: string }[] = Array.isArray(rawErrors)
+      ? rawErrors.map((e) => ({
+          message: typeof e === 'object' && e !== null && 'message' in e
+            ? String((e as { message: unknown }).message)
+            : String(e),
+        }))
+      : [{ message: String(rawErrors ?? 'Validation failed') }];
+
+    return { valid: false, errors };
   } catch (error) {
     return {
       valid: false,

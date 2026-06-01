@@ -17,7 +17,7 @@ async function getCachedOpenAPIDocument() {
   if (!cachedDocument) {
     try {
       const document = getDocument();
-      await validateDocument(document);
+      await validateDocument(document as unknown as Record<string, unknown>);
       cachedDocument = document;
 
       // Pre-compute and cache the JSON string and buffer for fast serving
@@ -26,7 +26,7 @@ async function getCachedOpenAPIDocument() {
 
       logger.info('OpenAPI document generated and cached');
     } catch (error) {
-      logger.error('Failed to generate OpenAPI document', error);
+      logger.error({ err: error }, 'Failed to generate OpenAPI document');
       throw error;
     }
   }
@@ -66,7 +66,7 @@ async function serveOpenAPISpec(req: Request, res: Response): Promise<void> {
     // Write directly and end
     res.end(jsonString);
   } catch (error) {
-    logger.error('Error serving OpenAPI specification', error);
+    logger.error({ err: error }, 'Error serving OpenAPI specification');
     res.status(500).json({
       error: 'Failed to generate OpenAPI specification',
       message: error instanceof Error ? error.message : 'Unknown error',
@@ -123,7 +123,7 @@ function handleSwaggerUIErrors(err: unknown, req: Request, res: Response, _next:
       ? ' (CSP violation detected)'
       : '';
 
-    logger.error(`Swagger UI error${cspViolation}:`, err);
+    logger.error({ err }, `Swagger UI error${cspViolation}:`);
 
     // Display user-friendly error message in browser
     // Requirement: 13.6

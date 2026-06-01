@@ -51,14 +51,17 @@ export const createExamConfigSchema = z.object({
     .max(255, 'name must be at most 255 characters'),
   description: z.string().max(1000).optional(),
   duration: z
+    .number()
     .int()
     .min(15, 'duration must be at least 15')
     .max(480, 'duration must be at most 480'),
   totalQuestions: z
+    .number()
     .int()
     .min(5, 'totalQuestions must be at least 5')
     .max(500, 'totalQuestions must be at most 500'),
   passingScore: z
+    .number()
     .int()
     .min(0, 'passingScore must be at least 0')
     .max(100, 'passingScore must be at most 100'),
@@ -66,7 +69,7 @@ export const createExamConfigSchema = z.object({
     .enum(['random', 'difficulty_balanced', 'topic_based'])
     .optional()
     .default('random'),
-  topicWeights: z.record(z.string(), z.number()).optional().default({}),
+  topicWeights: z.record(z.number()).optional().default({}),
   isActive: z.boolean().optional().default(true),
 });
 

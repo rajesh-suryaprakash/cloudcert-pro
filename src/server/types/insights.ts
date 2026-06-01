@@ -150,7 +150,7 @@ export interface AnswerChange {
 // Filter options for analytics
 export interface FilterOptions {
   examType?: 'mock' | 'practice';
-  difficulty?: 'Easy' | 'Medium' | 'Hard' | 'Mixed';
+  difficulty?: 'Easy' | 'Medium' | 'Hard' | 'Mixed' | 'all';
 }
 
 // Unit-level proficiency (for Subtopic → Unit drill-down)

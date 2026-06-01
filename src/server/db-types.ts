@@ -109,6 +109,7 @@ export interface ExamConfigRow {
   id: string;
   certificationId: string;
   name: string;
+  description?: string | null;
   duration: number;
   totalQuestions: number;
   passingScore: number;

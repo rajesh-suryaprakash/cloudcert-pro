@@ -32,6 +32,8 @@ export interface CreateTopicInput {
   description?: string;
   orderIndex?: number;
   isActive?: boolean;
+  docUrl?: string | null;
+  weightPercentage?: number;
 }
 
 export interface UpdateTopicInput {
