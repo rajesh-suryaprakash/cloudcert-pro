@@ -1,0 +1,983 @@
+{
+  "_schema": {
+    "certificationId": "gcp-pca",
+    "setNumber": 14,
+    "questions":[
+      {
+        "id": "q-gcppca-s14-001",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "Your enterprise operates a mission-critical transactional application backed by Cloud SQL for PostgreSQL in the `us-central1` region. The business Continuity Plan (BCP) dictates a Recovery Point Objective (RPO) of less than 5 minutes and a Recovery Time Objective (RTO) of less than 30 minutes in the event of a total regional disaster. You must ensure the database architecture meets these DR requirements while minimizing manual intervention and infrastructure costs during normal operations. What should you do?",
+        "questionType": "single",
+        "options":[
+          "Enable High Availability (HA) on the Cloud SQL instance to ensure it synchronously replicates data to a standby instance in `us-east1`.",
+          "Create a cross-region read replica in `us-east1`. In the event of a disaster in `us-central1`, manually promote the cross-region replica to a standalone primary instance and update application connection strings.",
+          "Configure an automated daily export of the Cloud SQL database to a multi-region Cloud Storage bucket. During a regional failure, import the data to a new Cloud SQL instance in a surviving region.",
+          "Enable Asynchronous Persistent Disk (PD) replication on the Cloud SQL underlying storage, targeting a zone in the `us-east1` region for zero-downtime failover."
+        ],
+        "correctAnswers":[
+          "Create a cross-region read replica in `us-east1`. In the event of a disaster in `us-central1`, manually promote the cross-region replica to a standalone primary instance and update application connection strings."
+        ],
+        "explanation": {
+          "general explanation": "To protect against a full regional outage (Disaster Recovery), you must use a cross-region read replica. Cross-region replicas use asynchronous replication. While replication lag is typically in seconds (easily meeting the < 5 minute RPO), promoting the replica is a manual or script-driven process (meeting the < 30 min RTO). Once promoted, the replica becomes the new primary, and applications must be pointed to its IP address.",
+          "Why other options are wrong": {
+            "Enable High Availability (HA) on the Cloud SQL instance to ensure it synchronously replicates data to a standby instance in `us-east1`.": "Cloud SQL High Availability (HA) provides synchronous replication across *zones* within the *same* region. It does not replicate across regions (e.g., `us-central1` to `us-east1`).",
+            "Configure an automated daily export of the Cloud SQL database to a multi-region Cloud Storage bucket. During a regional failure, import the data to a new Cloud SQL instance in a surviving region.": "A daily export provides an RPO of up to 24 hours, severely violating the business requirement of an RPO of < 5 minutes. Importing large databases also takes significant time, likely violating the 30-minute RTO.",
+            "Enable Asynchronous Persistent Disk (PD) replication on the Cloud SQL underlying storage, targeting a zone in the `us-east1` region for zero-downtime failover.": "Asynchronous PD replication is a feature for standard Compute Engine persistent disks. It is not natively configurable or exposed for the managed storage beneath a Cloud SQL instance."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "Cloud SQL",
+          "Disaster Recovery",
+          "Cross-Region Replica",
+          "RPO/RTO"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-002",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "You are designing the high availability network architecture for a hybrid cloud deployment. Your organization requires a 99.99% availability SLA for the Cloud Interconnect connecting your on-premises data centers to Google Cloud. The architecture must survive the failure of a single on-premises router and the failure of a single Google Cloud metropolitan area (metro). Which combination of configurations is strictly required to achieve this specific SLA? (Choose two)",
+        "questionType": "multiple",
+        "options":[
+          "Provision four Dedicated Interconnect connections, with two connections in Metro A and two connections in Metro B.",
+          "Configure the Cloud Router in Google Cloud to use Regional dynamic routing.",
+          "Terminate the interconnect attachments on at least two separate on-premises routers.",
+          "Deploy two Cloud VPN High Availability (HA) gateways over the Interconnect connections as a backup path.",
+          "Configure BGP AS-Path prepending on the primary metropolitan connections to ensure failover priority."
+        ],
+        "correctAnswers":[
+          "Provision four Dedicated Interconnect connections, with two connections in Metro A and two connections in Metro B.",
+          "Terminate the interconnect attachments on at least two separate on-premises routers."
+        ],
+        "explanation": {
+          "general explanation": "To achieve the 99.99% SLA for Dedicated Interconnect, Google strictly requires a highly redundant topology: You must provision four Interconnect connections across two different metropolitan areas (metros) to survive a metro failure. Additionally, on the customer side, these connections must terminate on at least two physically separate on-premises routers to survive a local hardware failure. Furthermore, the Google Cloud VPC must be configured for Global dynamic routing (not Regional).",
+          "Why other options are wrong": {
+            "Configure the Cloud Router in Google Cloud to use Regional dynamic routing.": "Achieving the 99.99% SLA across multiple metros requires Global dynamic routing so that subnets in all regions can automatically learn routes from both metropolitan interconnects.",
+            "Deploy two Cloud VPN High Availability (HA) gateways over the Interconnect connections as a backup path.": "Deploying HA VPN over Interconnect provides IPsec encryption, but it is not a requirement for the 99.99% Interconnect SLA itself.",
+            "Configure BGP AS-Path prepending on the primary metropolitan connections to ensure failover priority.": "While BGP MED or AS-Path prepending is used to influence traffic routing preference (e.g., Active/Passive), it is not a strict architectural requirement to qualify for the physical 99.99% SLA."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "Cloud Interconnect",
+          "SLA",
+          "Hybrid Cloud",
+          "Network HA"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-003",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "Your e-commerce application is deployed globally across multiple Google Kubernetes Engine (GKE) clusters in `us-east1`, `europe-west1`, and `asia-northeast1`. You need to expose a single Anycast IP address to users worldwide. The traffic must be routed to the closest available GKE cluster to the user. If an entire region goes down, the traffic must seamlessly fail over to the next closest healthy region. Which ingress architecture should you implement?",
+        "questionType": "single",
+        "options":[
+          "Deploy Multi Cluster Ingress (MCI) to provision a global external Application Load Balancer that routes traffic across the clusters based on proximity and health.",
+          "Configure an external Passthrough Network Load Balancer in each region, and use Cloud DNS Geolocation routing policies to direct users to the nearest IP.",
+          "Implement Multi-Cluster Services (MCS) to discover services across clusters, and use a regional Internal Application Load Balancer to route external traffic.",
+          "Deploy Anthos Service Mesh (ASM) and configure cross-cluster traffic routing using Istio virtual services mapped to a global Cloud NAT gateway."
+        ],
+        "correctAnswers":[
+          "Deploy Multi Cluster Ingress (MCI) to provision a global external Application Load Balancer that routes traffic across the clusters based on proximity and health."
+        ],
+        "explanation": {
+          "general explanation": "Multi Cluster Ingress (MCI) is the purpose-built Google Cloud solution for North-South traffic routing across multiple GKE clusters. MCI acts as a centralized controller that automatically provisions and configures a Google Cloud Global external Application Load Balancer. This load balancer provides a single Anycast IP, routes users to the nearest region (minimizing latency), and natively handles cross-region failover if a cluster or entire region becomes unhealthy.",
+          "Why other options are wrong": {
+            "Configure an external Passthrough Network Load Balancer in each region, and use Cloud DNS Geolocation routing policies to direct users to the nearest IP.": "While Cloud DNS can perform geo-routing, DNS caching by clients and ISPs means failover is not 'seamless' or instantaneous (unlike a Global LB). Furthermore, Network LBs do not provide a single Anycast IP; they provide regional IPs.",
+            "Implement Multi-Cluster Services (MCS) to discover services across clusters, and use a regional Internal Application Load Balancer to route external traffic.": "MCS is designed for East-West (internal cluster-to-cluster) service discovery and communication. Internal Application Load Balancers cannot expose traffic to external global users on the internet.",
+            "Deploy Anthos Service Mesh (ASM) and configure cross-cluster traffic routing using Istio virtual services mapped to a global Cloud NAT gateway.": "Cloud NAT is for outbound (egress) traffic only. It cannot act as a global ingress load balancer for inbound client traffic."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "GKE",
+          "Multi Cluster Ingress",
+          "Global Load Balancing",
+          "Failover"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-004",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "Your financial technology platform relies on a massive Cloud Spanner deployment configured with a Multi-region configuration (`nam3`, which covers `us-east4`, `us-east1`, and `us-central1`). Your primary read-write replicas are in `us-east4` and `us-east1`. A severe natural disaster completely destroys the `us-east4` region. How does Cloud Spanner handle this catastrophic regional failure to ensure high availability?",
+        "questionType": "single",
+        "options":[
+          "Cloud Spanner maintains availability because the surviving read-write region (`us-east1`) and the witness region (`us-central1`) form a Paxos majority to continue committing transactions.",
+          "Cloud Spanner enters a read-only mode globally to prevent split-brain scenarios until a new replica is manually provisioned in a healthy region to restore the Paxos quorum.",
+          "Cloud Spanner automatically performs a DNS failover, routing all queries to the standby asynchronous read replicas in the `us-central1` region.",
+          "Cloud Spanner loses committed data that was not yet asynchronously replicated from `us-east4`, but automatically resumes read-write operations in `us-east1` after 5 minutes."
+        ],
+        "correctAnswers":[
+          "Cloud Spanner maintains availability because the surviving read-write region (`us-east1`) and the witness region (`us-central1`) form a Paxos majority to continue committing transactions."
+        ],
+        "explanation": {
+          "general explanation": "Cloud Spanner achieves 99.999% availability and zero RPO globally through synchronous replication using the Paxos consensus algorithm. A multi-region topology like `nam3` consists of two read-write regions and a third 'witness' region. To commit a transaction, a majority (quorum) of voting replicas must agree. If one read-write region fails (`us-east4`), the surviving read-write region (`us-east1`) and the witness region (`us-central1`) still constitute a majority. Therefore, Spanner automatically continues processing read and write transactions without manual intervention or data loss.",
+          "Why other options are wrong": {
+            "Cloud Spanner enters a read-only mode globally to prevent split-brain scenarios until a new replica is manually provisioned in a healthy region to restore the Paxos quorum.": "This is factually incorrect. The specific purpose of the 3rd witness region is to ensure a quorum remains during a single-region failure, preventing read-only mode.",
+            "Cloud Spanner automatically performs a DNS failover, routing all queries to the standby asynchronous read replicas in the `us-central1` region.": "Spanner does not use DNS failover or standby asynchronous replicas for HA. It uses synchronous Paxos voting. The witness region does not hold data replicas, it only holds votes.",
+            "Cloud Spanner loses committed data that was not yet asynchronously replicated from `us-east4`, but automatically resumes read-write operations in `us-east1` after 5 minutes.": "Spanner multi-region provides strictly synchronous replication for commits. Therefore, no committed data is lost (RPO = 0) when a region fails."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "Cloud Spanner",
+          "Multi-Region",
+          "Paxos Quorum",
+          "Failover"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-005",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "You are migrating a legacy stateless web application to Compute Engine. The application frequently suffers from a memory leak, causing the internal process to freeze, though the OS remains responsive and responds to simple TCP pings. You have deployed the VMs in a Regional Managed Instance Group (MIG). You need an automated failover/recovery mechanism that detects the frozen application state and reliably recreates the VM to restore service. Which configuration is required?",
+        "questionType": "single",
+        "options":[
+          "Configure an Application-based Health Check on the MIG's Autohealer that queries a specific HTTP `/healthz` endpoint on the application.",
+          "Configure a Google Cloud Load Balancer in front of the MIG and rely on the Load Balancer's health checks to automatically recreate the frozen VMs.",
+          "Deploy the Active Assist Idle VM Recommender to identify frozen VMs based on low CPU utilization and trigger an automated reboot workflow.",
+          "Enable the `metadata-based-health-check` feature on the MIG to automatically restart VMs when the internal guest OS agent detects high memory utilization."
+        ],
+        "correctAnswers":[
+          "Configure an Application-based Health Check on the MIG's Autohealer that queries a specific HTTP `/healthz` endpoint on the application."
+        ],
+        "explanation": {
+          "general explanation": "To recover from application-level failures (like deadlocks or memory leaks) where the OS remains responsive, you must use an Application-based Health Check attached to the MIG's Autohealer. The autohealer continuously probes an HTTP endpoint (e.g., `/healthz`). If the application freezes and fails to return HTTP 200 responses, the autohealer explicitly deletes the frozen VM and creates a fresh instance, restoring the application.",
+          "Why other options are wrong": {
+            "Configure a Google Cloud Load Balancer in front of the MIG and rely on the Load Balancer's health checks to automatically recreate the frozen VMs.": "Load Balancer health checks only control *routing*. If a VM fails the LB health check, the LB stops sending traffic to it, but the LB will *not* recreate or reboot the VM. Only the MIG Autohealer recreates VMs.",
+            "Deploy the Active Assist Idle VM Recommender to identify frozen VMs based on low CPU utilization and trigger an automated reboot workflow.": "The Idle VM Recommender analyzes usage over a long period (e.g., 14 days) to recommend cost savings; it is not a real-time high-availability mechanism for failover or autohealing.",
+            "Enable the `metadata-based-health-check` feature on the MIG to automatically restart VMs when the internal guest OS agent detects high memory utilization.": "There is no native 'metadata-based-health-check' feature that triggers restarts based on memory thresholds. Autohealing relies on standard TCP/HTTP/HTTPS/gRPC health checks."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "Compute Engine",
+          "Managed Instance Groups",
+          "Autohealing",
+          "Health Checks"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-006",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "Your organization uses Cloud Bigtable to store high-velocity IoT time-series data. High availability is paramount; the system must survive a zonal failure without intervention. You have deployed a replicated Bigtable instance with clusters in `us-central1-a` and `us-central1-b`. The data engineering team requires strict read-your-writes consistency for a specific administrative application, while the IoT ingestion pipelines prioritize 99.99% availability over strong consistency. How should you design the Bigtable App Profiles?",
+        "questionType": "single",
+        "options":[
+          "Create two App Profiles. Profile A uses multi-cluster routing for the IoT pipelines to ensure HA failover. Profile B uses single-cluster routing targeting `us-central1-a` for the administrative app to ensure strong consistency.",
+          "Create a single App Profile utilizing multi-cluster routing. Enable the 'Strong Consistency' toggle on the routing policy to satisfy both applications simultaneously.",
+          "Create two App Profiles. Profile A uses multi-cluster routing with eventual consistency. Profile B uses multi-cluster routing with strict consistency enabled.",
+          "Deploy two separate Bigtable instances. Replicate the IoT data asynchronously between the instances, and point the administrative app exclusively to the primary instance."
+        ],
+        "correctAnswers":[
+          "Create two App Profiles. Profile A uses multi-cluster routing for the IoT pipelines to ensure HA failover. Profile B uses single-cluster routing targeting `us-central1-a` for the administrative app to ensure strong consistency."
+        ],
+        "explanation": {
+          "general explanation": "Cloud Bigtable App Profiles control how traffic is routed to clusters within an instance. Multi-cluster routing provides 99.99% availability (HA) by automatically failing over across clusters, but it inherently provides eventual consistency. Single-cluster routing pins traffic to a specific cluster, allowing for strong consistency (read-your-writes) but sacrificing automatic failover. By creating two distinct App Profiles, the IoT pipelines achieve their HA requirement, while the administrative app achieves its strong consistency requirement on the same underlying data.",
+          "Why other options are wrong": {
+            "Create a single App Profile utilizing multi-cluster routing. Enable the 'Strong Consistency' toggle on the routing policy to satisfy both applications simultaneously.": "There is no 'Strong Consistency' toggle for multi-cluster routing. Multi-cluster routing only supports eventual consistency due to the asynchronous nature of Bigtable replication.",
+            "Create two App Profiles. Profile A uses multi-cluster routing with eventual consistency. Profile B uses multi-cluster routing with strict consistency enabled.": "As stated above, multi-cluster routing cannot provide strict (strong) consistency.",
+            "Deploy two separate Bigtable instances. Replicate the IoT data asynchronously between the instances, and point the administrative app exclusively to the primary instance.": "Deploying completely separate instances adds massive cost and operational overhead. Managing custom asynchronous replication between instances defeats the purpose of Bigtable's native managed replication and App Profiles."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "Cloud Bigtable",
+          "App Profiles",
+          "High Availability",
+          "Consistency Models"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-007",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "A global media streaming platform utilizes Cloud Storage to host petabytes of static video assets. The business requires an RPO of 0 and protection against regional outages. You have deployed a Dual-region bucket spanning `us-central1` and `us-east1`. To strictly enforce the highest level of disaster recovery capability for recent uploads, which two additional configurations should you ensure? (Choose two)",
+        "questionType": "multiple",
+        "options":[
+          "Enable Turbo Replication on the Dual-region bucket.",
+          "Configure a Cloud Storage transfer job to incrementally copy data every 5 minutes to a separate Multi-region bucket.",
+          "Ensure the application routes all write requests through a Global Application Load Balancer with Cloud CDN.",
+          "Configure the application code to handle read retries using the alternate region if a 5xx error is received from the primary region.",
+          "Enable Object Versioning on the bucket to prevent permanent data loss during a regional failover event."
+        ],
+        "correctAnswers":[
+          "Enable Turbo Replication on the Dual-region bucket.",
+          "Configure the application code to handle read retries using the alternate region if a 5xx error is received from the primary region."
+        ],
+        "explanation": {
+          "general explanation": "When using a Dual-region Cloud Storage bucket, data is replicated asynchronously. To enforce strict DR for newly uploaded data, enabling 'Turbo Replication' guarantees an RPO of 15 minutes (meaning 100% of newly written data is replicated to the second region within 15 minutes). Secondly, during a regional outage, Cloud Storage does not automatically redirect the client if they hit an unhealthy endpoint in the affected region. The application architecture must be resilient enough to catch 5xx server errors and explicitly retry the request, at which point the internal Google network will route the request to the surviving region.",
+          "Why other options are wrong": {
+            "Configure a Cloud Storage transfer job to incrementally copy data every 5 minutes to a separate Multi-region bucket.": "Storage Transfer Service cannot be scheduled at a 5-minute interval natively via cron, and this approach is entirely redundant and costly given Dual-region's built-in replication.",
+            "Ensure the application routes all write requests through a Global Application Load Balancer with Cloud CDN.": "Cloud CDN caches read requests; it does not accelerate or protect write requests or dictate cross-region replication mechanics for Cloud Storage.",
+            "Enable Object Versioning on the bucket to prevent permanent data loss during a regional failover event.": "Object Versioning protects against accidental *deletion* or overwrite by users, not against infrastructural regional failures."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "Cloud Storage",
+          "Dual-region",
+          "Turbo Replication",
+          "Disaster Recovery"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-008",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "Your networking team has configured a highly available hybrid network utilizing two Cloud HA VPN tunnels connecting your Google Cloud VPC to two separate on-premises peer VPN gateways. Both tunnels are currently active and functioning. You want to implement an Active/Passive architecture, ensuring that 100% of the traffic from Google Cloud to on-premises uses Tunnel A, and Tunnel B is strictly used as a failover if Tunnel A goes down. Both tunnels use BGP for dynamic routing. How should you configure the Cloud Router to achieve this?",
+        "questionType": "single",
+        "options":[
+          "Assign a higher BGP MED (Multi-Exit Discriminator) value to the BGP session on Tunnel B, and a lower MED value to the BGP session on Tunnel A.",
+          "Configure BGP AS-Path prepending on Tunnel A so that its path appears longer, making it the preferred active route.",
+          "Assign a static IP route with a lower priority value (e.g., 100) to Tunnel A and a higher priority value (e.g., 1000) to Tunnel B.",
+          "Enable ECMP (Equal-Cost Multi-Path) on the Cloud Router and adjust the route weights to 100% for Tunnel A and 0% for Tunnel B."
+        ],
+        "correctAnswers":[
+          "Assign a higher BGP MED (Multi-Exit Discriminator) value to the BGP session on Tunnel B, and a lower MED value to the BGP session on Tunnel A."
+        ],
+        "explanation": {
+          "general explanation": "In BGP routing within Google Cloud, the Multi-Exit Discriminator (MED) attribute (often referred to as base priority) is used to influence the route preference for traffic leaving Google Cloud. A lower MED value denotes a higher preference. By setting a lower MED on Tunnel A and a higher MED on Tunnel B, Cloud Router will actively route all outbound traffic through Tunnel A. If Tunnel A fails, the BGP route is withdrawn, and traffic immediately fails over to Tunnel B.",
+          "Why other options are wrong": {
+            "Configure BGP AS-Path prepending on Tunnel A so that its path appears longer, making it the preferred active route.": "AS-Path prepending is used to influence traffic coming *in* from on-premises to Google Cloud. Furthermore, making an AS-Path 'longer' makes the route *less* preferred, not more.",
+            "Assign a static IP route with a lower priority value (e.g., 100) to Tunnel A and a higher priority value (e.g., 1000) to Tunnel B.": "The prompt explicitly states the tunnels use BGP for dynamic routing. Mixing static routes with BGP is an anti-pattern for HA failover and overrides dynamic route propagation.",
+            "Enable ECMP (Equal-Cost Multi-Path) on the Cloud Router and adjust the route weights to 100% for Tunnel A and 0% for Tunnel B.": "ECMP is used for Active/Active topologies to load balance traffic across multiple tunnels. It is the exact opposite of the Active/Passive architecture requested."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "Cloud Router",
+          "BGP",
+          "HA VPN",
+          "Failover"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-009",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "Your company deploys a monolithic legacy application on Compute Engine. The application is highly stateful; it requires a persistent IP address to communicate with whitelisted external mainframes, and it stores critical session state on its attached persistent disk. You need to design an automated high-availability strategy. If the primary VM crashes due to a hardware failure, a new VM must be automatically spawned, re-attach the exact same persistent disk, and assume the exact same internal IP address. How should you architect this?",
+        "questionType": "single",
+        "options":[
+          "Deploy the VM in a Stateful Managed Instance Group (MIG). Configure a stateful policy that declares the persistent disk and the internal IP address as stateful resources.",
+          "Create a Cloud Function triggered by Cloud Monitoring VM Crash alerts. The function should detach the disk, release the IP, and spawn a new VM with those resources.",
+          "Deploy the VM in a standard Regional Managed Instance Group. Use a regional persistent disk (regional PD) and configure an internal Passthrough Network Load Balancer to abstract the IP address.",
+          "Install the Google Cloud Ops Agent on the VM and configure a custom health check that triggers a Live Migration event when the VM becomes unresponsive."
+        ],
+        "correctAnswers":[
+          "Deploy the VM in a Stateful Managed Instance Group (MIG). Configure a stateful policy that declares the persistent disk and the internal IP address as stateful resources."
+        ],
+        "explanation": {
+          "general explanation": "Stateful Managed Instance Groups (Stateful MIGs) are designed exactly for this scenario. While standard MIGs treat VMs as ephemeral and disposable, Stateful MIGs allow you to define specific resources (disks, IPs, metadata) as 'stateful'. When a hardware failure occurs and the Autohealer recreates the VM, the Stateful MIG ensures the replacement VM is provisioned with the exact same retained internal IP and persistent disk, preserving the state and network identity automatically.",
+          "Why other options are wrong": {
+            "Create a Cloud Function triggered by Cloud Monitoring VM Crash alerts. The function should detach the disk, release the IP, and spawn a new VM with those resources.": "Building custom, complex automation using Cloud Functions introduces significant operational risk and maintenance overhead when Stateful MIGs provide this behavior natively.",
+            "Deploy the VM in a standard Regional Managed Instance Group. Use a regional persistent disk (regional PD) and configure an internal Passthrough Network Load Balancer to abstract the IP address.": "A standard MIG will recreate the VM with a random IP and a brand new blank disk, completely destroying the stateful requirements. Regional PDs do not natively attach to standard MIG autohealed instances without stateful configurations.",
+            "Install the Google Cloud Ops Agent on the VM and configure a custom health check that triggers a Live Migration event when the VM becomes unresponsive.": "Live Migration is an internal Google Cloud maintenance feature used to move healthy VMs prior to host maintenance. You cannot manually trigger a Live Migration to fix a crashed VM."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "Compute Engine",
+          "Stateful MIGs",
+          "High Availability",
+          "Autohealing"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-010",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "The EHR Healthcare case study highlights the need to improve their Disaster Recovery (DR) posture. Their current on-premises environment uses active-active deployments in multiple local colocation facilities, which are geographically too close to survive a major regional weather event. They want to use Google Cloud as their primary DR site. Which architecture provides a robust, low-RTO disaster recovery solution that allows them to rapidly recover their critical on-premises VMware workloads in Google Cloud?",
+        "questionType": "single",
+        "options":[
+          "Implement Google Cloud Backup and DR service. Deploy the backup/recovery appliance on-premises to capture snapshots, and configure it to replicate the data directly to Google Cloud Storage for rapid instantiation on Compute Engine.",
+          "Deploy an active-active Google Cloud VMware Engine (GCVE) cluster stretched across an on-premises vCenter and a Google Cloud region using vSphere vMotion.",
+          "Use Storage Transfer Service to perform a nightly sync of their on-premises SAN to a regional Cloud Storage bucket. In a disaster, mount the bucket to Compute Engine VMs using Cloud Storage FUSE.",
+          "Deploy Anthos on bare metal in their on-premises facilities to manage their VMs and configure an automatic failover policy to GKE Autopilot in Google Cloud."
+        ],
+        "correctAnswers":[
+          "Implement Google Cloud Backup and DR service. Deploy the backup/recovery appliance on-premises to capture snapshots, and configure it to replicate the data directly to Google Cloud Storage for rapid instantiation on Compute Engine."
+        ],
+        "explanation": {
+          "general explanation": "For enterprise DR from on-premises VMware environments to Google Cloud, Google Cloud Backup and DR (formerly Actifio) is the primary native tool. It captures incremental, application-consistent backups on-premises, replicates them efficiently to cost-effective Cloud Storage, and uniquely allows those backups to be instantly mounted and booted as Compute Engine VMs during a disaster, drastically reducing RTO compared to traditional restore methods.",
+          "Why other options are wrong": {
+            "Deploy an active-active Google Cloud VMware Engine (GCVE) cluster stretched across an on-premises vCenter and a Google Cloud region using vSphere vMotion.": "You cannot 'stretch' a single GCVE cluster across an on-premises data center and Google Cloud. vMotion can migrate VMs between them, but they remain separate clusters, and maintaining synchronous active-active across that distance is typically unsupported.",
+            "Use Storage Transfer Service to perform a nightly sync of their on-premises SAN to a regional Cloud Storage bucket. In a disaster, mount the bucket to Compute Engine VMs using Cloud Storage FUSE.": "Cloud Storage FUSE does not support booting a full VMware VM image. A nightly sync provides an RPO of 24 hours, and rebuilding VMs from raw files manually would severely violate low RTO goals.",
+            "Deploy Anthos on bare metal in their on-premises facilities to manage their VMs and configure an automatic failover policy to GKE Autopilot in Google Cloud.": "Anthos (Google Distributed Cloud) manages containers (Kubernetes), not traditional monolithic VMware virtual machines. You cannot auto-failover a legacy VM into a serverless GKE Autopilot pod."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "Case Study",
+          "EHR Healthcare",
+          "Disaster Recovery",
+          "Backup and DR"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-011",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "Your engineering team relies on Cloud Run to host multiple microservices. Currently, the entire application stack is deployed exclusively in the `europe-west1` region. To mitigate the risk of a regional outage bringing down the business, the team deploys identical Cloud Run services to the `europe-west4` region. What is the correct architectural pattern to automatically failover HTTP traffic to `europe-west4` if `europe-west1` experiences an outage?",
+        "questionType": "single",
+        "options":[
+          "Deploy a Global External Application Load Balancer. Create a backend service and add two Serverless Network Endpoint Groups (NEGs) to it, one targeting the `europe-west1` Cloud Run service and one targeting the `europe-west4` service.",
+          "Configure Cloud DNS with a failover routing policy. Set the primary IP address to the `europe-west1` Cloud Run service and the backup IP to the `europe-west4` Cloud Run service.",
+          "Implement a Regional External Application Load Balancer in `europe-west1` and configure an HTTP-to-HTTP redirect rule to route traffic to the `europe-west4` Cloud Run URL if the backend becomes unhealthy.",
+          "Configure the Cloud Run service in `europe-west1` to use the 'Multi-region Active-Passive' toggle in the Google Cloud Console, specifying `europe-west4` as the failover target."
+        ],
+        "correctAnswers":[
+          "Deploy a Global External Application Load Balancer. Create a backend service and add two Serverless Network Endpoint Groups (NEGs) to it, one targeting the `europe-west1` Cloud Run service and one targeting the `europe-west4` service."
+        ],
+        "explanation": {
+          "general explanation": "To achieve automatic cross-region failover and global routing for serverless compute (Cloud Run, App Engine, Cloud Functions), you must use a Global External Application Load Balancer combined with Serverless Network Endpoint Groups (NEGs). By attaching Serverless NEGs from different regions to the same backend service, the Load Balancer globally Anycasts the IP. If the Cloud Run service in `europe-west1` becomes unhealthy or the region goes offline, the Load Balancer natively and instantly routes new requests to the healthy `europe-west4` NEG.",
+          "Why other options are wrong": {
+            "Configure Cloud DNS with a failover routing policy. Set the primary IP address to the `europe-west1` Cloud Run service and the backup IP to the `europe-west4` Cloud Run service.": "Cloud Run services do not have static IP addresses exposed directly to DNS unless placed behind a Load Balancer. You cannot map a DNS failover directly to a dynamic serverless `.run.app` endpoint IP.",
+            "Implement a Regional External Application Load Balancer in `europe-west1` and configure an HTTP-to-HTTP redirect rule to route traffic to the `europe-west4` Cloud Run URL if the backend becomes unhealthy.": "If the `europe-west1` region experiences a total outage, the Regional Load Balancer located in that same region will also go down, meaning the redirect will never execute.",
+            "Configure the Cloud Run service in `europe-west1` to use the 'Multi-region Active-Passive' toggle in the Google Cloud Console, specifying `europe-west4` as the failover target.": "This toggle does not exist. Cloud Run is a regional service; multi-region architectures must be built explicitly using Global Load Balancing."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "Cloud Run",
+          "Global Load Balancing",
+          "Serverless NEGs",
+          "Multi-Region"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-012",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "Your company is running a massive data analytics pipeline. The backend is an internal stateless web service running on Compute Engine VMs distributed across three zones in the `us-central1` region. These backend VMs must be accessed by hundreds of internal client applications residing in different VPC subnets across the same region. You need to implement an internal load balancing layer that ensures high availability across all three zones and supports massive TCP/UDP throughput with minimal latency. Which load balancing architecture should you choose?",
+        "questionType": "single",
+        "options":[
+          "Deploy an Internal Passthrough Network Load Balancer configured with a regional backend service containing the Instance Groups from all three zones.",
+          "Deploy a Global External Network Load Balancer and use VPC Service Controls to restrict access to internal IP addresses only.",
+          "Deploy an Internal Application Load Balancer to perform Layer 7 routing across the three zones based on URL paths.",
+          "Configure a Cloud NAT gateway in `us-central1` and map the internal client IP addresses to the backend Instance Groups."
+        ],
+        "correctAnswers":[
+          "Deploy an Internal Passthrough Network Load Balancer configured with a regional backend service containing the Instance Groups from all three zones."
+        ],
+        "explanation": {
+          "general explanation": "The Internal Passthrough Network Load Balancer is a regional, Layer 4 load balancer built on Andromeda (Google's network virtualization stack). It does not proxy traffic; instead, it delivers packets directly to the backend VMs using their internal IPs. This provides massive throughput, ultra-low latency, and supports both TCP and UDP. By adding backend instance groups from multiple zones within the region to the LB's backend service, you achieve robust regional high availability.",
+          "Why other options are wrong": {
+            "Deploy an Internal Application Load Balancer to perform Layer 7 routing across the three zones based on URL paths.": "The prompt specifies the need to support 'massive TCP/UDP throughput'. Application Load Balancers operate at Layer 7 and only support HTTP/HTTPS/HTTP2, failing the UDP requirement.",
+            "Deploy a Global External Network Load Balancer and use VPC Service Controls to restrict access to internal IP addresses only.": "External Network LBs require external IPs and route traffic through Google's public edge, which adds latency and security complexity. Internal traffic should be routed using Internal LBs.",
+            "Configure a Cloud NAT gateway in `us-central1` and map the internal client IP addresses to the backend Instance Groups.": "Cloud NAT is used for outbound internet access (egress) for internal VMs. It is not a load balancer and cannot distribute internal inbound traffic across instance groups."
+          }
+        },
+        "difficulty": "Easy",
+        "tags":[
+          "Internal Load Balancer",
+          "Network HA",
+          "TCP/UDP",
+          "Compute Engine"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-013",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "Your development team manages a fleet of microservices deployed on a Regional Google Kubernetes Engine (GKE) cluster in `us-west1`. The cluster uses node pools distributed evenly across `us-west1-a`, `us-west1-b`, and `us-west1-c`. An automated Kubernetes version upgrade is scheduled for the nodes. To ensure the microservices experience zero downtime during the rolling node upgrades or unexpected zonal failures, which two configurations are strictly required at the workload level? (Choose two)",
+        "questionType": "multiple",
+        "options":[
+          "Define PodDisruptionBudgets (PDBs) with a `minAvailable` or `maxUnavailable` setting to prevent GKE from evicting too many replicas simultaneously.",
+          "Implement PodTopologySpreadConstraints or PodAntiAffinity rules to force the Kubernetes scheduler to distribute the application replicas across different availability zones.",
+          "Enable Node Auto-Provisioning (NAP) to ensure a backup node is always kept in a running state prior to the upgrade starting.",
+          "Configure the GKE cluster to use the 'Surge Upgrade' strategy with `maxSurge` set to 0 and `maxUnavailable` set to 1.",
+          "Create a regional persistent disk (regional PD) and mount it to the pods using ReadWriteMany access mode to share state across zones."
+        ],
+        "correctAnswers":[
+          "Define PodDisruptionBudgets (PDBs) with a `minAvailable` or `maxUnavailable` setting to prevent GKE from evicting too many replicas simultaneously.",
+          "Implement PodTopologySpreadConstraints or PodAntiAffinity rules to force the Kubernetes scheduler to distribute the application replicas across different availability zones."
+        ],
+        "explanation": {
+          "general explanation": "To ensure workload HA in GKE during planned disruptions (like node upgrades) or unplanned disruptions (like zonal outages), you must instruct Kubernetes how to manage the pods. A PodDisruptionBudget (PDB) is required to tell the GKE upgrade process to wait if draining a node would cause the number of available replicas to drop below your defined threshold. Secondly, you must use PodAntiAffinity or TopologySpreadConstraints to ensure that all replicas aren't accidentally scheduled onto nodes in the same zone; otherwise, a single zonal failure would take down the entire application.",
+          "Why other options are wrong": {
+            "Enable Node Auto-Provisioning (NAP) to ensure a backup node is always kept in a running state prior to the upgrade starting.": "NAP dynamically creates node pools based on unschedulable pods; it does not proactively provision warm backup nodes prior to upgrades.",
+            "Configure the GKE cluster to use the 'Surge Upgrade' strategy with `maxSurge` set to 0 and `maxUnavailable` set to 1.": "Setting `maxSurge` to 0 and `maxUnavailable` to 1 actually *decreases* availability, as GKE will take a node offline without spinning up a surge replacement first, potentially causing capacity shortages.",
+            "Create a regional persistent disk (regional PD) and mount it to the pods using ReadWriteMany access mode to share state across zones.": "Persistent Disks (including regional PDs) only support ReadWriteOnce (RWO) for block storage attached to pods. They cannot be mounted in ReadWriteMany mode across multiple pods simultaneously."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "GKE",
+          "High Availability",
+          "PodDisruptionBudget",
+          "PodAntiAffinity"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-014",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "Your organization uses Cloud Pub/Sub as the central messaging backbone for asynchronous microservice communication. A critical publisher microservice resides in `europe-west1`. The subscribing microservice processing these messages is deployed in `europe-west4`. The architecture team is designing for a disaster recovery scenario where the entire `europe-west1` region suddenly goes offline indefinitely. Assuming the subscribing service in `europe-west4` is fully operational, what is the impact on the Pub/Sub architecture?",
+        "questionType": "single",
+        "options":[
+          "Pub/Sub is a global service. Messages published in `europe-west1` just prior to the outage might be temporarily unavailable, but publishers failing over to `europe-west4` can immediately publish to the exact same topic seamlessly.",
+          "The Pub/Sub topic is regional. The topic and all unacknowledged messages stored in `europe-west1` are permanently lost. A new topic must be created in `europe-west4`.",
+          "Pub/Sub automatically synchronizes all messages to a regional Cloud Storage bucket. The subscribers in `europe-west4` can read the backup messages from the bucket using a Dataflow job.",
+          "The Pub/Sub subscription in `europe-west4` will automatically enter an 'Unhealthy' state because its origin publishing region is unreachable, requiring manual intervention."
+        ],
+        "correctAnswers":[
+          "Pub/Sub is a global service. Messages published in `europe-west1` just prior to the outage might be temporarily unavailable, but publishers failing over to `europe-west4` can immediately publish to the exact same topic seamlessly."
+        ],
+        "explanation": {
+          "general explanation": "Google Cloud Pub/Sub operates as a single global service. Topics and subscriptions are global resources, not tied to a specific region. When a message is published, it is stored in the region closest to the publisher. If that specific region (`europe-west1`) fails, messages physically stored there are temporarily unavailable until the region recovers. However, the service itself remains highly available; surviving publishers (or publishers failed over to a new region like `europe-west4`) can continue publishing to the exact same global topic without any architectural changes.",
+          "Why other options are wrong": {
+            "The Pub/Sub topic is regional. The topic and all unacknowledged messages stored in `europe-west1` are permanently lost. A new topic must be created in `europe-west4`.": "Pub/Sub topics are explicitly global, not regional. Messages are stored durably and are not permanently lost; they become available again when the affected region comes back online.",
+            "Pub/Sub automatically synchronizes all messages to a regional Cloud Storage bucket. The subscribers in `europe-west4` can read the backup messages from the bucket using a Dataflow job.": "Pub/Sub does not automatically backup messages to Cloud Storage natively for DR purposes in this manner. It handles replication internally within the region where the message is published.",
+            "The Pub/Sub subscription in `europe-west4` will automatically enter an 'Unhealthy' state because its origin publishing region is unreachable, requiring manual intervention.": "Subscriptions are decoupled from publishers. The subscription in `europe-west4` remains perfectly healthy and will continue to process messages published from any other healthy region globally."
+          }
+        },
+        "difficulty": "Medium",
+        "tags": [
+          "Cloud Pub/Sub",
+          "Global Services",
+          "Disaster Recovery"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-015",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "Your company deploys a massive data analytics warehouse on AlloyDB for PostgreSQL in the `us-central1` region. Due to regulatory compliance, your Disaster Recovery strategy requires a Recovery Time Objective (RTO) of 1 hour and a Recovery Point Objective (RPO) of less than 1 second. Your DR site is the `us-east4` region. How should you architect the AlloyDB deployment to achieve this while optimizing performance for the primary analytical workloads?",
+        "questionType": "single",
+        "options":[
+          "Deploy a Primary AlloyDB cluster in `us-central1` and configure a Cross-Region Secondary Cluster in `us-east4`. Ensure the primary cluster has High Availability (HA) enabled for intra-region failover.",
+          "Deploy an AlloyDB Omni cluster spanning on-premises hardware and the `us-east4` region to utilize continuous synchronous storage replication.",
+          "Configure standard Cloud SQL for PostgreSQL instead of AlloyDB, as only Cloud SQL supports cross-region synchronous replication guaranteeing an RPO of less than 1 second.",
+          "Deploy a standalone AlloyDB cluster in `us-central1` and configure continuous logical replication using the Database Migration Service (DMS) to a standby instance in `us-east4`."
+        ],
+        "correctAnswers":[
+          "Deploy a Primary AlloyDB cluster in `us-central1` and configure a Cross-Region Secondary Cluster in `us-east4`. Ensure the primary cluster has High Availability (HA) enabled for intra-region failover."
+        ],
+        "explanation": {
+          "general explanation": "AlloyDB for PostgreSQL natively supports Cross-Region Secondary Clusters for disaster recovery. The primary cluster in `us-central1` handles the heavy analytical and transactional workloads. By enabling High Availability (HA) on the primary, you survive zonal failures instantly. The Cross-Region Secondary Cluster in `us-east4` uses asynchronous storage-layer replication. Because AlloyDB's replication is highly optimized, it typically achieves sub-second RPO, perfectly satisfying the compliance requirement, and manual promotion of the secondary cluster easily meets the 1-hour RTO.",
+          "Why other options are wrong": {
+            "Deploy an AlloyDB Omni cluster spanning on-premises hardware and the `us-east4` region to utilize continuous synchronous storage replication.": "AlloyDB Omni is a downloadable edition of AlloyDB for running anywhere (like on-prem), but it does not natively stretch a single cluster synchronously between an on-premises data center and a GCP region.",
+            "Configure standard Cloud SQL for PostgreSQL instead of AlloyDB, as only Cloud SQL supports cross-region synchronous replication guaranteeing an RPO of less than 1 second.": "This is factually incorrect. Cloud SQL cross-region replicas are asynchronous, not synchronous. AlloyDB generally provides lower replication lag (often sub-second) compared to standard Cloud SQL due to its custom storage layer.",
+            "Deploy a standalone AlloyDB cluster in `us-central1` and configure continuous logical replication using the Database Migration Service (DMS) to a standby instance in `us-east4`.": "DMS is a migration tool, not an enterprise DR orchestration service. Using logical replication via DMS adds overhead and complexity when AlloyDB natively provides Cross-Region Secondary clusters at the storage layer."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "AlloyDB",
+          "Disaster Recovery",
+          "Cross-Region Replica",
+          "RPO/RTO"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-016",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "The TerramEarth case study outlines a massive global architecture for ingesting telemetry data from millions of heavy equipment vehicles. To ensure High Availability and low-latency ingestion, TerramEarth wants to deploy endpoints worldwide that can survive regional Google Cloud outages. If a region goes down, vehicles must seamlessly continue sending data without losing telemetry. Which architecture perfectly satisfies TerramEarth's requirements?",
+        "questionType": "single",
+        "options":[
+          "Deploy regional API gateways using Cloud Endpoints. Configure Cloud DNS Geolocation policies to route vehicle traffic to the nearest healthy regional IP address.",
+          "Implement a Global External Application Load Balancer with Cloud CDN. Route the incoming API requests to regional Managed Instance Groups running custom ingestion proxies.",
+          "Use Cloud IoT Core to ingest telemetry natively across multiple regions, routing the data directly into a multi-region Cloud Spanner database.",
+          "Expose regional Cloud Run ingestion services behind a Global External Application Load Balancer. Configure the services to publish directly to a global Cloud Pub/Sub topic."
+        ],
+        "correctAnswers":[
+          "Expose regional Cloud Run ingestion services behind a Global External Application Load Balancer. Configure the services to publish directly to a global Cloud Pub/Sub topic."
+        ],
+        "explanation": {
+          "general explanation": "To achieve global HA and low latency for IoT ingestion (TerramEarth), utilizing a Global External Application Load Balancer is critical. It provides a single Anycast IP globally and natively routes traffic to the nearest healthy region (e.g., Serverless NEGs pointing to regional Cloud Run instances). If a region fails, the LB instantly routes traffic to the next closest region. Inside the region, Cloud Run offers highly scalable serverless compute to accept the payload and publish it to Cloud Pub/Sub, which is a globally resilient messaging fabric.",
+          "Why other options are wrong": {
+            "Deploy regional API gateways using Cloud Endpoints. Configure Cloud DNS Geolocation policies to route vehicle traffic to the nearest healthy regional IP address.": "DNS geo-routing is subject to TTL caching by clients and ISPs. If a region fails, vehicles might cache the dead IP for minutes or hours, resulting in lost telemetry data. A Global LB is required for seamless failover.",
+            "Implement a Global External Application Load Balancer with Cloud CDN. Route the incoming API requests to regional Managed Instance Groups running custom ingestion proxies.": "While valid, Cloud CDN is for caching outbound read traffic (static assets). It provides absolutely no benefit for ingesting massive inbound POST requests (telemetry data).",
+            "Use Cloud IoT Core to ingest telemetry natively across multiple regions, routing the data directly into a multi-region Cloud Spanner database.": "Google Cloud IoT Core has been officially deprecated and retired. It is no longer a valid architectural solution on Google Cloud."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "Case Study",
+          "TerramEarth",
+          "Global Load Balancing",
+          "Cloud Pub/Sub",
+          "IoT"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-017",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "Your enterprise network requires internal applications located in different Google Cloud regions (e.g., `us-central1` and `europe-west1`) to communicate securely with a highly available internal microservice. To optimize performance, the client applications must connect to the backend instances located in their respective local regions. However, if all instances in `europe-west1` become unhealthy, traffic from European clients must automatically fail over across the global Google backbone to the healthy instances in `us-central1`. What should you implement?",
+        "questionType": "single",
+        "options":[
+          "Deploy an Internal Application Load Balancer configured with global routing enabled, and attach backend services from both `us-central1` and `europe-west1`.",
+          "Deploy two Internal Passthrough Network Load Balancers (one in each region). Configure Cloud DNS with a failover routing policy pointing to the two regional ILB IPs.",
+          "Implement VPC Network Peering between the two regional subnets, and configure Cloud Router to broadcast BGP routes with different MED values.",
+          "Deploy a Global External Application Load Balancer and use VPC Service Controls to block external internet IP access, allowing only VPC traffic."
+        ],
+        "correctAnswers":[
+          "Deploy an Internal Application Load Balancer configured with global routing enabled, and attach backend services from both `us-central1` and `europe-west1`."
+        ],
+        "explanation": {
+          "general explanation": "The Cross-Region Internal Application Load Balancer is designed exactly for this scenario. It provides global internal load balancing for HTTP(S) traffic within a VPC. By attaching backend services from multiple regions to a single cross-region internal LB, traffic from clients is routed to their closest healthy backend by default. If the local regional backend becomes unhealthy, the load balancer natively and seamlessly fails over the traffic across the Google backbone to the backend in the healthy region.",
+          "Why other options are wrong": {
+            "Deploy two Internal Passthrough Network Load Balancers (one in each region). Configure Cloud DNS with a failover routing policy pointing to the two regional ILB IPs.": "While Cloud DNS can perform failover, it relies on DNS TTL caching. This causes slow failovers and potential request drops compared to the native, instant failover provided by a Cross-Region Internal Load Balancer.",
+            "Implement VPC Network Peering between the two regional subnets, and configure Cloud Router to broadcast BGP routes with different MED values.": "Regions within the same VPC already communicate globally by default; VPC peering is for connecting *different* VPCs. Furthermore, Cloud Router/BGP does not perform Layer 7 application health checks for failover.",
+            "Deploy a Global External Application Load Balancer and use VPC Service Controls to block external internet IP access, allowing only VPC traffic.": "This is an architectural anti-pattern. Internal traffic should use internal load balancers. Routing internal traffic out to public edge IPs (even if protected by VPC SC) adds unnecessary latency and complexity."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "Internal Load Balancer",
+          "Cross-Region",
+          "Failover",
+          "High Availability"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-018",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "Your engineering team relies heavily on Cloud NAT to allow private Google Kubernetes Engine (GKE) nodes to download external dependencies from the internet. Recently, during a massive autoscaling event where the cluster scaled from 10 to 500 nodes within minutes, the application experienced a catastrophic failure because outbound connections began dropping. Cloud Monitoring revealed \"Out of NAT IP addresses\" errors. You must redesign the Cloud NAT architecture to ensure high availability and prevent connection drops during massive, sudden spikes. Which two actions should you take? (Choose two)",
+        "questionType": "multiple",
+        "options":[
+          "Configure the Cloud NAT gateway to use Dynamic Port Allocation.",
+          "Change the NAT IP address allocation from Manual to Automatic.",
+          "Configure a secondary Cloud NAT gateway in a different availability zone for failover.",
+          "Decrease the 'Minimum ports per VM instance' setting on the Cloud NAT gateway.",
+          "Enable VPC Flow Logs to automatically scale the NAT gateway bandwidth."
+        ],
+        "correctAnswers":[
+          "Configure the Cloud NAT gateway to use Dynamic Port Allocation.",
+          "Change the NAT IP address allocation from Manual to Automatic."
+        ],
+        "explanation": {
+          "general explanation": "Cloud NAT port exhaustion occurs when many internal VMs try to make simultaneous outbound connections and run out of available NAT source ports or IPs. 1) Setting NAT IP allocation to 'Automatic' allows Google Cloud to seamlessly allocate new external IP addresses to the NAT gateway as demand scales, preventing IP exhaustion. 2) Using 'Dynamic Port Allocation' ensures that VMs requiring a massive number of ports get them dynamically, rather than statically assigning a huge block of ports to every VM (which rapidly wastes the available port pool).",
+          "Why other options are wrong": {
+            "Configure a secondary Cloud NAT gateway in a different availability zone for failover.": "Cloud NAT is a regional, software-defined managed service. It does not exist in a single zone, so you do not deploy a 'secondary gateway in a different zone' for HA. It is highly available by default.",
+            "Decrease the 'Minimum ports per VM instance' setting on the Cloud NAT gateway.": "While decreasing minimum ports saves the overall pool, it risks starving individual VMs that might actually need more ports to download multiple dependencies simultaneously. Dynamic Port Allocation is the correct architectural fix.",
+            "Enable VPC Flow Logs to automatically scale the NAT gateway bandwidth.": "VPC Flow Logs provide network telemetry logging. They have absolutely zero impact on scaling NAT resources or bandwidth."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "Cloud NAT",
+          "High Availability",
+          "Port Exhaustion",
+          "Network Scalability"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-019",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "Your company operates an enterprise architecture utilizing a Shared VPC. The Host project (`project-host`) manages the central network infrastructure. Three Service projects (`project-web`, `project-db`, `project-analytics`) contain compute workloads. You need to establish a highly available, encrypted hybrid connection to your on-premises data center using Cloud HA VPN. To maintain centralized network control and ensure all workloads in the Service projects can utilize the highly available hybrid connection, where and how must you deploy the HA VPN infrastructure?",
+        "questionType": "single",
+        "options":[
+          "Deploy the HA VPN Gateway and Cloud Router in the Host project (`project-host`). The Service projects automatically utilize this centralized connection via the Shared VPC.",
+          "Deploy separate HA VPN Gateways in each of the three Service projects to ensure isolation and project-level redundancy.",
+          "Deploy the HA VPN Gateway in `project-web` and use VPC Network Peering to connect `project-db` and `project-analytics` to it.",
+          "Deploy a Classic VPN Gateway in the Host project, as HA VPN is not supported in a Shared VPC architecture."
+        ],
+        "correctAnswers":[
+          "Deploy the HA VPN Gateway and Cloud Router in the Host project (`project-host`). The Service projects automatically utilize this centralized connection via the Shared VPC."
+        ],
+        "explanation": {
+          "general explanation": "In a Shared VPC architecture, the central network infrastructure (subnets, firewalls, routing) is managed entirely within the Host project. To provide highly available, centralized hybrid connectivity (like HA VPN or Cloud Interconnect) to all connected workloads, the HA VPN Gateway and its associated Cloud Router must be deployed in the Host project. The Service projects, which share this VPC, inherently inherit these routes and can communicate seamlessly with the on-premises network.",
+          "Why other options are wrong": {
+            "Deploy separate HA VPN Gateways in each of the three Service projects to ensure isolation and project-level redundancy.": "Service projects typically do not have the network administration permissions to create VPN gateways in the Shared VPC. Deploying redundant VPNs per project wastes resources, complicates routing, and defeats the centralized management purpose of a Shared VPC.",
+            "Deploy the HA VPN Gateway in `project-web` and use VPC Network Peering to connect `project-db` and `project-analytics` to it.": "If `project-web` is a Service project, it should not host core routing infrastructure. Furthermore, VPC peering is for connecting independent VPCs, not for connecting Service projects within the same Shared VPC.",
+            "Deploy a Classic VPN Gateway in the Host project, as HA VPN is not supported in a Shared VPC architecture.": "HA VPN is fully supported in a Shared VPC. Furthermore, Classic VPN is deprecated and does not natively provide the 99.99% high availability required by modern enterprise architectures."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "Shared VPC",
+          "HA VPN",
+          "Network Architecture",
+          "High Availability"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-020",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "Your team relies on Cloud Firestore as the backend for a popular global mobile game. You are designing the high availability architecture to handle massive traffic. The CTO mandates that the game must survive the complete loss of an entire Google Cloud region without any data loss (RPO = 0) and without application downtime. Which Firestore deployment configuration is strictly required?",
+        "questionType": "single",
+        "options":[
+          "Deploy Firestore in a Multi-region location (e.g., `eur3` or `nam5`).",
+          "Deploy Firestore in a Regional location and configure continuous automated backups to a multi-region Cloud Storage bucket.",
+          "Deploy two separate Regional Firestore databases and synchronize them using a Cloud Function triggered by Firestore document writes.",
+          "Deploy Firestore in Datastore mode to enable active-active global read/write replication."
+        ],
+        "correctAnswers":[
+          "Deploy Firestore in a Multi-region location (e.g., `eur3` or `nam5`)."
+        ],
+        "explanation": {
+          "general explanation": "To survive a complete regional outage with zero data loss (RPO=0) and continuous availability, you must deploy Cloud Firestore in a Multi-region location. A Multi-region configuration distributes data across multiple geographically separated regions (two read-write regions and a third witness region) using a Paxos-based synchronous replication protocol. This ensures that even if an entire read-write region is destroyed, the database remains highly available and strictly consistent.",
+          "Why other options are wrong": {
+            "Deploy Firestore in a Regional location and configure continuous automated backups to a multi-region Cloud Storage bucket.": "A Regional Firestore database only replicates across zones within a single region. If the region fails, the database is offline. Restoring from backups takes time (RTO > 0) and backups are rarely perfectly real-time (RPO > 0).",
+            "Deploy two separate Regional Firestore databases and synchronize them using a Cloud Function triggered by Firestore document writes.": "Building custom asynchronous replication using Cloud Functions introduces replication lag (RPO > 0), race conditions, split-brain scenarios, and massive operational complexity.",
+            "Deploy Firestore in Datastore mode to enable active-active global read/write replication.": "Datastore mode is an API compatibility mode for legacy applications. It does not provide unique 'global active-active' capabilities beyond what native Firestore Multi-region already provides."
+          }
+        },
+        "difficulty": "Easy",
+        "tags":[
+          "Cloud Firestore",
+          "Multi-Region",
+          "Disaster Recovery",
+          "RPO=0"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-021",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "A critical legacy application runs on Compute Engine instances in `europe-west4`. It requires a shared, POSIX-compliant file system to maintain state locks and share configuration files across instances. To meet compliance, the application must be resilient against the failure of a single zone. What is the most appropriate storage architecture to implement?",
+        "questionType": "single",
+        "options":[
+          "Deploy Google Cloud Filestore using the Enterprise tier.",
+          "Attach a regional persistent disk (regional PD) to all VM instances simultaneously using 'ReadWriteMany' mode.",
+          "Deploy Google Cloud Filestore using the Basic tier and configure an hourly rsync job to a secondary Basic tier instance in another zone.",
+          "Mount a Multi-region Cloud Storage bucket to the VMs using Cloud Storage FUSE."
+        ],
+        "correctAnswers": [
+          "Deploy Google Cloud Filestore using the Enterprise tier."
+        ],
+        "explanation": {
+          "general explanation": "Google Cloud Filestore Enterprise tier is designed for critical workloads requiring high availability. Unlike the Basic tier (which is zonal), the Enterprise tier is regional. It synchronously replicates data across three zones within the region. If a zone fails, Filestore Enterprise transparently continues to serve the POSIX-compliant NFS shares from the surviving zones without any intervention, satisfying the strict zonal resilience requirement.",
+          "Why other options are wrong": {
+            "Attach a regional persistent disk (regional PD) to all VM instances simultaneously using 'ReadWriteMany' mode.": "Persistent Disks (including regional PDs) are block storage devices. They cannot be attached in ReadWriteMany mode across multiple active VMs simultaneously unless configured as a read-only disk.",
+            "Deploy Google Cloud Filestore using the Basic tier and configure an hourly rsync job to a secondary Basic tier instance in another zone.": "An hourly rsync script provides an RPO of 1 hour (data loss) and requires manual mounting and failover if a zone goes down, failing the high availability resilience requirement.",
+            "Mount a Multi-region Cloud Storage bucket to the VMs using Cloud Storage FUSE.": "Cloud Storage FUSE translates file system calls to object storage API calls. It is not fully POSIX-compliant (e.g., no hard links, poor state locking mechanisms) and is inappropriate for applications requiring strict shared file system state locks."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "Cloud Filestore",
+          "High Availability",
+          "Enterprise Tier",
+          "NFS"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-022",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "Your financial services firm is migrating a mission-critical batch processing application to Google Cloud. The application runs on Compute Engine and relies on Asynchronous Persistent Disk (PD Async) Replication to replicate the data volumes from the primary region (`us-east4`) to the secondary DR region (`us-central1`). You need to execute an annual Disaster Recovery drill. You must ensure the DR drill successfully tests the application in the secondary region without impacting the live primary workload. Which two steps are necessary? (Choose two)",
+        "questionType": "multiple",
+        "options":[
+          "In the secondary region (`us-central1`), invoke the 'Clone disk' operation on the secondary asynchronous replica disk.",
+          "In the primary region (`us-east4`), detach the primary disk from the active compute instance to pause replication cleanly.",
+          "Attach the newly cloned disk to a test compute instance in the secondary region (`us-central1`) and verify the application boots successfully.",
+          "Promote the secondary disk to primary, effectively reversing the replication direction back to `us-east4`.",
+          "Take a snapshot of the primary disk in `us-east4` and manually copy it to `us-central1`."
+        ],
+        "correctAnswers":[
+          "In the secondary region (`us-central1`), invoke the 'Clone disk' operation on the secondary asynchronous replica disk.",
+          "Attach the newly cloned disk to a test compute instance in the secondary region (`us-central1`) and verify the application boots successfully."
+        ],
+        "explanation": {
+          "general explanation": "To perform a non-disruptive DR test when using PD Async Replication, you do not touch the active primary disk or the active replication relationship. Instead, you clone the secondary (replica) disk in the DR region. This provides an isolated, point-in-time copy of the replicated data. You then attach this cloned disk to a fresh test VM in the DR region to verify that the OS boots, the application starts, and the data is consistent, all while the primary workload continues operating untouched.",
+          "Why other options are wrong": {
+            "In the primary region (`us-east4`), detach the primary disk from the active compute instance to pause replication cleanly.": "Detaching the primary disk takes the live, mission-critical application offline, completely violating the requirement to perform the drill 'without impacting the live primary workload'.",
+            "Promote the secondary disk to primary, effectively reversing the replication direction back to `us-east4`.": "Promoting the secondary disk is the action taken during a *real* disaster failover. Doing this during a drill would break the replication from the active primary and cause a split-brain scenario.",
+            "Take a snapshot of the primary disk in `us-east4` and manually copy it to `us-central1`.": "While snapshots are valid for backup, the architecture explicitly uses PD Async Replication. Cloning the secondary disk is the native, intended method for testing PD Async Replication readiness without disrupting the primary."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "Compute Engine",
+          "Persistent Disk",
+          "Async Replication",
+          "Disaster Recovery Testing"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-023",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "The Mountkirk Games case study specifies building an entirely new mobile game architecture on Google Cloud. They anticipate massive, unpredictable spikes in global traffic upon launch. They require a highly available, globally distributed database to store player profiles and game state. The database must provide strong consistency globally so that if a player logs in from Asia and immediately travels to Europe, their state is perfectly accurate. Which architecture is required?",
+        "questionType": "single",
+        "options":[
+          "Deploy Cloud Spanner with a Multi-region configuration.",
+          "Deploy Cloud Bigtable using multi-cluster routing across global regions.",
+          "Deploy Cloud SQL for PostgreSQL with high availability enabled and cross-region read replicas.",
+          "Deploy Firestore in a regional configuration and use Memorystore for Redis to cache the global state."
+        ],
+        "correctAnswers":[
+          "Deploy Cloud Spanner with a Multi-region configuration."
+        ],
+        "explanation": {
+          "general explanation": "In the Mountkirk Games case study, the requirement for a globally scalable, strongly consistent relational database points exclusively to Cloud Spanner. A Multi-region Spanner deployment replicates data globally while utilizing TrueTime and Paxos to guarantee external consistency (strong consistency). This ensures a player's state is accurate globally in real-time, surviving regional failures automatically.",
+          "Why other options are wrong": {
+            "Deploy Cloud Bigtable using multi-cluster routing across global regions.": "Bigtable multi-cluster routing only provides eventual consistency, meaning the player traveling from Asia to Europe might read stale profile data, violating the 'strong consistency globally' requirement.",
+            "Deploy Cloud SQL for PostgreSQL with high availability enabled and cross-region read replicas.": "Cloud SQL cross-region replicas use asynchronous replication. They are read-only and do not provide synchronous global consistency for read/write player states.",
+            "Deploy Firestore in a regional configuration and use Memorystore for Redis to cache the global state.": "A regional configuration does not provide the global availability required. Furthermore, caching state in a regional Memorystore instance introduces massive cross-region latency and consistency issues."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "Case Study",
+          "Mountkirk Games",
+          "Cloud Spanner",
+          "Global Consistency"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-024",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "Your organization is migrating a legacy, stateful on-premises application to Google Cloud. The application strictly requires a single, static IP address and cannot run in an active-active load-balanced cluster due to licensing constraints. You must design an Active-Passive Disaster Recovery architecture with an RTO of less than 15 minutes across two regions (`us-central1` and `us-east4`). Which architecture provides the most robust automated failover?",
+        "questionType": "single",
+        "options":[
+          "Deploy the active VM in `us-central1` and a warm standby VM in `us-east4`. Use a Global External Network Load Balancer pointing to both VMs, with a health check triggering the failover routing.",
+          "Configure the active VM in `us-central1` with PD Async Replication to `us-east4`. Deploy a Cloud Function triggered by Cloud Monitoring to promote the disk and boot a new VM in `us-east4`.",
+          "Deploy a Cross-Region Internal Application Load Balancer mapping the static IP to an unmanaged instance group in `us-central1` and a secondary group in `us-east4`.",
+          "Deploy the VM in a regional Managed Instance Group in `us-central1`. If the region fails, rely on Google Cloud support to manually migrate the persistent disk to `us-east4`."
+        ],
+        "correctAnswers":[
+          "Deploy the active VM in `us-central1` and a warm standby VM in `us-east4`. Use a Global External Network Load Balancer pointing to both VMs, with a health check triggering the failover routing."
+        ],
+        "explanation": {
+          "general explanation": "Because the application cannot run active-active and requires a single static IP, a Global External Network Load Balancer (or App LB, depending on traffic) is required to expose the Anycast IP globally. By deploying a warm standby VM in the secondary region and configuring health checks, the load balancer will route 100% of traffic to the active primary VM. If the primary region fails, the health check fails, and the Global LB automatically reroutes traffic to the standby VM in the secondary region, ensuring an RTO well under 15 minutes.",
+          "Why other options are wrong": {
+            "Configure the active VM in `us-central1` with PD Async Replication to `us-east4`. Deploy a Cloud Function triggered by Cloud Monitoring to promote the disk and boot a new VM in `us-east4`.": "While PD Async replication provides data redundancy, building custom Cloud Functions to orchestrate failovers introduces massive operational risk. Furthermore, the IP address would change unless a global LB is in front of it.",
+            "Deploy a Cross-Region Internal Application Load Balancer mapping the static IP to an unmanaged instance group in `us-central1` and a secondary group in `us-east4`.": "If the application requires an external static IP, an internal LB cannot be used. Additionally, the prompt specifies the app cannot run in an active-active cluster; configuring standard backend groups without specific capacity/failover priority settings could result in traffic splitting.",
+            "Deploy the VM in a regional Managed Instance Group in `us-central1`. If the region fails, rely on Google Cloud support to manually migrate the persistent disk to `us-east4`.": "Google Cloud Support does not manually migrate customer disks during regional outages. A regional MIG only protects against zonal failures; a full region failure results in total downtime."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "Compute Engine",
+          "Active-Passive",
+          "Global Load Balancing",
+          "Disaster Recovery"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-025",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "Your team is running a massive data processing workload on Google Cloud. You need to implement high availability (HA) for the Cloud SQL for PostgreSQL database instance. You configure the instance to use the HA (Regional) configuration. During a routine maintenance window, the primary zone (`us-central1-a`) experiences an unexpected power failure. What exactly occurs within the Google Cloud architecture to restore database availability?",
+        "questionType": "single",
+        "options":[
+          "The internal Google Load Balancer immediately redirects all queries to the standby VM in the secondary zone, which accesses the synchronously replicated Regional Persistent Disk.",
+          "The standby VM in the secondary zone takes over the primary role, attaches the Regional Persistent Disk, assumes the exact same static IP address, and begins accepting connections.",
+          "A new read replica is automatically promoted to primary in the secondary zone, and the application must update its connection string to the new IP address.",
+          "Cloud SQL automatically pauses transactions, takes a snapshot of the primary disk, copies it to the secondary zone, and boots a new VM."
+        ],
+        "correctAnswers":[
+          "The standby VM in the secondary zone takes over the primary role, attaches the Regional Persistent Disk, assumes the exact same static IP address, and begins accepting connections."
+        ],
+        "explanation": {
+          "general explanation": "Cloud SQL High Availability (HA) utilizes a Regional Persistent Disk (which synchronously replicates data at the block level across two zones). In an HA configuration, a standby VM sits idle in the secondary zone. When the primary zone fails, Cloud SQL initiates an automatic failover: the standby VM takes over the primary role, attaches the Regional PD, assumes the exact same IP address as the original primary, and begins accepting traffic. The application does not need to change connection strings.",
+          "Why other options are wrong": {
+            "The internal Google Load Balancer immediately redirects all queries to the standby VM in the secondary zone, which accesses the synchronously replicated Regional Persistent Disk.": "Cloud SQL does not use a typical proxy 'Load Balancer' to route traffic to the standby VM. Instead, the standby VM aggressively takes over the actual IP address of the primary VM via network routing updates.",
+            "A new read replica is automatically promoted to primary in the secondary zone, and the application must update its connection string to the new IP address.": "HA failover is completely transparent to the application regarding the connection string (the IP address remains the same). Read replicas are used for read scaling and DR, not regional HA failover.",
+            "Cloud SQL automatically pauses transactions, takes a snapshot of the primary disk, copies it to the secondary zone, and boots a new VM.": "HA relies on the synchronous replication of the Regional Persistent Disk. It does not take snapshots or copy data during the failover event, which would be extremely slow."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "Cloud SQL",
+          "High Availability",
+          "Regional Persistent Disk",
+          "Failover"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-026",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "Your global e-commerce platform relies on a Cloud DNS configuration to route users to the geographically closest Google Cloud region. You have deployed external Application Load Balancers in `us-east1`, `europe-west1`, and `asia-east1`. To ensure high availability, if the `europe-west1` load balancer goes down, European users should be automatically routed to `us-east1`. Which two Cloud DNS configurations must be implemented to achieve this dynamic failover? (Choose two)",
+        "questionType": "multiple",
+        "options":[
+          "Create a Cloud DNS Geolocation routing policy.",
+          "Attach a Cloud DNS Health Check to the routing policy, targeting the external IP addresses of the regional load balancers.",
+          "Create a Cloud DNS Weighted Round Robin routing policy and assign a weight of 0 to the `europe-west1` region.",
+          "Implement DNSSEC to ensure the DNS failover response cannot be spoofed during an outage.",
+          "Configure a Cloud Router in `europe-west1` to withdraw BGP routes from the DNS servers upon failure."
+        ],
+        "correctAnswers":[
+          "Create a Cloud DNS Geolocation routing policy.",
+          "Attach a Cloud DNS Health Check to the routing policy, targeting the external IP addresses of the regional load balancers."
+        ],
+        "explanation": {
+          "general explanation": "To achieve dynamic, health-aware geographic routing, you must use a combination of Cloud DNS Geolocation routing policies and Cloud DNS Health Checks. The Geolocation policy ensures users are routed to the nearest region (`europe-west1` for EU users). The Cloud DNS Health Check constantly monitors the endpoint (the regional load balancers). If the `europe-west1` endpoint fails the health check, Cloud DNS automatically stops returning its IP address and routes the European users to the next closest healthy region (e.g., `us-east1`).",
+          "Why other options are wrong": {
+            "Create a Cloud DNS Weighted Round Robin routing policy and assign a weight of 0 to the `europe-west1` region.": "Weighted Round Robin distributes traffic probabilistically based on weights, not geographically. Setting a weight to 0 would permanently disable routing to Europe, not failover.",
+            "Implement DNSSEC to ensure the DNS failover response cannot be spoofed during an outage.": "DNSSEC provides cryptographic validation of DNS records to prevent spoofing/cache poisoning. It has absolutely no mechanism for monitoring health or triggering dynamic failovers.",
+            "Configure a Cloud Router in `europe-west1` to withdraw BGP routes from the DNS servers upon failure.": "Cloud Router and BGP are used for IP routing (Layer 3) across hybrid networks. They do not interact with or withdraw routes from Cloud DNS (Layer 7 name resolution)."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "Cloud DNS",
+          "Geolocation Routing",
+          "Health Checks",
+          "Failover"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-027",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "A media rendering company uses a large Compute Engine Managed Instance Group (MIG) for stateless processing. To optimize costs, the MIG heavily relies on Spot VMs. However, during periods of high cloud demand, Google frequently preempts large batches of Spot VMs simultaneously, causing unacceptable drops in rendering throughput. You need to redesign the MIG to guarantee a highly available baseline of rendering capacity while still utilizing Spot VMs for cost optimization when available. What is the most robust architectural solution?",
+        "questionType": "single",
+        "options":[
+          "Configure the MIG to use a mix of Spot and Standard VMs by defining a baseline capacity of standard provisioned instances.",
+          "Purchase Committed Use Discounts (CUDs) specifically applied to the Spot VMs to grant them priority scheduling against preemption.",
+          "Create a Cloud Function that monitors Compute Engine preemption logs and automatically changes the machine type of the preempted instances to standard instances.",
+          "Deploy two separate MIGs (one for Spot, one for Standard) and place an Internal Load Balancer in front with weighted backend routing favoring the Spot MIG."
+        ],
+        "correctAnswers":[
+          "Configure the MIG to use a mix of Spot and Standard VMs by defining a baseline capacity of standard provisioned instances."
+        ],
+        "explanation": {
+          "general explanation": "Google Cloud allows you to configure a single Managed Instance Group (MIG) to provision a mix of standard and Spot VMs. By setting a specific number (or percentage) of standard instances as a 'baseline', you guarantee that a minimum level of highly available compute capacity is always running. The MIG then scales the rest of the instances using cheap Spot VMs. If the Spot VMs are preempted en masse, the baseline standard VMs ensure the rendering pipeline does not halt.",
+          "Why other options are wrong": {
+            "Purchase Committed Use Discounts (CUDs) specifically applied to the Spot VMs to grant them priority scheduling against preemption.": "This is factually incorrect. You cannot apply CUDs to Spot VMs, and Spot VMs never receive priority scheduling. They are strictly excess capacity.",
+            "Create a Cloud Function that monitors Compute Engine preemption logs and automatically changes the machine type of the preempted instances to standard instances.": "Building custom automation to handle preemption is complex, slow, and error-prone. By the time the function reacts and boots standard VMs, the rendering throughput has already crashed. Native mixed-MIG configurations handle this declaratively.",
+            "Deploy two separate MIGs (one for Spot, one for Standard) and place an Internal Load Balancer in front with weighted backend routing favoring the Spot MIG.": "While somewhat functional, managing two separate MIGs adds operational overhead and complexity to deployment pipelines. The native feature of mixing instances within a single MIG is the intended best practice."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "Compute Engine",
+          "Managed Instance Groups",
+          "Spot VMs",
+          "High Availability"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-028",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "The Helicopter Racing League (HRL) case study involves migrating a legacy video rendering pipeline to Google Cloud. The architecture relies on an orchestrator node that dispatches rendering tasks to worker nodes. The system must be highly fault-tolerant. If a worker node crashes or is preempted mid-render, the orchestrator must instantly recognize the failure, and the specific video chunk must be safely placed back into a queue to be processed by a healthy worker. Which Google Cloud service architecture provides the most resilient, decoupled failover for this task distribution?",
+        "questionType": "single",
+        "options":[
+          "Use Cloud Pub/Sub to distribute rendering tasks. Configure the workers to pull messages, process the video, and explicitly acknowledge (ACK) the message only upon successful completion.",
+          "Use Cloud Storage. The orchestrator writes task files to a bucket. Workers use Cloud Storage FUSE to read the files, locking them during processing.",
+          "Use Cloud SQL for PostgreSQL as a task queue database. Workers query for `status='pending'`, update it to `status='processing'`, and commit the transaction.",
+          "Use an Internal Network Load Balancer to spray gRPC rendering requests directly from the orchestrator to the worker nodes."
+        ],
+        "correctAnswers":[
+          "Use Cloud Pub/Sub to distribute rendering tasks. Configure the workers to pull messages, process the video, and explicitly acknowledge (ACK) the message only upon successful completion."
+        ],
+        "explanation": {
+          "general explanation": "To achieve high fault tolerance and decoupled task distribution, a messaging queue is required. Cloud Pub/Sub is the ideal service. By publishing tasks to Pub/Sub, workers can pull them. Crucially, Pub/Sub requires an explicit acknowledgment (ACK). If a worker crashes mid-render, it fails to send the ACK before the acknowledgment deadline expires. Pub/Sub then automatically makes the message available again, and another healthy worker will pull it. This natively guarantees no tasks are lost during worker failures.",
+          "Why other options are wrong": {
+            "Use Cloud Storage. The orchestrator writes task files to a bucket. Workers use Cloud Storage FUSE to read the files, locking them during processing.": "Cloud Storage is an object store, not a queuing system. It lacks native state tracking, visibility timeouts, and retry logic. Building a resilient queue on GCS is an anti-pattern.",
+            "Use Cloud SQL for PostgreSQL as a task queue database. Workers query for `status='pending'`, update it to `status='processing'`, and commit the transaction.": "Using a relational database as a high-throughput messaging queue leads to locking contention, transaction overhead, and poor scaling compared to a purpose-built pub/sub system.",
+            "Use an Internal Network Load Balancer to spray gRPC rendering requests directly from the orchestrator to the worker nodes.": "A Load Balancer provides synchronous, tightly coupled connections. If a worker crashes during the gRPC call, the connection drops, and the orchestrator has to implement complex custom retry logic to handle the failure, lacking the safety of a queue."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "Case Study",
+          "HRL",
+          "Cloud Pub/Sub",
+          "Fault Tolerance",
+          "Decoupling"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-029",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "Your architecture utilizes Cloud Dataflow for mission-critical stream processing. The pipeline reads messages from Cloud Pub/Sub, enriches the data, and writes the output to Cloud Bigtable. To ensure the highest availability against a total regional failure of `us-central1`, you want to deploy a Disaster Recovery (DR) architecture. Which approach provides the most robust multi-region high availability for this entire streaming pipeline?",
+        "questionType": "single",
+        "options":[
+          "Deploy identical Dataflow pipelines in both `us-central1` and `us-east4` reading from the same global Pub/Sub subscription. Configure the pipelines to write to a multi-cluster Bigtable instance spanning both regions.",
+          "Rely on Dataflow's built-in regional HA. If `us-central1` fails, Google Cloud will automatically restart the pipeline in `us-east4` and resume processing from the last Pub/Sub checkpoint.",
+          "Take hourly snapshots of the Dataflow job state using FlexRS. During a disaster, manually restore the snapshot to a new Dataflow job in `us-east4`.",
+          "Deploy the Dataflow pipeline in `us-central1`. Configure Cloud Monitoring to trigger a Cloud Function that deploys a new Dataflow job in `us-east4` if the primary job fails."
+        ],
+        "correctAnswers":[
+          "Deploy identical Dataflow pipelines in both `us-central1` and `us-east4` reading from the same global Pub/Sub subscription. Configure the pipelines to write to a multi-cluster Bigtable instance spanning both regions."
+        ],
+        "explanation": {
+          "general explanation": "To achieve true active-active multi-region HA for a streaming pipeline, you must deploy the pipeline redundantly. Because Pub/Sub is a global service, two identical Dataflow pipelines running in different regions can read from the same global subscription (or parallel subscriptions). By writing to a multi-cluster Cloud Bigtable instance (which replicates data across regions), the entire end-to-end architecture is continuously processing data in multiple regions simultaneously. If `us-central1` fails, the `us-east4` pipeline seamlessly continues processing the global Pub/Sub stream.",
+          "Why other options are wrong": {
+            "Rely on Dataflow's built-in regional HA. If `us-central1` fails, Google Cloud will automatically restart the pipeline in `us-east4` and resume processing from the last Pub/Sub checkpoint.": "Dataflow is a regional service. It does *not* automatically fail over or restart jobs in entirely different geographic regions if the primary region experiences an outage.",
+            "Take hourly snapshots of the Dataflow job state using FlexRS. During a disaster, manually restore the snapshot to a new Dataflow job in `us-east4`.": "FlexRS (Flexible Resource Scheduling) is used for cost optimization of batch jobs, not snapshotting streaming state for DR. Hourly snapshots would also result in unacceptable data loss/delay for mission-critical streams.",
+            "Deploy the Dataflow pipeline in `us-central1`. Configure Cloud Monitoring to trigger a Cloud Function that deploys a new Dataflow job in `us-east4` if the primary job fails.": "Spinning up a new streaming job from scratch during a disaster takes significant time and loses the internal pipeline state (windows, watermarks), making an active-passive custom script far less robust than an active-active architecture."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "Cloud Dataflow",
+          "High Availability",
+          "Multi-Region",
+          "Stream Processing"
+        ]
+      },
+      {
+        "id": "q-gcppca-s14-030",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-a-cloud-solution-infrastructure-that-meets-technical-requirements",
+        "unitId": "gcp-pca-unit-1-2-high-availability-and-fail-over-design",
+        "questionText": "Your team is responsible for managing a large Google Kubernetes Engine (GKE) Autopilot cluster. The cluster hosts various stateful and stateless applications. To guarantee maximum high availability and resilience against unplanned node disruptions or zonal hardware failures, which two architectural best practices should you enforce on all deployments within the GKE Autopilot environment? (Choose two)",
+        "questionType": "multiple",
+        "options":[
+          "Configure `topologySpreadConstraints` with `maxSkew: 1` and `topologyKey: topology.kubernetes.io/zone`.",
+          "Implement PodDisruptionBudgets (PDBs) to ensure a minimum number of healthy replicas are maintained during disruptions.",
+          "Manually provision backup node pools in a secondary region and configure GKE Autopilot to failover pods to them.",
+          "Mount regional persistent disks to the stateless applications to ensure fast recovery if a node fails.",
+          "Disable automatic node upgrades to prevent GKE Autopilot from draining nodes during business hours."
+        ],
+        "correctAnswers":[
+          "Configure `topologySpreadConstraints` with `maxSkew: 1` and `topologyKey: topology.kubernetes.io/zone`.",
+          "Implement PodDisruptionBudgets (PDBs) to ensure a minimum number of healthy replicas are maintained during disruptions."
+        ],
+        "explanation": {
+          "general explanation": "In GKE Autopilot, Google manages the nodes entirely. To ensure High Availability for your workloads against zonal failures or Google-initiated node upgrades/disruptions, you must use Kubernetes primitives to declare your HA requirements. 1) `topologySpreadConstraints` instructs the scheduler to evenly distribute your pods across different availability zones (preventing a single zone failure from taking out the app). 2) PodDisruptionBudgets (PDBs) instruct the cluster to never evict too many pods simultaneously during planned maintenance, guaranteeing a baseline of available replicas.",
+          "Why other options are wrong": {
+            "Manually provision backup node pools in a secondary region and configure GKE Autopilot to failover pods to them.": "In GKE Autopilot, you cannot manually provision or manage node pools. Furthermore, a single GKE cluster cannot span multiple regions (it is limited to zones within a single region).",
+            "Mount regional persistent disks to the stateless applications to ensure fast recovery if a node fails.": "Stateless applications, by definition, do not require persistent disks. Mounting regional PDs adds unnecessary cost and complexity, and limits attachment speeds.",
+            "Disable automatic node upgrades to prevent GKE Autopilot from draining nodes during business hours.": "You cannot disable automatic node upgrades in GKE Autopilot. Google fully manages the node lifecycle and security patching. You must design workloads to tolerate these upgrades using PDBs."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "GKE Autopilot",
+          "High Availability",
+          "TopologySpreadConstraints",
+          "PodDisruptionBudgets"
+        ]
+      }
+    ]
+  }
+}

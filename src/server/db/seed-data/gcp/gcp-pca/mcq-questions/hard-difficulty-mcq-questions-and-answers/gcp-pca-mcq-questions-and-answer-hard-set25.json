@@ -1,0 +1,982 @@
+{
+  "_schema": {
+    "certificationId": "gcp-pca",
+    "setNumber": 25,
+    "questions":[
+      {
+        "id": "q-gcppca-s25-001",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "Your enterprise is migrating a legacy, commercial off-the-shelf (COTS) application to Google Cloud. The vendor's strict Bring Your Own License (BYOL) agreement requires the software to be licensed per physical CPU socket. Additionally, the application requires an exact ratio of 10 vCPUs to 115 GB of RAM, which does not match any predefined machine types. Which compute architecture must you implement to satisfy both the licensing and hardware ratio requirements?",
+        "questionType": "single",
+        "options":[
+          "Deploy Google Kubernetes Engine (GKE) and use Node Auto-provisioning (NAP) to dynamically create nodes with the exact CPU/RAM ratios.",
+          "Provision Compute Engine Sole-tenant nodes and deploy instances on them using Custom Machine Types with Extended Memory enabled.",
+          "Deploy the workload to Cloud Run, configuring exactly 10 CPUs and 115 GB of memory per container instance.",
+          "Use Bare Metal Solution to install the application directly onto a physical server, bypassing the hypervisor entirely."
+        ],
+        "correctAnswers":[
+          "Provision Compute Engine Sole-tenant nodes and deploy instances on them using Custom Machine Types with Extended Memory enabled."
+        ],
+        "explanation": {
+          "general explanation": "To satisfy physical hardware licensing constraints (per socket/per core BYOL), you must use Compute Engine Sole-tenant nodes, which dedicate physical servers to your project and provide visibility into the underlying hardware for compliance. To achieve the non-standard ratio of 10 vCPUs to 115 GB of RAM, you must use Custom Machine Types. Because 115 GB for 10 vCPUs exceeds the standard memory-to-vCPU ratio limits, you must also enable the 'Extended Memory' feature.",
+          "Why other options are wrong": {
+            "Deploy Google Kubernetes Engine (GKE) and use Node Auto-provisioning (NAP) to dynamically create nodes with the exact CPU/RAM ratios.": "GKE runs on multi-tenant Compute Engine infrastructure by default, which violates the strict physical socket licensing requirements.",
+            "Deploy the workload to Cloud Run, configuring exactly 10 CPUs and 115 GB of memory per container instance.": "Cloud Run is a multi-tenant serverless platform. It does not support physical socket licensing, and its maximum limits (currently 8 vCPUs and 32GB RAM) are well below the required specifications.",
+            "Use Bare Metal Solution to install the application directly onto a physical server, bypassing the hypervisor entirely.": "While Bare Metal Solution provides physical hardware, it is typically reserved for specialized workloads like Oracle RAC. Sole-tenant nodes are the native, flexible Compute Engine solution for standard VM BYOL licensing, and Bare Metal does not use 'Custom Machine Types'."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "compute-engine",
+          "sole-tenant-nodes",
+          "custom-machine-types",
+          "licensing"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-002",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "A development team has built a stateless, containerized web API using Node.js. Traffic is extremely volatile, ranging from zero requests for hours to 5,000 requests per second during marketing pushes. The application design requires that after returning an HTTP 200 response to the user, a background thread continues processing a heavy data aggregation task for up to 2 minutes. The team wants a fully managed, serverless platform. Which Google Cloud compute service and configuration maps to these needs?",
+        "questionType": "single",
+        "options":[
+          "Deploy to App Engine Standard and configure basic scaling to handle the unpredictable traffic.",
+          "Deploy to Cloud Run and configure the CPU allocation setting to 'CPU is always allocated'.",
+          "Deploy to Cloud Functions (2nd gen) and configure the minimum instances to 5 to handle background processing.",
+          "Deploy to Google Kubernetes Engine (GKE) Autopilot and implement a Horizontal Pod Autoscaler (HPA) based on custom background metrics."
+        ],
+        "correctAnswers":[
+          "Deploy to Cloud Run and configure the CPU allocation setting to 'CPU is always allocated'."
+        ],
+        "explanation": {
+          "general explanation": "Cloud Run is the ideal serverless platform for containerized web APIs with volatile traffic (scaling to zero). By default, Cloud Run severely throttles the CPU immediately after the HTTP response is sent, which would kill or stall the 2-minute background thread. However, by enabling 'CPU is always allocated', the container maintains full CPU access between requests, allowing the background data aggregation task to complete successfully while still benefiting from serverless autoscaling.",
+          "Why other options are wrong": {
+            "Deploy to App Engine Standard and configure basic scaling to handle the unpredictable traffic.": "App Engine Standard does not natively support long-running background threads that continue executing outside the lifecycle of the active HTTP request without using external task queues.",
+            "Deploy to Cloud Functions (2nd gen) and configure the minimum instances to 5 to handle background processing.": "Cloud Functions also throttle CPU after the request concludes. Setting minimum instances prevents cold starts but does not grant CPU time to background threads after the HTTP response is finalized.",
+            "Deploy to Google Kubernetes Engine (GKE) Autopilot and implement a Horizontal Pod Autoscaler (HPA) based on custom background metrics.": "While GKE can run background tasks, it does not scale to zero cluster-wide, violating the serverless expectation and incurring baseline costs during the hours of zero traffic."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "cloud-run",
+          "serverless",
+          "background-processing",
+          "cpu-allocation"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-003",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "You are designing the architecture for a massive multiplayer online role-playing game (MMORPG). The game servers are highly stateful, managing continuous player connections via custom UDP protocols for up to 3 hours per session. The architecture requires automated fleet management, scaling, and the ability to strictly protect active game servers from being terminated during scale-in events. Which compute platform maps best to these needs?",
+        "questionType": "single",
+        "options":[
+          "Cloud Run, using WebSockets to emulate UDP and configuring instance concurrency to 1.",
+          "Compute Engine Managed Instance Groups (MIGs) using stateful policies to prevent scale-in.",
+          "Google Kubernetes Engine (GKE) integrated with the open-source Agones game server orchestration framework.",
+          "App Engine Flexible, utilizing custom Docker runtimes to expose the required UDP ports."
+        ],
+        "correctAnswers":[
+          "Google Kubernetes Engine (GKE) integrated with the open-source Agones game server orchestration framework."
+        ],
+        "explanation": {
+          "general explanation": "Agones is a Google-founded open-source project specifically built to run dedicated game servers on Kubernetes (GKE). It natively handles the complex lifecycle of stateful UDP game servers. Crucially, Agones introduces a Custom Resource Definition (CRD) that tracks the state of a game. If a game is 'Allocated' (active players), Agones protects that specific Pod and its underlying Node from being terminated by the Kubernetes Cluster Autoscaler during a scale-in event.",
+          "Why other options are wrong": {
+            "Cloud Run, using WebSockets to emulate UDP and configuring instance concurrency to 1.": "Cloud Run is for HTTP/Websocket traffic. It does not support inbound raw UDP traffic natively, and its maximum request timeout is 60 minutes, failing the 3-hour session requirement.",
+            "Compute Engine Managed Instance Groups (MIGs) using stateful policies to prevent scale-in.": "Stateful MIGs permanently tie a VM to its disk/IP and do not autoscale down properly. This destroys elasticity. Agones dynamically protects only the actively running matches and scales down the rest.",
+            "App Engine Flexible, utilizing custom Docker runtimes to expose the required UDP ports.": "App Engine Flexible only routes HTTP and TCP traffic on port 8080 (or WebSockets). It does not support custom inbound UDP protocols required for fast-paced game servers."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "gke",
+          "agones",
+          "gaming",
+          "udp"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-004",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "Your data science team needs to execute a complex video rendering process. The rendering code is packaged as a Docker container. Once triggered via a message in Pub/Sub, the container must process the 50 GB video file, which takes approximately 14 hours of continuous compute time to complete, and then exit. The team wants a fully managed, serverless platform to minimize operational overhead. Which two Google Cloud services can be combined to map to these exact compute needs? (Choose two)",
+        "questionType": "multiple",
+        "options":[
+          "Cloud Run Jobs",
+          "Cloud Functions (2nd gen)",
+          "Eventarc",
+          "App Engine Standard",
+          "Cloud Dataflow"
+        ],
+        "correctAnswers":[
+          "Cloud Run Jobs",
+          "Eventarc"
+        ],
+        "explanation": {
+          "general explanation": "Cloud Run Jobs is the serverless execution environment designed for run-to-completion scripts or batch processes that do not listen for HTTP requests. Crucially, Cloud Run Jobs supports execution times of up to 24 hours, perfectly accommodating the 14-hour video processing requirement. Eventarc is used to route the Pub/Sub message event to trigger the execution of the Cloud Run Job seamlessly.",
+          "Why other options are wrong": {
+            "Cloud Functions (2nd gen)": "Cloud Functions have a maximum execution timeout of 60 minutes (for HTTP) or 9 minutes (for event-driven 1st gen). They will timeout and fail long before the 14-hour task completes.",
+            "App Engine Standard": "App Engine Standard is designed for responding to web requests and has a 24-hour limit for manual scaling background threads, but it is not a container-native, event-driven batch job runner like Cloud Run Jobs. Furthermore, it has strict memory/sandbox limits.",
+            "Cloud Dataflow": "Dataflow is for distributed stream/batch data processing (Apache Beam). It is not a generic serverless container execution environment for running monolithic video rendering binaries."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "cloud-run-jobs",
+          "eventarc",
+          "serverless",
+          "batch-processing"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-005",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "An enterprise is migrating a specialized distributed database cluster to Google Cloud. The database nodes require extreme storage IOPS and sub-millisecond latency. The architecture dictates using local NVMe SSDs directly attached to the compute instances. The platform engineering team requires Kubernetes orchestration to manage the deployments using StatefulSets, but they must strictly isolate these database pods to specific physical nodes. Which compute platform perfectly maps to these needs?",
+        "questionType": "single",
+        "options":[
+          "Google Kubernetes Engine (GKE) Autopilot.",
+          "Google Kubernetes Engine (GKE) Standard.",
+          "Cloud Run configured with gen2 execution environment and Local SSD volume mounts.",
+          "Compute Engine Managed Instance Groups (MIGs) with attached Local SSDs."
+        ],
+        "correctAnswers":[
+          "Google Kubernetes Engine (GKE) Standard."
+        ],
+        "explanation": {
+          "general explanation": "GKE Standard provides the deep infrastructure control required for specialized stateful workloads. It natively supports Kubernetes StatefulSets and allows you to provision node pools with physically attached Local NVMe SSDs. Furthermore, GKE Standard allows the use of Node Affinities, Taints, and Tolerations to strictly isolate the database pods to those specific hardware nodes.",
+          "Why other options are wrong": {
+            "Google Kubernetes Engine (GKE) Autopilot.": "While GKE Autopilot manages nodes for you and is adding more hardware support, for specialized, deeply customized hardware isolation (strict node affinities binding to local ephemeral NVMe SSDs for stateful sets), GKE Standard is the architecturally correct choice for maximum infrastructure control.",
+            "Cloud Run configured with gen2 execution environment and Local SSD volume mounts.": "Cloud Run is a stateless serverless platform. It does not support Kubernetes StatefulSets or persistent Local NVMe SSD storage that survives across container restarts.",
+            "Compute Engine Managed Instance Groups (MIGs) with attached Local SSDs.": "While MIGs support Local SSDs, they do not provide the requested Kubernetes orchestration (StatefulSets) natively without manually deploying and managing a custom Kubernetes cluster on top of them."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "gke-standard",
+          "local-ssd",
+          "statefulset",
+          "kubernetes"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-006",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "Your organization is executing a massive data center exit. You have 800 VMware vSphere VMs running a mix of legacy Windows and Linux applications. The CIO mandates that all VMs must be migrated to Google Cloud within 4 months. The applications cannot be refactored, IP addresses should remain unchanged where possible, and the on-premises VMware NSX-T network and security policies must be retained. Which compute migration strategy maps to these strict requirements?",
+        "questionType": "single",
+        "options":[
+          "Use Google Cloud Migrate to Virtual Machines to translate the VMs into native Compute Engine instances.",
+          "Migrate the workloads to Google Cloud VMware Engine (GCVE) utilizing VMware HCX for L2 network stretching and live migration.",
+          "Use Migrate to Containers to automatically extract the workloads from the VMs and deploy them to Anthos clusters on Google Cloud.",
+          "Export the VMware VMDK files to Cloud Storage and use the Compute Engine Image Import tool to boot them on standard VPCs."
+        ],
+        "correctAnswers":[
+          "Migrate the workloads to Google Cloud VMware Engine (GCVE) utilizing VMware HCX for L2 network stretching and live migration."
+        ],
+        "explanation": {
+          "general explanation": "Google Cloud VMware Engine (GCVE) provides a fully managed VMware software-defined data center (vSphere, vCenter, vSAN, NSX-T) running on bare metal in Google Cloud. This maps perfectly to the requirement of retaining VMware tooling and NSX-T policies without refactoring. By using VMware HCX (Hybrid Cloud Extension), you can stretch Layer 2 networks from on-premises to GCVE, allowing you to retain IP addresses and live-migrate (vMotion) 800 VMs rapidly within the strict 4-month deadline.",
+          "Why other options are wrong": {
+            "Use Google Cloud Migrate to Virtual Machines to translate the VMs into native Compute Engine instances.": "Migrating to native Compute Engine means you lose the VMware ecosystem (NSX-T, vCenter). Additionally, changing IP addresses is generally required when moving to standard GCP VPCs unless complex overlay networking is built.",
+            "Use Migrate to Containers to automatically extract the workloads from the VMs and deploy them to Anthos clusters on Google Cloud.": "The prompt explicitly states 'The applications cannot be refactored'. Containerizing them violates this constraint.",
+            "Export the VMware VMDK files to Cloud Storage and use the Compute Engine Image Import tool to boot them on standard VPCs.": "This is a slow, highly manual, error-prone process that results in extended downtime and loss of VMware management tools, failing the 4-month deadline and tooling requirements."
+          }
+        },
+        "difficulty": "Easy",
+        "tags":[
+          "gcve",
+          "vmware",
+          "migration",
+          "lift-and-shift"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-007",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "Your financial services company is building a highly secured, containerized microservices architecture. The security team dictates that these microservices must run in an environment with extreme isolation, specifically requiring hardware-virtualized boundaries between individual containers to protect against kernel privilege escalation attacks. They want to use Kubernetes for orchestration. Which compute configuration maps to this requirement?",
+        "questionType": "single",
+        "options":[
+          "Deploy GKE Standard clusters and enable GKE Sandbox (gVisor) on the node pools.",
+          "Deploy the containers on Cloud Run and enable the Gen 2 execution environment.",
+          "Deploy Compute Engine Shielded VMs and run the containers using Docker Compose.",
+          "Deploy GKE Autopilot clusters, as they natively prevent containers from running in privileged mode."
+        ],
+        "correctAnswers":[
+          "Deploy GKE Standard clusters and enable GKE Sandbox (gVisor) on the node pools."
+        ],
+        "explanation": {
+          "general explanation": "GKE Sandbox provides defense-in-depth security for containerized workloads. It uses gVisor, an application kernel written in Go, to intercept and handle system calls (syscalls) between the container and the host kernel. This creates a secure, hardware-virtualized isolation boundary around each Pod, preventing malicious code from exploiting the host OS kernel, mapping perfectly to the security team's requirements.",
+          "Why other options are wrong": {
+            "Deploy the containers on Cloud Run and enable the Gen 2 execution environment.": "Cloud Run Gen 1 uses gVisor, but Gen 2 provides better performance by providing a full Linux namespace environment (less isolated than strict gVisor). Regardless, the prompt explicitly requires 'Kubernetes for orchestration', which Cloud Run is not.",
+            "Deploy Compute Engine Shielded VMs and run the containers using Docker Compose.": "Shielded VMs protect the boot integrity of the VM via vTPM and Secure Boot; they do not provide hardware-virtualized boundaries between individual containers running on that VM. Furthermore, Docker Compose is not an enterprise Kubernetes orchestration tool.",
+            "Deploy GKE Autopilot clusters, as they natively prevent containers from running in privileged mode.": "While Autopilot blocks privileged pods, it does not natively wrap every pod in a gVisor hardware-virtualized sandbox by default to intercept syscalls."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "gke",
+          "gke-sandbox",
+          "gvisor",
+          "security"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-008",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "A weather forecasting application relies on a massive High Performance Computing (HPC) cluster. The compute workload requires Message Passing Interface (MPI) for extreme high-frequency, tightly-coupled inter-node communication. To maximize performance, the physical network latency between the compute nodes must be as close to zero as physically possible. How should you map this compute requirement to Google Cloud resources?",
+        "questionType": "single",
+        "options":[
+          "Deploy the nodes on a single Compute Engine Managed Instance Group and enable VPC Network Peering to bypass the standard routing hops.",
+          "Deploy the nodes on Compute Engine C2 (Compute-Optimized) instances and enforce a Compact Placement Policy.",
+          "Deploy the nodes on Google Kubernetes Engine (GKE) and configure an internal passthrough Network Load Balancer.",
+          "Deploy the workload on Bare Metal Solution utilizing regional extensions."
+        ],
+        "correctAnswers":[
+          "Deploy the nodes on Compute Engine C2 (Compute-Optimized) instances and enforce a Compact Placement Policy."
+        ],
+        "explanation": {
+          "general explanation": "For tightly coupled HPC workloads using MPI, network latency is the primary bottleneck. Compute Engine offers 'Compact Placement Policies'. When applied to a group of VMs, Google Cloud ensures that all VMs are scheduled on physical host servers that are in the same physical rack or physically adjacent racks. This provides the absolute lowest possible network latency and highest bisection bandwidth between the nodes. C2 instances are specifically built for HPC workloads.",
+          "Why other options are wrong": {
+            "Deploy the nodes on a single Compute Engine Managed Instance Group and enable VPC Network Peering to bypass the standard routing hops.": "VPC Peering connects different networks; it does not dictate the physical placement of hardware in the data center. A standard MIG might span multiple hardware racks across a zone, introducing latency.",
+            "Deploy the nodes on Google Kubernetes Engine (GKE) and configure an internal passthrough Network Load Balancer.": "Load balancers introduce an extra network hop, increasing latency. Standard GKE nodes are scattered across the zone/region hardware.",
+            "Deploy the workload on Bare Metal Solution utilizing regional extensions.": "Bare Metal Solution is designed for specialized licensing and hardware requirements (like Oracle RAC), not as a general-purpose HPC compute cluster. Standard C2 instances with compact placement perform better for native MPI workloads."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "compute-engine",
+          "hpc",
+          "placement-policies",
+          "c2-instances"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-009",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "Your team maintains an old, monolithic internal tool currently deployed on App Engine Standard (Python 2.7). Python 2 is deprecated, and you must migrate the application to a supported runtime. The business has decided to containerize the application to avoid future vendor lock-in. However, the application receives zero traffic on weekends, and the business strictly requires that the new platform scales to zero to incur zero compute costs during idle periods. Which two actions map to these compute requirements? (Choose two)",
+        "questionType": "multiple",
+        "options":[
+          "Refactor the code to Python 3 and package it inside a Docker container.",
+          "Deploy the Docker container to Cloud Run.",
+          "Deploy the Docker container to App Engine Flexible.",
+          "Deploy the Docker container to Google Kubernetes Engine (GKE) Autopilot.",
+          "Configure an internal TCP/UDP Load Balancer in front of the container."
+        ],
+        "correctAnswers":[
+          "Refactor the code to Python 3 and package it inside a Docker container.",
+          "Deploy the Docker container to Cloud Run."
+        ],
+        "explanation": {
+          "general explanation": "To move away from the deprecated Python 2 runtime and avoid vendor lock-in, the application must be updated to a modern runtime (Python 3) and packaged as a standard Docker container. To meet the strict requirement of scaling to zero (incurring zero costs during idle weekends) while running a container, Cloud Run is the only correct platform. Cloud Run is fully managed, serverless, natively runs containers, and scales down to exactly 0 instances when there is no HTTP traffic.",
+          "Why other options are wrong": {
+            "Deploy the Docker container to App Engine Flexible.": "While App Engine Flexible runs custom Docker containers, it requires at least one underlying Compute Engine instance to be running at all times. It cannot scale to zero, failing the cost requirement.",
+            "Deploy the Docker container to Google Kubernetes Engine (GKE) Autopilot.": "GKE Autopilot bills per pod, but you generally cannot scale an entire Kubernetes cluster workload to absolute zero dynamically without complex custom KEDA metrics, and basic cluster infrastructure still incurs costs.",
+            "Configure an internal TCP/UDP Load Balancer in front of the container.": "Cloud Run provisions its own fully managed HTTPS endpoints. You do not manually provision L4 TCP/UDP load balancers for basic Cloud Run services."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "cloud-run",
+          "app-engine",
+          "scale-to-zero",
+          "containerization"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-010",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "Your development team has adopted a microservices architecture. They want to deploy their containers to Google Cloud. The CTO mandates that the platform must use the standard Kubernetes API so the team can leverage existing Helm charts. However, the operations team consists of only one person, so the platform must be fully managed: no node provisioning, no OS patching, no cluster version upgrades, and billing must be calculated strictly per-pod rather than per-node. Which compute platform perfectly maps to these needs?",
+        "questionType": "single",
+        "options":[
+          "Cloud Run",
+          "Google Kubernetes Engine (GKE) Autopilot",
+          "Google Kubernetes Engine (GKE) Standard",
+          "App Engine Flexible"
+        ],
+        "correctAnswers": [
+          "Google Kubernetes Engine (GKE) Autopilot"
+        ],
+        "explanation": {
+          "general explanation": "GKE Autopilot is a revolutionary mode of operations for Kubernetes. It provides the standard Kubernetes API (allowing Helm charts and standard kubectl commands), but Google fully manages the cluster infrastructure. There are no nodes to configure, provision, or patch. Crucially, billing is based strictly on the CPU, memory, and storage requested by the scheduled Pods, not the underlying Compute Engine nodes. This maps perfectly to the requirement of Kubernetes API compatibility with zero node operational overhead.",
+          "Why other options are wrong": {
+            "Cloud Run": "While Cloud Run is fully managed and serverless, it does not use the standard Kubernetes API or support Helm charts natively. It uses the Knative API.",
+            "Google Kubernetes Engine (GKE) Standard": "In GKE Standard, the customer is responsible for managing node pools, selecting machine types, and paying for the underlying Compute Engine nodes regardless of whether Pods are utilizing the capacity.",
+            "App Engine Flexible": "App Engine Flexible is a PaaS that runs containers, but it does not expose a Kubernetes API, does not use Helm, and does not bill purely per-pod (it bills for the underlying VMs)."
+          }
+        },
+        "difficulty": "Easy",
+        "tags":[
+          "gke",
+          "gke-autopilot",
+          "kubernetes",
+          "serverless"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-011",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "You are deploying a legacy telecommunications application to Google Cloud. The application relies entirely on the Stream Control Transmission Protocol (SCTP) and highly specific UDP multicast configurations for node discovery. The vendor explicitly prohibits containerizing the application. Which compute platform and networking approach must you use to map to these legacy networking requirements?",
+        "questionType": "single",
+        "options":[
+          "Deploy the application on Compute Engine instances and construct an overlay network (e.g., VXLAN or GRE tunnels) between the instances.",
+          "Deploy the application on App Engine Flexible and expose custom ports for SCTP and UDP multicast.",
+          "Deploy the application on Compute Engine instances and use Cloud Router to natively route the SCTP and multicast traffic across the VPC.",
+          "Deploy the application on Cloud Run and configure an internal passthrough Network Load Balancer to forward SCTP traffic."
+        ],
+        "correctAnswers":[
+          "Deploy the application on Compute Engine instances and construct an overlay network (e.g., VXLAN or GRE tunnels) between the instances."
+        ],
+        "explanation": {
+          "general explanation": "The application requires raw OS access (cannot be containerized), which mandates Compute Engine. Furthermore, Google Cloud VPC natively supports TCP, UDP, and ICMP, but it *does not* natively support IP multicast or SCTP. To route unsupported protocols or multicast traffic between VMs in a GCP VPC, you must build an overlay network (like a VXLAN, GRE, or IPsec tunnel) on top of the Compute Engine instances to encapsulate and route the traffic.",
+          "Why other options are wrong": {
+            "Deploy the application on App Engine Flexible and expose custom ports for SCTP and UDP multicast.": "App Engine Flexible runs containers (prohibited by vendor) and does not support custom SCTP or Multicast network traffic.",
+            "Deploy the application on Compute Engine instances and use Cloud Router to natively route the SCTP and multicast traffic across the VPC.": "Cloud Router manages BGP dynamic routing; it does not add support for multicast or SCTP to the underlying VPC software-defined network, which drops these packets natively.",
+            "Deploy the application on Cloud Run and configure an internal passthrough Network Load Balancer to forward SCTP traffic.": "Cloud Run requires containerization (prohibited) and supports HTTP/TCP, not SCTP or Multicast."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "compute-engine",
+          "networking",
+          "multicast",
+          "overlay-network"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-012",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "Your team needs to run an ad-hoc Python script that executes a database cleanup query. The script takes about 15 seconds to run and requires a few custom Python libraries. The business wants this to run automatically every Sunday at 2:00 AM. They demand the absolute minimum operational overhead—no servers to manage, no containers to build, and billing calculated down to the 100-millisecond increment. Which two services map perfectly to this compute need? (Choose two)",
+        "questionType": "multiple",
+        "options":[
+          "Cloud Functions (1st or 2nd gen)",
+          "Cloud Scheduler",
+          "Compute Engine preemptible VMs",
+          "Google Kubernetes Engine (GKE) CronJobs",
+          "Cloud Run Jobs"
+        ],
+        "correctAnswers":[
+          "Cloud Functions (1st or 2nd gen)",
+          "Cloud Scheduler"
+        ],
+        "explanation": {
+          "general explanation": "For a lightweight, 15-second snippet of glue code that requires 'no containers to build' and extreme serverless billing, Cloud Functions is the best compute map. You simply paste the Python code and `requirements.txt` into the console or deploy via CLI, and GCP manages the rest. To execute it on a schedule (every Sunday), you pair it with Cloud Scheduler, which acts as a managed cron job service that triggers the function via an HTTP request or Pub/Sub.",
+          "Why other options are wrong": {
+            "Compute Engine preemptible VMs": "Managing a VM just to run a 15-second script once a week is a massive violation of 'minimum operational overhead' (requires OS patching, cron setup, and bills for minimum 1 minute).",
+            "Google Kubernetes Engine (GKE) CronJobs": "GKE requires building containers, managing a cluster, and massive operational overhead for a simple script.",
+            "Cloud Run Jobs": "While Cloud Run Jobs is great for batch processing, it requires you to write a Dockerfile, build a container image, and push it to Artifact Registry. Cloud Functions natively builds the source code for you, mapping better to the 'no containers to build' requirement."
+          }
+        },
+        "difficulty": "Easy",
+        "tags":[
+          "cloud-functions",
+          "cloud-scheduler",
+          "serverless",
+          "automation"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-013",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "You are designing the architecture for a highly regulated SaaS application. The application consists of stateless web endpoints. Due to strict compliance requirements, the deployment pipeline must automatically cryptographically verify that every deployed container image was built by the trusted internal CI/CD pipeline and has successfully passed vulnerability scanning. If a developer attempts to deploy a non-compliant image manually, the compute platform must block the deployment. Which compute platform and service combination maps to these needs?",
+        "questionType": "single",
+        "options":[
+          "Deploy to App Engine Standard and enforce VPC Service Controls.",
+          "Deploy to Cloud Run and configure Binary Authorization.",
+          "Deploy to Compute Engine MIGs and use Shielded VMs with Secure Boot.",
+          "Deploy to Cloud Functions and enforce IAM conditions on the developer roles."
+        ],
+        "correctAnswers":[
+          "Deploy to Cloud Run and configure Binary Authorization."
+        ],
+        "explanation": {
+          "general explanation": "Binary Authorization is a deploy-time security control that ensures only trusted container images are deployed. You can require images to be signed by trusted authorities (attestors) during the CI/CD build and vulnerability scanning phases. Cloud Run (along with GKE) natively integrates with Binary Authorization. If an image lacks the required cryptographic signatures, Cloud Run will block the deployment, fulfilling the strict compliance mandate.",
+          "Why other options are wrong": {
+            "Deploy to App Engine Standard and enforce VPC Service Controls.": "App Engine Standard does not natively run custom Docker containers in a way that integrates with Binary Authorization, and VPC Service Controls protect against data exfiltration, not unauthorized container deployment.",
+            "Deploy to Compute Engine MIGs and use Shielded VMs with Secure Boot.": "Shielded VMs with Secure Boot ensure the underlying virtual machine OS kernel is untampered. They do not cryptographically verify the Docker container payloads running on top of the OS.",
+            "Deploy to Cloud Functions and enforce IAM conditions on the developer roles.": "IAM conditions control who can call an API based on attributes like time or IP. They do not cryptographically verify the contents or CI/CD provenance of the code being deployed."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "cloud-run",
+          "binary-authorization",
+          "security",
+          "compliance"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-014",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "Your engineering team needs to deploy an open-source network virtual appliance (a next-generation firewall) to inspect traffic flowing between three different VPC networks: Web-VPC, App-VPC, and DB-VPC. The appliance requires three distinct virtual network interfaces (vNICs), each attached to a different VPC. Which Google Cloud compute platform supports this multi-NIC requirement natively?",
+        "questionType": "single",
+        "options":[
+          "Compute Engine",
+          "Google Kubernetes Engine (GKE) Standard",
+          "Cloud Run",
+          "App Engine Flexible"
+        ],
+        "correctAnswers":[
+          "Compute Engine"
+        ],
+        "explanation": {
+          "general explanation": "Compute Engine instances natively support multiple network interfaces (up to 8 vNICs, depending on the machine type). Each vNIC can be attached to a different VPC network. This is the foundational architectural requirement for deploying network virtual appliances (like firewalls, SD-WAN routers, or load balancers) that must sit between and route traffic across multiple isolated VPCs.",
+          "Why other options are wrong": {
+            "Google Kubernetes Engine (GKE) Standard": "Native GKE pods only have a single network interface (`eth0`) attached to the single VPC the cluster is deployed in. While advanced open-source CNIs (like Multus) exist, they are not natively managed or supported for standard multi-VPC routing appliance deployments in GCP.",
+            "Cloud Run": "Cloud Run is a serverless application platform. Containers do not have accessible virtual NICs and cannot bridge multiple VPCs.",
+            "App Engine Flexible": "App Engine Flexible instances are deployed into a single VPC network. You cannot attach multiple vNICs to an App Engine deployment to bridge VPCs."
+          }
+        },
+        "difficulty": "Easy",
+        "tags":[
+          "compute-engine",
+          "networking",
+          "multi-nic",
+          "virtual-appliance"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-015",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "You are migrating a legacy content management system to Cloud Run to achieve serverless autoscaling. The application processes uploaded media and requires a shared, POSIX-compliant file system where hundreds of container instances can concurrently read and write to the same directory structure. It cannot be refactored to use object storage APIs natively. Which two services map to this requirement? (Choose two)",
+        "questionType": "multiple",
+        "options":[
+          "Cloud Run volume mounts connected to a Cloud Filestore instance via Serverless VPC Access.",
+          "Cloud Run volume mounts connected natively to a Cloud Storage bucket via Cloud Storage FUSE.",
+          "Cloud Run volume mounts connected to a Compute Engine Persistent Disk configured in multi-writer mode.",
+          "App Engine Standard configured with a Memorystore for Redis backend.",
+          "Google Kubernetes Engine (GKE) with local SSDs."
+        ],
+        "correctAnswers":[
+          "Cloud Run volume mounts connected to a Cloud Filestore instance via Serverless VPC Access.",
+          "Cloud Run volume mounts connected natively to a Cloud Storage bucket via Cloud Storage FUSE."
+        ],
+        "explanation": {
+          "general explanation": "Cloud Run (Gen 2) natively supports mounting network file systems to serverless containers. For a POSIX-compliant, highly concurrent read/write shared file system, Cloud Filestore (NFS) is the standard enterprise choice. Cloud Run accesses Filestore via Direct VPC Egress or a Serverless VPC Access connector. Alternatively, Cloud Run also natively integrates Cloud Storage FUSE, which allows you to mount a Cloud Storage bucket as a local file system directory, providing POSIX-like access to object storage without refactoring the application code.",
+          "Why other options are wrong": {
+            "Cloud Run volume mounts connected to a Compute Engine Persistent Disk configured in multi-writer mode.": "Cloud Run does not support attaching block storage (Persistent Disks) directly to serverless containers.",
+            "App Engine Standard configured with a Memorystore for Redis backend.": "Memorystore is an in-memory key-value cache, not a POSIX-compliant file system. App Engine Standard does not support mounting shared network drives.",
+            "Google Kubernetes Engine (GKE) with local SSDs.": "Local SSDs are ephemeral and physically attached to a single specific node. They cannot be shared concurrently across hundreds of pods scattered across different nodes."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "cloud-run",
+          "cloud-filestore",
+          "cloud-storage-fuse",
+          "shared-file-system"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-016",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "Your AI research team is training a massive Deep Learning model. The compute requirements mandate using eight NVIDIA A100 GPUs per node. Furthermore, the GPUs must communicate with each other at extremely high bandwidth (up to 600 GB/s) bypassing the CPU entirely to avoid bottlenecks during gradient synchronization. Which Compute Engine machine family and hardware capability maps to these needs?",
+        "questionType": "single",
+        "options":[
+          "A2 machine family utilizing NVLink topology.",
+          "C2 (Compute-Optimized) machine family with Tier 1 networking.",
+          "N2 (General Purpose) machine family with local NVMe SSDs.",
+          "M2 (Memory-Optimized) machine family utilizing gVNIC."
+        ],
+        "correctAnswers": [
+          "A2 machine family utilizing NVLink topology."
+        ],
+        "explanation": {
+          "general explanation": "The A2 machine family in Google Cloud is specifically designed for the most demanding GPU workloads. It is the only family that natively supports the NVIDIA A100 Tensor Core GPUs. To satisfy the requirement of bypassing the CPU for ultra-high-bandwidth GPU-to-GPU communication (up to 600 GB/s), the A2 instances feature NVIDIA NVLink topology, mapping perfectly to the deep learning gradient synchronization requirement.",
+          "Why other options are wrong": {
+            "C2 (Compute-Optimized) machine family with Tier 1 networking.": "C2 instances are for CPU-bound high-performance computing (HPC) workloads. They do not support attaching GPUs.",
+            "N2 (General Purpose) machine family with local NVMe SSDs.": "N2 instances can support older GPUs (like T4), but they do not support the massive A100 GPUs, nor do they support NVLink for direct GPU-to-GPU memory bridging.",
+            "M2 (Memory-Optimized) machine family utilizing gVNIC.": "M2 instances are built for massive in-memory databases like SAP HANA. They do not support attached GPUs."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "compute-engine",
+          "a2-instances",
+          "gpus",
+          "machine-learning"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-017",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "You are designing the CI/CD pipeline for your infrastructure team. They use HashiCorp Packer to build 'golden' virtual machine images. Building these images requires running QEMU/KVM inside the CI/CD build worker to spin up virtual environments. You need to map this compute requirement to Google Cloud. How should you configure the build workers?",
+        "questionType": "single",
+        "options":[
+          "Deploy the workers on Cloud Run and enable the Gen 2 execution environment to gain access to hardware virtualization features.",
+          "Deploy the workers on Google Kubernetes Engine (GKE) Autopilot to ensure container escape isolation during the KVM execution.",
+          "Deploy the workers on Compute Engine VMs configured with an Intel CPU platform and explicitly enable nested virtualization.",
+          "Deploy the workers on Compute Engine Shielded VMs with vTPM enabled to securely execute the hypervisor binaries."
+        ],
+        "correctAnswers":[
+          "Deploy the workers on Compute Engine VMs configured with an Intel CPU platform and explicitly enable nested virtualization."
+        ],
+        "explanation": {
+          "general explanation": "Running QEMU/KVM inside a virtual machine requires 'nested virtualization' (running a hypervisor inside a hypervisor). In Google Cloud, nested virtualization is only supported on Compute Engine instances, and it must be explicitly enabled at the VM level. Currently, it requires instances running on Intel CPU architectures (Haswell or newer). Neither serverless platforms nor managed container services support hardware-level nested virtualization.",
+          "Why other options are wrong": {
+            "Deploy the workers on Cloud Run and enable the Gen 2 execution environment to gain access to hardware virtualization features.": "Cloud Run does not support nested virtualization. You cannot run a KVM hypervisor inside a Cloud Run container.",
+            "Deploy the workers on Google Kubernetes Engine (GKE) Autopilot to ensure container escape isolation during the KVM execution.": "GKE nodes do not enable nested virtualization by default, and Autopilot abstracts the nodes entirely, preventing you from modifying the host OS to support hardware hypervisors.",
+            "Deploy the workers on Compute Engine Shielded VMs with vTPM enabled to securely execute the hypervisor binaries.": "Shielded VMs provide boot security, not hardware virtualization passthrough. You must explicitly enable the nested virtualization flag on the VM."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "compute-engine",
+          "nested-virtualization",
+          "ci-cd",
+          "packer"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-018",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "Your observability team wants to deploy a third-party, open-source distributed tracing backend to gather metrics from your microservices. The backend application strictly relies on receiving high volumes of UDP traffic from the microservice agents. The team wants to run this backend as a highly available, orchestrated container deployment. Which compute platform perfectly maps to this need?",
+        "questionType": "single",
+        "options":[
+          "Google Kubernetes Engine (GKE)",
+          "Cloud Run",
+          "App Engine Flexible",
+          "Cloud Functions"
+        ],
+        "correctAnswers": [
+          "Google Kubernetes Engine (GKE)"
+        ],
+        "explanation": {
+          "general explanation": "GKE is the only container orchestration platform in Google Cloud that natively supports receiving inbound UDP traffic. You can expose a Kubernetes deployment via a Service of type `LoadBalancer` (which provisions an External or Internal passthrough Network Load Balancer) that routes UDP traffic directly to the pods.",
+          "Why other options are wrong": {
+            "Cloud Run": "Cloud Run only supports inbound HTTP, HTTPS, WebSockets, and gRPC traffic. It does not support inbound raw UDP traffic.",
+            "App Engine Flexible": "App Engine Flexible does not support inbound UDP traffic. It is restricted to HTTP/HTTPS and TCP over specific ports.",
+            "Cloud Functions": "Cloud Functions are triggered by HTTP requests or specific Google Cloud events (Eventarc). They cannot listen for raw inbound UDP packets."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "gke",
+          "udp",
+          "networking",
+          "observability"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-019",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "A monolithic web application deployed on Cloud Run requires extensive architectural refactoring to improve security and observability. Specifically, you need to implement a sidecar proxy (like Envoy) alongside the main application container to handle mutual TLS (mTLS) termination and emit distributed tracing spans before the request hits the primary application code. Both the main app and the sidecar must share the exact same network namespace and scale together. Which Cloud Run feature maps to this need?",
+        "questionType": "single",
+        "options":[
+          "Deploy both containers into a single Cloud Run service using the multi-container feature, configuring the Envoy container as the ingress point.",
+          "Deploy the Envoy proxy to an API Gateway and route the traffic to the Cloud Run service via an Internal Load Balancer.",
+          "Deploy the Envoy proxy as a separate Cloud Run service and use Eventarc to bridge the traffic to the main application.",
+          "It is impossible; sidecar architectures are strictly limited to Google Kubernetes Engine (GKE) Pods."
+        ],
+        "correctAnswers":[
+          "Deploy both containers into a single Cloud Run service using the multi-container feature, configuring the Envoy container as the ingress point."
+        ],
+        "explanation": {
+          "general explanation": "Cloud Run natively supports the multi-container (sidecar) deployment pattern. Similar to a Kubernetes Pod, you can deploy multiple containers into a single Cloud Run instance. They share the same network namespace (localhost) and lifecycle. You can configure which container is the primary 'ingress' container that receives the external HTTP requests (e.g., the Envoy proxy). Envoy can then terminate mTLS, generate traces, and forward the request to the main application container via localhost.",
+          "Why other options are wrong": {
+            "Deploy the Envoy proxy to an API Gateway and route the traffic to the Cloud Run service via an Internal Load Balancer.": "This decouples the proxy from the application compute instance entirely. It breaks the 'sidecar' paradigm where the proxy and app share the exact same scale, lifecycle, and local network namespace.",
+            "Deploy the Envoy proxy as a separate Cloud Run service and use Eventarc to bridge the traffic to the main application.": "Deploying them as separate services means they scale independently and communicate over the network, incurring latency and violating the shared network namespace requirement.",
+            "It is impossible; sidecar architectures are strictly limited to Google Kubernetes Engine (GKE) Pods.": "This is factually incorrect. Cloud Run introduced full support for multi-container sidecar deployments."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "cloud-run",
+          "sidecar",
+          "multi-container",
+          "envoy"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-020",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "Your data engineering team is building an ad-hoc batch processing pipeline. The pipeline uses a custom message queue (RabbitMQ). They need a massive pool of worker nodes to pull messages from the queue and perform CPU-intensive transformations. The workloads are stateless, fault-tolerant, and can be interrupted and retried without data loss. The primary technical requirement is absolute maximum cost savings on compute infrastructure. Which two architectural choices should you combine? (Choose two)",
+        "questionType": "multiple",
+        "options":[
+          "Deploy the workers on Compute Engine Managed Instance Groups (MIGs).",
+          "Configure the Compute Engine instances to use Spot (preemptible) provisioning models.",
+          "Deploy the workers to Cloud Functions (2nd gen) to ensure billing is strictly by the millisecond.",
+          "Configure the Compute Engine instances using the Sole-tenant node optimization.",
+          "Deploy the workers on Compute Engine E2 (General Purpose) standard instances with Committed Use Discounts (CUDs)."
+        ],
+        "correctAnswers":[
+          "Deploy the workers on Compute Engine Managed Instance Groups (MIGs).",
+          "Configure the Compute Engine instances to use Spot (preemptible) provisioning models."
+        ],
+        "explanation": {
+          "general explanation": "For stateless, fault-tolerant batch processing where the absolute highest priority is cost savings, Compute Engine Spot VMs (formerly preemptible VMs) are the perfect compute map. They offer up to a 91% discount compared to standard instances. Because the workloads can be interrupted, the fact that Google might reclaim the VM at any time is acceptable. You orchestrate this massive pool of Spot VMs using a Managed Instance Group (MIG), which will automatically recreate the VMs when capacity returns.",
+          "Why other options are wrong": {
+            "Deploy the workers to Cloud Functions (2nd gen) to ensure billing is strictly by the millisecond.": "While serverless is cheap for spiky traffic, running massive, continuous CPU-intensive batch transformations on Cloud Functions is vastly more expensive than using discounted Spot VMs.",
+            "Configure the Compute Engine instances using the Sole-tenant node optimization.": "Sole-tenant nodes require paying for entire dedicated physical servers. This is for strict compliance/licensing, not for aggressive cost-saving batch jobs.",
+            "Deploy the workers on Compute Engine E2 (General Purpose) standard instances with Committed Use Discounts (CUDs).": "CUDs offer a 37-55% discount in exchange for a 1- or 3-year contract. Spot VMs offer up to 91% discounts with no contract, making them significantly cheaper for fault-tolerant ad-hoc batch workloads."
+          }
+        },
+        "difficulty": "Easy",
+        "tags":[
+          "compute-engine",
+          "spot-vms",
+          "mig",
+          "cost-optimization"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-021",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "You are migrating a proprietary Windows Server application to Google Cloud. The application runs a Microsoft SQL Server Failover Cluster Instance (FCI) for high availability. This specific cluster architecture strictly requires multiple Windows VMs to mount the exact same disk volume with block-level Read/Write access simultaneously. How must you map this specific storage/compute need in Google Cloud?",
+        "questionType": "single",
+        "options":[
+          "Deploy Compute Engine Windows VMs and use a persistent disk configured in multi-writer mode.",
+          "Deploy Compute Engine Windows VMs and connect them to a Cloud Filestore Enterprise instance.",
+          "Deploy Compute Engine Windows VMs and configure Cloud Storage FUSE to mount a GCS bucket.",
+          "Deploy Google Cloud NetApp Volumes and configure SMB protocol sharing for the Windows VMs."
+        ],
+        "correctAnswers":[
+          "Deploy Compute Engine Windows VMs and use a persistent disk configured in multi-writer mode."
+        ],
+        "explanation": {
+          "general explanation": "Microsoft SQL Server Failover Cluster Instances (FCI) require a shared block storage architecture (like a SAN). In Google Cloud, Compute Engine supports attaching a single Persistent Disk to multiple VMs simultaneously in Read/Write mode (multi-writer mode). This natively supports the SCSI Persistent Reserve (PR) commands required by Windows Server Failover Clustering (WSFC) to manage disk arbitration and failover.",
+          "Why other options are wrong": {
+            "Deploy Compute Engine Windows VMs and connect them to a Cloud Filestore Enterprise instance.": "Cloud Filestore is an NFS (Network File System) service. Microsoft SQL Server FCI requires block storage, not NFS.",
+            "Deploy Compute Engine Windows VMs and configure Cloud Storage FUSE to mount a GCS bucket.": "Cloud Storage FUSE mounts an object store as a file system. It does not provide block-level storage, sub-millisecond latency, or the SCSI locking mechanisms required by an active SQL Server failover cluster.",
+            "Deploy Google Cloud NetApp Volumes and configure SMB protocol sharing for the Windows VMs.": "While NetApp Volumes supports SMB (which SQL Server can use for simple database files), FCI architectures typically rely on shared block volumes with SCSI reservations, which is natively supported by multi-writer persistent disks."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "compute-engine",
+          "persistent-disk",
+          "multi-writer",
+          "sql-server"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-022",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "Your organization uses a highly complex third-party SaaS application that sends event webhooks. You need to capture these webhooks, perform a lightweight data transformation, and insert the data into BigQuery. The traffic is highly variable. The security team mandates that the compute service handling the webhooks must sit behind an External Application Load Balancer so they can attach Cloud Armor WAF policies to inspect the incoming SaaS traffic. Which compute mapping is most appropriate?",
+        "questionType": "single",
+        "options":[
+          "Deploy the transformation logic to Cloud Run, and attach a Serverless Network Endpoint Group (NEG) to the External Application Load Balancer.",
+          "Deploy the transformation logic to Cloud Functions, and attach a Zonal Network Endpoint Group (NEG) to the External Application Load Balancer.",
+          "Deploy the transformation logic to an App Engine Standard application, which natively intercepts Cloud Armor traffic without a Load Balancer.",
+          "Deploy the transformation logic to a Compute Engine Managed Instance Group (MIG) and configure Cloud NAT for inbound webhook traffic."
+        ],
+        "correctAnswers":[
+          "Deploy the transformation logic to Cloud Run, and attach a Serverless Network Endpoint Group (NEG) to the External Application Load Balancer."
+        ],
+        "explanation": {
+          "general explanation": "For a lightweight, highly variable webhook processor, serverless architectures (like Cloud Run or Cloud Functions) are ideal. To satisfy the security mandate (using Cloud Armor), the compute service MUST sit behind an External Application Load Balancer. Cloud Run integrates seamlessly with Load Balancers via Serverless NEGs. Traffic hits the Load Balancer, is inspected by Cloud Armor, and is then routed via the Serverless NEG to the autoscaling Cloud Run containers.",
+          "Why other options are wrong": {
+            "Deploy the transformation logic to Cloud Functions, and attach a Zonal Network Endpoint Group (NEG) to the External Application Load Balancer.": "While Cloud Functions can be placed behind a load balancer, they also require a *Serverless* NEG, not a *Zonal* NEG. Zonal NEGs are for Compute Engine VMs or GKE pods.",
+            "Deploy the transformation logic to an App Engine Standard application, which natively intercepts Cloud Armor traffic without a Load Balancer.": "This is factually incorrect. App Engine does not 'natively intercept Cloud Armor traffic'. Cloud Armor must be attached to a Load Balancer, which then routes to App Engine via a Serverless NEG.",
+            "Deploy the transformation logic to a Compute Engine Managed Instance Group (MIG) and configure Cloud NAT for inbound webhook traffic.": "Managing a fleet of VMs for simple webhook processing is high operational overhead. Additionally, Cloud NAT is for *outbound* internet access, not inbound load balancing."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "cloud-run",
+          "cloud-armor",
+          "load-balancing",
+          "serverless-neg"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-023",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "An enterprise is designing an internal portal deployed on Google Kubernetes Engine (GKE). To ensure strict security and compliance, the platform must enforce fine-grained access control to Google Cloud APIs (like Cloud Storage and Spanner) at the individual Pod level. Different microservices running on the same GKE Node require entirely different IAM permissions. How should you map this compute security requirement?",
+        "questionType": "single",
+        "options":[
+          "Configure Workload Identity on the GKE cluster and map Kubernetes Service Accounts to distinct Google Cloud IAM Service Accounts.",
+          "Create multiple distinct GKE Node Pools. Assign a different IAM Service Account to each Node Pool, and use nodeSelectors to place the Pods.",
+          "Embed long-lived JSON Service Account keys into Kubernetes Secrets and mount them as volumes inside the individual Pods.",
+          "Configure VPC Service Controls to filter outbound traffic from the GKE Pods based on their internal IP addresses."
+        ],
+        "correctAnswers":[
+          "Configure Workload Identity on the GKE cluster and map Kubernetes Service Accounts to distinct Google Cloud IAM Service Accounts."
+        ],
+        "explanation": {
+          "general explanation": "Workload Identity is the recommended, secure way to access Google Cloud services from applications running on GKE. It allows you to link a Kubernetes Service Account (KSA) to a Google Cloud IAM Service Account (GSA). When a Pod runs as that KSA, it automatically authenticates as the GSA. This allows different Pods running on the *exact same* physical node to have entirely different, fine-grained IAM permissions, without managing physical keys.",
+          "Why other options are wrong": {
+            "Create multiple distinct GKE Node Pools. Assign a different IAM Service Account to each Node Pool, and use nodeSelectors to place the Pods.": "While this works, it is a massive anti-pattern. It creates extreme operational overhead and resource stranding (wasted CPU/RAM) because you must spin up an entire new node pool every time a microservice needs a slightly different IAM permission.",
+            "Embed long-lived JSON Service Account keys into Kubernetes Secrets and mount them as volumes inside the individual Pods.": "Using long-lived JSON keys is a severe security risk (credential leakage, no automated rotation) and is strongly discouraged in favor of Workload Identity.",
+            "Configure VPC Service Controls to filter outbound traffic from the GKE Pods based on their internal IP addresses.": "VPC Service Controls mitigate data exfiltration at the perimeter; they are not an Identity and Access Management (IAM) mechanism for granting Pods fine-grained access to GCP APIs."
+          }
+        },
+        "difficulty": "Easy",
+        "tags":[
+          "gke",
+          "workload-identity",
+          "iam",
+          "security"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-024",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "Your financial modeling application runs on Compute Engine. The application performs massive Monte Carlo simulations. To achieve acceptable performance, the application relies on deeply optimized C++ code that utilizes Advanced Vector Extensions (AVX-512). Not all physical hardware in Google Cloud supports this instruction set. How must you configure the compute environment to guarantee the application functions correctly?",
+        "questionType": "single",
+        "options":[
+          "Specify a Minimum CPU Platform (e.g., Intel Skylake or newer) when creating the Compute Engine instances or instance templates.",
+          "Deploy the workload on the C2 (Compute-Optimized) machine family, which automatically recompiles code to match the underlying hardware.",
+          "Use a startup script to query the CPU flags via `/proc/cpuinfo`. If AVX-512 is missing, execute an API call to migrate the VM to another zone.",
+          "Deploy the application onto Google Kubernetes Engine (GKE) and apply a `nodeAffinity` rule targeting the `cloud.google.com/avx512=true` label."
+        ],
+        "correctAnswers":[
+          "Specify a Minimum CPU Platform (e.g., Intel Skylake or newer) when creating the Compute Engine instances or instance templates."
+        ],
+        "explanation": {
+          "general explanation": "Compute Engine allows you to explicitly map your compute needs to specific underlying hardware generations by specifying a 'Minimum CPU Platform'. When you request an instance (e.g., an N1 or N2), Google Cloud will schedule it on any available hardware in that zone. If your application strictly requires advanced instruction sets like AVX-512, you must specify a minimum CPU platform (like Intel Skylake, Cascade Lake, or Ice Lake) that supports it. Google will then guarantee the VM is scheduled only on host hardware meeting or exceeding that platform.",
+          "Why other options are wrong": {
+            "Deploy the workload on the C2 (Compute-Optimized) machine family, which automatically recompiles code to match the underlying hardware.": "While C2 instances offer high performance, GCP does not 'automatically recompile' your compiled C++ binaries. You still need the underlying hardware to support the instruction set the binary was compiled for.",
+            "Use a startup script to query the CPU flags via `/proc/cpuinfo`. If AVX-512 is missing, execute an API call to migrate the VM to another zone.": "This is a terrible architectural hack. It results in wasted boot times, constant thrashing, and unpredictable deployments. Specifying the minimum CPU platform solves this natively at scheduling time.",
+            "Deploy the application onto Google Kubernetes Engine (GKE) and apply a `nodeAffinity` rule targeting the `cloud.google.com/avx512=true` label.": "GKE nodes are just Compute Engine VMs. You still must configure the underlying Node Pool's Compute Engine instance template to use a Minimum CPU Platform. GCP does not natively expose an `avx512=true` label."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "compute-engine",
+          "minimum-cpu-platform",
+          "hpc",
+          "hardware-architecture"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-025",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "A telecommunications company is building a high-frequency packet processing engine. The application must achieve line-rate network performance (up to 100 Gbps) and absolute minimum latency. To do this, the application software must bypass the guest operating system's kernel network stack and interact directly with the virtual network interface card (NIC) using Data Plane Development Kit (DPDK). Which compute architecture maps to these extreme networking needs?",
+        "questionType": "single",
+        "options":[
+          "Compute Engine VMs configured with Google Virtual NIC (gVNIC) and Tier 1 networking performance enabled.",
+          "Google Kubernetes Engine (GKE) utilizing the Calico Container Network Interface (CNI) in eBPF mode.",
+          "Cloud Run configured with the Gen 2 execution environment and Direct VPC Egress.",
+          "Compute Engine VMs configured with standard VirtIO network interfaces and Cloud NAT."
+        ],
+        "correctAnswers":[
+          "Compute Engine VMs configured with Google Virtual NIC (gVNIC) and Tier 1 networking performance enabled."
+        ],
+        "explanation": {
+          "general explanation": "To achieve 50-100 Gbps of network throughput and support advanced kernel-bypass technologies like DPDK, you must map the workload to Compute Engine VMs equipped with the Google Virtual NIC (gVNIC). gVNIC is a custom-built virtual network interface designed specifically for high performance. When combined with specific machine types (like N2, C2, or A2) and 'Tier 1' networking enabled, it provides the required line-rate performance and DPDK compatibility.",
+          "Why other options are wrong": {
+            "Google Kubernetes Engine (GKE) utilizing the Calico Container Network Interface (CNI) in eBPF mode.": "While eBPF improves Kubernetes networking performance, it does not bypass the host OS kernel for direct NIC access (DPDK), nor does it natively guarantee 100 Gbps per pod without underlying gVNIC host configurations.",
+            "Cloud Run configured with the Gen 2 execution environment and Direct VPC Egress.": "Cloud Run does not support DPDK or kernel bypass, nor does it support 100 Gbps of dedicated network throughput per container.",
+            "Compute Engine VMs configured with standard VirtIO network interfaces and Cloud NAT.": "VirtIO is the older network interface standard. It caps out at lower bandwidths (typically 16-32 Gbps) and is not optimized for DPDK or 100 Gbps Tier 1 networking compared to gVNIC."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "compute-engine",
+          "gvnic",
+          "dpdk",
+          "high-performance-networking"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-026",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "Your team needs to process hundreds of millions of files residing in a Cloud Storage bucket. For each file, a Python script must extract EXIF metadata and write it to Firestore. The process needs to run as quickly as possible. The architecture should dynamically scale compute resources from zero up to thousands of concurrent instances based on the queue depth of the unprocessed files, and scale back to zero when complete. Which two architectural combinations map best to this serverless batch processing need? (Choose two)",
+        "questionType": "multiple",
+        "options":[
+          "Package the Python script into a container and deploy it using Cloud Run Jobs, orchestrating the parallel execution across an array of workers.",
+          "Publish the list of files to a Pub/Sub topic and trigger a Cloud Run service (configured for HTTP) to process them asynchronously.",
+          "Deploy a Compute Engine Managed Instance Group (MIG) and configure the autoscaler to scale based on a custom Cloud Monitoring metric of the remaining file count.",
+          "Use App Engine Flexible and configure a custom scaling metric to monitor the Cloud Storage bucket size.",
+          "Deploy a Dataproc Hadoop cluster and use MapReduce to parse the files directly."
+        ],
+        "correctAnswers":[
+          "Package the Python script into a container and deploy it using Cloud Run Jobs, orchestrating the parallel execution across an array of workers.",
+          "Publish the list of files to a Pub/Sub topic and trigger a Cloud Run service (configured for HTTP) to process them asynchronously."
+        ],
+        "explanation": {
+          "general explanation": "To process millions of files serverlessly (scaling to zero, massive parallelization, zero infrastructure management), two main patterns emerge using Cloud Run. \n1) Array Jobs: Use Cloud Run Jobs to execute an 'Array Job'. You specify 10,000 tasks, and Cloud Run spins up parallel containers to churn through the indices/files.\n2) Pub/Sub Push: Publish a message for every file into Pub/Sub. Pub/Sub pushes these messages as HTTP requests to a Cloud Run service, which elastically scales from 0 to 1000s of instances to process the queue, shrinking back to 0 when empty.",
+          "Why other options are wrong": {
+            "Deploy a Compute Engine Managed Instance Group (MIG) and configure the autoscaler to scale based on a custom Cloud Monitoring metric of the remaining file count.": "While MIGs can scale based on custom metrics, managing VMs, configuring custom metrics, and handling OS images involves significant operational overhead, violating the 'serverless' expectation.",
+            "Use App Engine Flexible and configure a custom scaling metric to monitor the Cloud Storage bucket size.": "App Engine Flexible does not scale to zero (requires at least 1 VM). Monitoring bucket size is not a reliable metric for task queue depth.",
+            "Deploy a Dataproc Hadoop cluster and use MapReduce to parse the files directly.": "Dataproc is for massive big data analytics (Spark/Hadoop). Managing a cluster for a simple Python EXIF extraction script introduces unnecessary complexity compared to serverless container execution."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "cloud-run",
+          "cloud-run-jobs",
+          "pubsub",
+          "serverless-batch"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-027",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "An enterprise is planning a major modernization effort. They have 50 unique web applications currently running on a mix of Windows IIS and Linux Tomcat servers in their on-premises data center. The source code for many of these applications has been lost. The CIO wants to migrate these directly to Kubernetes (GKE) to unify their hosting platform. How should you map this migration need to Google Cloud's product suite?",
+        "questionType": "single",
+        "options":[
+          "Use Google Cloud Migrate to Containers. It natively scans the source VMs, extracts the application artifacts, and automatically generates Dockerfiles and Kubernetes manifests for deployment to GKE.",
+          "Use Google Cloud Migrate to Virtual Machines to lift and shift the VMs into Compute Engine, then enable the GKE Windows Node integration to bridge the platforms.",
+          "Use Cloud Build. Write a custom pipeline that connects to the on-premises servers via SSH/WinRM, zips the application directories, and pushes them to Artifact Registry.",
+          "This is not possible. Applications without source code cannot be containerized or moved to GKE. They must be re-written or remain on Compute Engine VMs."
+        ],
+        "correctAnswers":[
+          "Use Google Cloud Migrate to Containers. It natively scans the source VMs, extracts the application artifacts, and automatically generates Dockerfiles and Kubernetes manifests for deployment to GKE."
+        ],
+        "explanation": {
+          "general explanation": "Migrate to Containers (formerly Migrate for Anthos) is a specialized Google Cloud product designed exactly for this use case. It allows enterprises to modernize legacy workloads without needing the original source code. The tool analyzes running VMs (including specific support for Linux Tomcat and Windows IIS), intelligently extracts the necessary OS configurations, application binaries, and dependencies, and automatically generates container images and Kubernetes deployment YAML files ready for GKE.",
+          "Why other options are wrong": {
+            "Use Google Cloud Migrate to Virtual Machines to lift and shift the VMs into Compute Engine, then enable the GKE Windows Node integration to bridge the platforms.": "While you can migrate VMs to Compute Engine, they remain VMs. GKE runs containers. You cannot 'bridge' a raw Compute Engine VM into a GKE cluster to magically make it a Kubernetes-managed Pod.",
+            "Use Cloud Build. Write a custom pipeline that connects to the on-premises servers via SSH/WinRM, zips the application directories, and pushes them to Artifact Registry.": "Zipping directories does not create a functional Docker container image. You still need to build base images, configure dependencies, and write manifests. Migrate to Containers automates all of this.",
+            "This is not possible. Applications without source code cannot be containerized or moved to GKE. They must be re-written or remain on Compute Engine VMs.": "This is factually incorrect. Migrate to Containers was built specifically to solve the 'lost source code' modernization problem."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "migrate-to-containers",
+          "gke",
+          "modernization",
+          "legacy-migration"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-028",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "Your application allows users to upload custom data processing scripts. For security, these scripts must be executed in an isolated compute environment that is spun up on-demand and instantly destroyed after execution to prevent any cross-tenant data leakage. The execution time is typically 5 seconds. To ensure the fastest response time to the user, the compute environment must have ultra-fast 'cold start' times. Which compute mapping provides the most secure, isolated, and fastest execution environment for this scenario?",
+        "questionType": "single",
+        "options":[
+          "Deploy a Cloud Function to execute the user script, as it scales natively and executes within a secure gVisor sandbox.",
+          "Trigger a Compute Engine Shielded VM creation via API, run the script as a startup script, and use the 'delete-on-terminate' flag.",
+          "Deploy an App Engine Flexible environment, configured to spin up a new Docker container for every incoming user request.",
+          "Use a Google Kubernetes Engine (GKE) DaemonSet to run a privileged pod that executes the user scripts within different Linux namespaces."
+        ],
+        "correctAnswers":[
+          "Deploy a Cloud Function to execute the user script, as it scales natively and executes within a secure gVisor sandbox."
+        ],
+        "explanation": {
+          "general explanation": "Cloud Functions (and Cloud Run) are built on top of gVisor, a hardware-virtualized sandbox that provides defense-in-depth isolation, making it safe to execute untrusted user code (scripts). Because it is a serverless platform, instances spin up in milliseconds (ultra-fast cold starts compared to VMs) to execute the 5-second script, and the isolated container environment is safely discarded afterward, ensuring no cross-tenant leakage.",
+          "Why other options are wrong": {
+            "Trigger a Compute Engine Shielded VM creation via API, run the script as a startup script, and use the 'delete-on-terminate' flag.": "Creating a full Compute Engine VM takes 30-90 seconds. This violates the requirement for 'ultra-fast cold start times' to ensure a fast response to the user.",
+            "Deploy an App Engine Flexible environment, configured to spin up a new Docker container for every incoming user request.": "App Engine Flexible is backed by Compute Engine VMs. Scaling up takes minutes, completely failing the cold start requirement.",
+            "Use a Google Kubernetes Engine (GKE) DaemonSet to run a privileged pod that executes the user scripts within different Linux namespaces.": "Running untrusted user code in a 'privileged pod' is a catastrophic security vulnerability. Privileged pods have root access to the host node, allowing the untrusted script to easily escape the container and compromise the entire cluster."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "cloud-functions",
+          "gvisor",
+          "security",
+          "serverless"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-029",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "Your frontend web application is hosted on an External Application Load Balancer. It needs to route traffic to a backend service. This backend service consists of a cluster of virtual machines running a proprietary caching software that only communicates over HTTP. To optimize cloud costs and maximize elasticity, you want to utilize Spot VMs. Which compute and networking architecture maps perfectly to this need?",
+        "questionType": "single",
+        "options":[
+          "Deploy the backend instances in a Managed Instance Group (MIG) configured with Spot instances. Attach the MIG as the backend service to the External Application Load Balancer.",
+          "Deploy the backend instances in an Unmanaged Instance Group. Write a Cloud Function to monitor Spot VM preemption events and update the Load Balancer IP list dynamically.",
+          "Deploy the backend instances on GKE Autopilot using Spot Pods, and configure a Kubernetes Service of type ExternalName to link to the Load Balancer.",
+          "Deploy the caching software on Cloud Run, and use the 'Spot' execution tier to ensure discounted billing."
+        ],
+        "correctAnswers":[
+          "Deploy the backend instances in a Managed Instance Group (MIG) configured with Spot instances. Attach the MIG as the backend service to the External Application Load Balancer."
+        ],
+        "explanation": {
+          "general explanation": "Managed Instance Groups (MIGs) are the native Compute Engine solution for orchestrating fleets of identical VMs. MIGs natively support provisioning Spot (preemptible) VMs to achieve massive cost savings. Most importantly, MIGs integrate natively with Cloud Load Balancing. When a Spot VM is preempted, the MIG automatically spins up a replacement, and the Load Balancer instantly updates its routing pool based on the MIG's health checks, providing a seamless, elastic, cost-optimized architecture.",
+          "Why other options are wrong": {
+            "Deploy the backend instances in an Unmanaged Instance Group. Write a Cloud Function to monitor Spot VM preemption events and update the Load Balancer IP list dynamically.": "Unmanaged instance groups require manual management of the underlying VMs. Using custom functions to handle preemption replacement and LB updates is a massive anti-pattern when MIGs do this natively for free.",
+            "Deploy the backend instances on GKE Autopilot using Spot Pods, and configure a Kubernetes Service of type ExternalName to link to the Load Balancer.": "The prompt specifies 'a cluster of virtual machines', implying a non-containerized architecture. Even if containerized, an `ExternalName` service maps to an external DNS name, it does not attach pods to a GCP External Load Balancer (an Ingress or Service of type LoadBalancer would be used).",
+            "Deploy the caching software on Cloud Run, and use the 'Spot' execution tier to ensure discounted billing.": "Cloud Run is a serverless platform; there is no 'Spot' execution tier for Cloud Run. Spot pricing is for Compute Engine VMs (and GKE nodes)."
+          }
+        },
+        "difficulty": "Easy",
+        "tags":[
+          "compute-engine",
+          "mig",
+          "spot-vms",
+          "load-balancing"
+        ]
+      },
+      {
+        "id": "q-gcppca-s25-030",
+        "topicId": "gcp-pca-topic-designing-and-planning-a-cloud-solution-architecture",
+        "subTopicId": "gcp-pca-subtopic-designing-network-storage-and-compute-resources",
+        "unitId": "gcp-pca-unit-1-3-mapping-compute-needs-to-platform-products",
+        "questionText": "Your team needs to quickly deploy a simple internal dashboard application. The code is written in a popular web framework (e.g., Python Django). The team has limited DevOps experience and does not know how to write Dockerfiles, configure Kubernetes manifests, or manage virtual machines. They simply want to push their source code to a repository and have Google Cloud automatically build, deploy, and scale the web app serverlessly. Which two compute solutions map to this exact developer experience? (Choose two)",
+        "questionType": "multiple",
+        "options":[
+          "App Engine Standard",
+          "Cloud Run (deploying directly from source)",
+          "Compute Engine with a Startup Script",
+          "Google Kubernetes Engine (GKE) Autopilot",
+          "Cloud Functions (1st gen)"
+        ],
+        "correctAnswers":[
+          "App Engine Standard",
+          "Cloud Run (deploying directly from source)"
+        ],
+        "explanation": {
+          "general explanation": "Both App Engine Standard and Cloud Run (when using the 'deploy from source' feature) provide a pure PaaS/Serverless developer experience. Developers simply provide their source code (no Dockerfile required). Behind the scenes, Google Cloud uses Buildpacks to automatically detect the language (like Python), build a secure container image, deploy it, and provision a scalable HTTPS endpoint. This maps perfectly to teams with zero DevOps or containerization experience.",
+          "Why other options are wrong": {
+            "Compute Engine with a Startup Script": "While a startup script can pull code from a repo, this requires managing VMs, OS patching, load balancers, and complex MIG autoscaling. It violates the 'no virtual machines' and serverless requirements.",
+            "Google Kubernetes Engine (GKE) Autopilot": "GKE requires the team to understand containerization, write Dockerfiles, and write Kubernetes YAML manifests (Deployments, Services, Ingress), which violates the 'limited DevOps experience' constraint.",
+            "Cloud Functions (1st gen)": "While Cloud Functions deploy from source, they are designed for single-purpose, event-driven functions (snippets of code), not for hosting entire multi-route web frameworks like Django."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "app-engine",
+          "cloud-run",
+          "serverless",
+          "developer-experience"
+        ]
+      }
+    ]
+  }
+}

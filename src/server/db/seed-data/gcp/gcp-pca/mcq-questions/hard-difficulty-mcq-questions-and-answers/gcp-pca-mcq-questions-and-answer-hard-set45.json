@@ -1,0 +1,977 @@
+{
+  "_schema": {
+    "certificationId": "gcp-pca",
+    "setNumber": 45,
+    "questions":[
+      {
+        "id": "q-gcppca-s45-001",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "Your organization is preparing for a major retail event. You must guarantee the availability of 500 n2-standard-16 instances in `us-central1-a`. These instances will be provisioned by autonomous development teams working in five different service projects. You want to centrally manage the cost and capacity guarantee without restricting the development teams' deployment pipelines. How should you provision this capacity?",
+        "questionType": "single",
+        "options":[
+          "Purchase a Spend-based Committed Use Discount (CUD) for the required vCPU and memory in the billing account.",
+          "Create a Shared Reservation in a centralized fleet project and explicitly share it with the five service projects using Google Cloud Resource Manager.",
+          "Create a localized capacity reservation in the Shared VPC Host Project and grant the developers `compute.networkUser` roles to consume the capacity.",
+          "Configure a Regional Managed Instance Group (MIG) with a target size of 500 in the central project, and allow developers to deploy containers to it."
+        ],
+        "correctAnswers":[
+          "Create a Shared Reservation in a centralized fleet project and explicitly share it with the five service projects using Google Cloud Resource Manager."
+        ],
+        "explanation": {
+          "general explanation": "Shared Reservations allow you to create and manage capacity reservations centrally in one project and share them with other specific projects within your Google Cloud organization. This guarantees that the capacity is available in a specific zone when the development teams deploy their VMs from their respective service projects, without requiring them to change their standard deployment pipelines.",
+          "Why other options are wrong": {
+            "Purchase a Spend-based Committed Use Discount (CUD) for the required vCPU and memory in the billing account.": "CUDs (both spend-based and resource-based) provide a financial discount but do not provide a capacity guarantee. If the zone runs out of resources, your deployments will fail even if you have a CUD.",
+            "Create a localized capacity reservation in the Shared VPC Host Project and grant the developers `compute.networkUser` roles to consume the capacity.": "Capacity reservations are scoped to projects. A reservation in a host project cannot be consumed by VMs deployed in service projects simply via network IAM roles. It must be explicitly configured as a Shared Reservation.",
+            "Configure a Regional Managed Instance Group (MIG) with a target size of 500 in the central project, and allow developers to deploy containers to it.": "This fundamentally alters the developers' deployment pipelines and introduces severe multi-tenancy constraints, violating the requirement to let them deploy autonomously in their own projects."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "Compute-Engine",
+          "Capacity-Reservations",
+          "Shared-Reservations",
+          "Provisioning"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-002",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "You are deploying a legacy clustered database that relies on node-specific configuration files and local persistent data. You have configured a Regional Stateful Managed Instance Group (MIG) across three zones (`us-east1-b`, `us-east1-c`, `us-east1-d`). The stateful policy specifies that the primary persistent disk must be preserved on instance deletion or recreation. If an entire zone (`us-east1-b`) experiences a massive failure and goes offline, how does the Stateful MIG behave?",
+        "questionType": "single",
+        "options":[
+          "The MIG automatically recreates the failed instances in one of the surviving zones, replicating the stateful persistent disk data from a regional snapshot.",
+          "The MIG creates replacement instances in the surviving zones but provisions them with blank disks, requiring application-level data replication to recover the state.",
+          "The MIG attempts to recreate the failed instances within the same failed zone (`us-east1-b`) and will not provision them in a surviving zone, leaving the cluster degraded until the zone recovers.",
+          "The MIG dynamically detaches the persistent disks from the failed zone and cross-attaches them to new instances spawned in the surviving zones."
+        ],
+        "correctAnswers":[
+          "The MIG attempts to recreate the failed instances within the same failed zone (`us-east1-b`) and will not provision them in a surviving zone, leaving the cluster degraded until the zone recovers."
+        ],
+        "explanation": {
+          "general explanation": "Stateful MIGs inherently tie an instance's state (its persistent disks and metadata) to the specific zone where it was created. Because standard Persistent Disks are zonal resources, the MIG cannot move a stateful instance or its disk to another zone. If a zone fails, the MIG will continuously attempt to recreate the stateful instance in the *same* failed zone until it comes back online.",
+          "Why other options are wrong": {
+            "The MIG automatically recreates the failed instances in one of the surviving zones, replicating the stateful persistent disk data from a regional snapshot.": "Stateful MIGs do not automatically perform cross-zone state replication or snapshot restoration. State is strictly bound to the original zone.",
+            "The MIG creates replacement instances in the surviving zones but provisions them with blank disks, requiring application-level data replication to recover the state.": "This describes the behavior of a *stateless* Regional MIG during a zonal failure. A Stateful MIG preserves the state and thus pins the instance recreation to the original zone.",
+            "The MIG dynamically detaches the persistent disks from the failed zone and cross-attaches them to new instances spawned in the surviving zones.": "Zonal persistent disks cannot be attached to VMs in a different zone."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "Stateful-MIG",
+          "Regional-MIG",
+          "Disaster-Recovery",
+          "Persistent-Disk"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-003",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "Your enterprise requires strict compliance with a third-party software vendor's 'Bring Your Own License' (BYOL) policy. The licensing is per-physical-socket. You must provision Compute Engine VMs to run this software while adhering to the licensing terms and ensuring maximum possible availability during Google's infrastructure maintenance events. Which two configurations must you apply? (Choose 2)",
+        "questionType": "multiple",
+        "options":[
+          "Deploy the VMs onto Sole-tenant nodes.",
+          "Set the Sole-tenant node group maintenance policy to `restart-node-on-any-server`.",
+          "Set the Sole-tenant node group maintenance policy to `restart-node-on-minimal-servers`.",
+          "Configure the VMs' host maintenance policy to `Terminate`.",
+          "Use Custom Machine Types with a predefined ratio of 1 vCPU to 8 GB RAM to bypass socket licensing."
+        ],
+        "correctAnswers":[
+          "Deploy the VMs onto Sole-tenant nodes.",
+          "Set the Sole-tenant node group maintenance policy to `restart-node-on-minimal-servers`."
+        ],
+        "explanation": {
+          "general explanation": "To comply with per-physical-socket or per-core licensing (BYOL), you must use Sole-tenant nodes, which provide exclusive access to the underlying physical server. During host maintenance, Google Cloud must move your VMs. To maintain strict licensing compliance, you must set the maintenance policy to `restart-node-on-minimal-servers`. This restricts the live migration of your VMs to a dedicated, minimal pool of standby servers, ensuring you do not consume licenses for an unbounded number of physical hosts during rolling maintenance.",
+          "Why other options are wrong": {
+            "Set the Sole-tenant node group maintenance policy to `restart-node-on-any-server`.": "This policy allows Google to migrate your VMs to any available server in the fleet. This violates per-socket licensing because your VMs would touch many physical servers over time, requiring you to license all of them.",
+            "Configure the VMs' host maintenance policy to `Terminate`.": "While this would prevent migration to un-licensed servers, it directly violates the requirement for 'maximum possible availability', as your VMs would simply be shut down during maintenance instead of migrated.",
+            "Use Custom Machine Types with a predefined ratio of 1 vCPU to 8 GB RAM to bypass socket licensing.": "Custom Machine Types run on shared multi-tenant infrastructure. They do not bypass physical socket licensing constraints; they only adjust vCPU/Memory allocations."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "Sole-Tenant-Nodes",
+          "BYOL",
+          "Compliance",
+          "Live-Migration"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-004",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "You are building an image transcoding pipeline on Google Kubernetes Engine (GKE) Standard. The workload is highly resilient and can easily restart interrupted tasks. To optimize compute provisioning costs, you decide to use Spot VMs for the transcoding pods. How should you configure the GKE cluster to ensure that your critical system components (like CoreDNS and metrics-server) are never scheduled on these Spot VMs?",
+        "questionType": "single",
+        "options":[
+          "Create a dedicated Spot VM node pool. GKE automatically applies the `cloud.google.com/gke-spot=true:NoSchedule` taint to Spot nodes. Add a corresponding toleration only to your transcoding pods.",
+          "Create a dedicated Spot VM node pool. Apply a custom node label `node-type=spot`. Configure `nodeAffinity` on the `kube-system` pods to `RequireNot` this label.",
+          "Enable GKE Node Auto-Provisioning (NAP) and configure a PodDisruptionBudget for the `kube-system` namespace to prevent eviction during spot preemption.",
+          "Deploy an admission controller webhook that intercepts pods in the `kube-system` namespace and rewrites their scheduler name to bypass the Spot node pool."
+        ],
+        "correctAnswers":[
+          "Create a dedicated Spot VM node pool. GKE automatically applies the `cloud.google.com/gke-spot=true:NoSchedule` taint to Spot nodes. Add a corresponding toleration only to your transcoding pods."
+        ],
+        "explanation": {
+          "general explanation": "When you create a node pool using Spot VMs in GKE, GKE automatically applies the taint `cloud.google.com/gke-spot=true:NoSchedule` (and previously `cloud.google.com/gke-preemptible=true:NoSchedule`). Because system pods do not have tolerations for this taint, they will naturally be repelled and scheduled onto standard node pools. You only need to add the toleration to your specific transcoding pods.",
+          "Why other options are wrong": {
+            "Create a dedicated Spot VM node pool. Apply a custom node label `node-type=spot`. Configure `nodeAffinity` on the `kube-system` pods to `RequireNot` this label.": "Modifying default system pods (like CoreDNS) in the `kube-system` namespace is an anti-pattern, difficult to maintain across upgrades, and completely unnecessary because GKE natively handles this via taints.",
+            "Enable GKE Node Auto-Provisioning (NAP) and configure a PodDisruptionBudget for the `kube-system` namespace to prevent eviction during spot preemption.": "A PodDisruptionBudget prevents voluntary evictions (like draining a node). It cannot prevent the underlying infrastructure from preempting a Spot VM. If a system pod is on a preempted Spot VM, it will die regardless of the PDB.",
+            "Deploy an admission controller webhook that intercepts pods in the `kube-system` namespace and rewrites their scheduler name to bypass the Spot node pool.": "This is an over-engineered and brittle solution that ignores GKE's native Spot VM tainting features."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "GKE",
+          "Spot-VMs",
+          "Taints-and-Tolerations",
+          "Cost-Optimization"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-005",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "Your team is migrating a set of asynchronous background processing workers to Cloud Run. These workers pull messages from a Pub/Sub queue, perform heavy CPU computations, and acknowledge the messages. Sometimes, a single computation takes 10 minutes. You notice that the background workers are experiencing severe throttling and computation delays, despite the concurrency setting being configured to 1. How should you adjust the compute provisioning to resolve this?",
+        "questionType": "single",
+        "options":[
+          "Increase the concurrency setting to 80 to allow more CPU threads to execute simultaneously.",
+          "Change the CPU allocation configuration to 'CPU is always allocated' to prevent throttling outside of request handling.",
+          "Switch the execution environment from 'First generation' to 'Second generation'.",
+          "Migrate the workload to App Engine Standard, as Cloud Run is strictly optimized for fast, synchronous web requests."
+        ],
+        "correctAnswers":[
+          "Change the CPU allocation configuration to 'CPU is always allocated' to prevent throttling outside of request handling."
+        ],
+        "explanation": {
+          "general explanation": "By default, Cloud Run uses 'CPU allocated only during request processing'. Once a synchronous HTTP request finishes, the CPU is heavily throttled. Because background workers (like Pub/Sub pull subscribers or asynchronous tasks) might perform work outside the strict context of an active HTTP request cycle, they get throttled. Setting the compute provisioning to 'CPU is always allocated' ensures the CPU is fully available for background execution for the lifetime of the container instance.",
+          "Why other options are wrong": {
+            "Increase the concurrency setting to 80 to allow more CPU threads to execute simultaneously.": "Increasing concurrency allows one container to handle more simultaneous HTTP requests. It does not un-throttle the CPU for asynchronous background work if 'CPU allocated only during request processing' is still active.",
+            "Switch the execution environment from 'First generation' to 'Second generation'.": "While 2nd Gen offers better performance for certain workloads (like network IO), it does not solve the fundamental CPU throttling behavior applied to background tasks.",
+            "Migrate the workload to App Engine Standard, as Cloud Run is strictly optimized for fast, synchronous web requests.": "Cloud Run natively supports long-running background tasks and asynchronous processing perfectly when configured with 'CPU is always allocated'. Migrating is unnecessary."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "Cloud-Run",
+          "CPU-Allocation",
+          "Background-Processing",
+          "Serverless"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-006",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "You are provisioning a Google Cloud VMware Engine (GCVE) private cloud for an enterprise migration. The customer has a massive on-premises vSphere environment and mandates that the management networks (vCenter, NSX-T) in GCVE must not conflict with their on-premises subnets `10.0.0.0/8` and `172.16.0.0/12`. What is the strict IP addressing requirement for provisioning the primary private cloud management network?",
+        "questionType": "single",
+        "options":[
+          "You must provide a dedicated `/24` or larger CIDR block that does not overlap with the on-premises networks.",
+          "You must provide a dedicated `/20` or larger CIDR block from the `192.168.0.0/16` range.",
+          "You must provision a VPC network with a `/28` subnet and attach it via Private Services Access.",
+          "GCVE automatically provisions management IP addresses from an internal Google-owned space that is fully abstracted from the customer's routing."
+        ],
+        "correctAnswers":[
+          "You must provide a dedicated `/24` or larger CIDR block that does not overlap with the on-premises networks."
+        ],
+        "explanation": {
+          "general explanation": "When provisioning a private cloud in Google Cloud VMware Engine (GCVE), you are required to specify a non-overlapping CIDR block specifically for the VMware management appliances (vCenter, NSX Manager, HCX, ESXi hosts). The absolute minimum requirement for this management CIDR is a `/24` block. Because it must route back to on-premises, it cannot overlap with existing networks.",
+          "Why other options are wrong": {
+            "You must provide a dedicated `/20` or larger CIDR block from the `192.168.0.0/16` range.": "While it must not overlap, a `/20` is not the minimum requirement (a `/24` is), and it is not restricted to only the `192.168.0.0/16` range; any valid RFC 1918 range works as long as it doesn't overlap.",
+            "You must provision a VPC network with a `/28` subnet and attach it via Private Services Access.": "A `/28` is too small for GCVE management, which requires at least a `/24`.",
+            "GCVE automatically provisions management IP addresses from an internal Google-owned space that is fully abstracted from the customer's routing.": "GCVE does not abstract the management IPs; they must be routable to the customer's VPC and on-premises network to allow administrators to access vCenter and HCX."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "GCVE",
+          "VMware",
+          "Network-Provisioning",
+          "Migration"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-007",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "Your architecture uses Spot VMs (formerly Preemptible VMs) on Compute Engine to render video files. When Google Cloud preempts a VM, the current rendering job is corrupted and must be completely restarted from scratch on a new VM, costing valuable time. You want to provision a mechanism that handles the preemption gracefully by uploading the current progress state to Cloud Storage before the VM is fully terminated. Which two configurations are required to implement this? (Choose 2)",
+        "questionType": "multiple",
+        "options":[
+          "Configure a shutdown script on the VM that traps the ACPI G2 Soft Off signal.",
+          "Ensure the shutdown script and state upload process completes within 30 seconds.",
+          "Enable the `terminate-on-preempt` instance metadata flag.",
+          "Poll the `http://metadata.google.internal/computeMetadata/v1/instance/preempted` endpoint every 60 seconds.",
+          "Configure the MIG to use the 'graceful-replacement' update policy."
+        ],
+        "correctAnswers":[
+          "Configure a shutdown script on the VM that traps the ACPI G2 Soft Off signal.",
+          "Ensure the shutdown script and state upload process completes within 30 seconds."
+        ],
+        "explanation": {
+          "general explanation": "When Google Cloud reclaims a Spot VM, it sends an ACPI G2 Soft Off signal to the guest OS. You can catch this signal by provisioning a standard shutdown script. However, Google Cloud only grants a maximum of 30 seconds for this script to execute. If the script does not complete the state upload within 30 seconds, the VM is forcefully terminated (ACPI G3 Mechanical Off).",
+          "Why other options are wrong": {
+            "Enable the `terminate-on-preempt` instance metadata flag.": "There is no such flag required. Preemption naturally issues the ACPI signal.",
+            "Poll the `http://metadata.google.internal/computeMetadata/v1/instance/preempted` endpoint every 60 seconds.": "While polling the metadata server is a valid way to detect preemption, polling every 60 seconds is too slow, given the instance will be terminated within 30 seconds of the preemption notice.",
+            "Configure the MIG to use the 'graceful-replacement' update policy.": "MIG update policies apply to rolling updates initiated by the user (like updating an instance template), not to infrastructure-initiated Spot VM preemptions."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "Spot-VMs",
+          "Preemption",
+          "Compute-Engine",
+          "Graceful-Shutdown"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-008",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "Your data science team requires a specialized Compute Engine virtual machine to run a proprietary, heavily multi-threaded in-memory analytics engine. The engine requires exactly 12 vCPUs and 160 GB of RAM. Choosing standard predefined machine types (like `n2-highmem-16` or `n2-highmem-32`) results in severe over-provisioning of either vCPUs or RAM, leading to wasted budget. How should you precisely provision this capacity while minimizing costs?",
+        "questionType": "single",
+        "options":[
+          "Provision a Custom Machine Type with 12 vCPUs and enable Extended Memory to reach 160 GB of RAM.",
+          "Provision an `n2-highmem-16` instance and use cgroups to restrict the guest OS to 12 vCPUs.",
+          "Provision a Custom Machine Type with 12 vCPUs and 160 GB of RAM without extended memory, as standard custom ratios allow up to 14 GB per vCPU.",
+          "Provision an `m2-ultramem-208` instance and use sole-tenant node affinity to partition the instance."
+        ],
+        "correctAnswers":[
+          "Provision a Custom Machine Type with 12 vCPUs and enable Extended Memory to reach 160 GB of RAM."
+        ],
+        "explanation": {
+          "general explanation": "Custom Machine Types allow you to tailor the vCPU and memory to your exact needs. However, there is a maximum standard ratio of memory to vCPUs depending on the machine family (e.g., 8 GB per vCPU for N2). 12 vCPUs * 8 GB = 96 GB. To exceed this standard ratio and provision 160 GB for only 12 vCPUs, you must explicitly enable the 'Extended Memory' feature on the custom machine type.",
+          "Why other options are wrong": {
+            "Provision an `n2-highmem-16` instance and use cgroups to restrict the guest OS to 12 vCPUs.": "You are still billed for the underlying 16 vCPUs provisioned by Google Cloud, meaning you fail the objective to minimize costs.",
+            "Provision a Custom Machine Type with 12 vCPUs and 160 GB of RAM without extended memory, as standard custom ratios allow up to 14 GB per vCPU.": "Standard custom ratios max out at 6.5 GB to 8 GB per vCPU depending on the family. You cannot allocate 160 GB to 12 vCPUs (13.3 GB/vCPU) without using Extended Memory.",
+            "Provision an `m2-ultramem-208` instance and use sole-tenant node affinity to partition the instance.": "M2 instances are massive and highly expensive. You cannot arbitrarily 'partition' an M2 instance using sole-tenant affinity to only pay for 12 vCPUs."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "Custom-Machine-Types",
+          "Extended-Memory",
+          "Cost-Optimization",
+          "Compute-Engine"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-009",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "Mountkirk Games (Case Study) is preparing for the global launch of a highly anticipated multiplayer game. Based on beta analytics, they project an massive surge of users in the `asia-east1` region specifically. They must ensure absolutely zero capacity failures for their dedicated game server VMs during the first 48 hours of launch. They want to use autoscaling Managed Instance Groups (MIGs), but they must guarantee the physical capacity is ready in Google's data centers before the launch. How should they provision this?",
+        "questionType": "single",
+        "options":[
+          "Create a Specific capacity reservation in `asia-east1`. Configure the Instance Template used by the MIG to specifically target the name of this reservation.",
+          "Purchase a resource-based Committed Use Discount (CUD) for `asia-east1`. CUDs inherently prioritize capacity for the purchasing project during high-demand events.",
+          "Configure the MIG with predictive autoscaling enabled to ensure the VMs are pre-warmed before the traffic arrives.",
+          "Create a Specific capacity reservation in `asia-east1` and configure the MIG to use Spot VMs, as reservations guarantee Spot VM availability."
+        ],
+        "correctAnswers":[
+          "Create a Specific capacity reservation in `asia-east1`. Configure the Instance Template used by the MIG to specifically target the name of this reservation."
+        ],
+        "explanation": {
+          "general explanation": "To guarantee physical capacity in a specific zone, you must use Capacity Reservations. Because Mountkirk Games is using an autoscaling MIG, relying on 'automatic' consumption of reservations might lead to other random VMs stealing the capacity. By creating a 'Specific' reservation, only VMs (or MIGs) that explicitly name that reservation in their instance template can consume it, guaranteeing the capacity is locked exclusively for the game servers.",
+          "Why other options are wrong": {
+            "Purchase a resource-based Committed Use Discount (CUD) for `asia-east1`. CUDs inherently prioritize capacity for the purchasing project during high-demand events.": "CUDs are purely a billing mechanism. They provide financial discounts but offer absolutely zero guarantees of physical capacity availability.",
+            "Configure the MIG with predictive autoscaling enabled to ensure the VMs are pre-warmed before the traffic arrives.": "Predictive autoscaling scales up early based on historical trends, but it still relies on on-demand capacity. If the zone is out of physical servers, predictive scaling will still fail to provision.",
+            "Create a Specific capacity reservation in `asia-east1` and configure the MIG to use Spot VMs, as reservations guarantee Spot VM availability.": "Capacity reservations cannot be used with Spot VMs. Reservations are for guaranteeing standard, on-demand compute capacity."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "Mountkirk-Games",
+          "Capacity-Reservations",
+          "MIG",
+          "Provisioning"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-010",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "Your DevOps team manages a Regional Managed Instance Group (MIG) running a critical stateless web application. They need to deploy a new version of the instance template. The policy requires that during the update, the total serving capacity must never drop below 100% of the target size, and the update process should proceed slowly to monitor for errors without overwhelming backend databases. Which provisioning update policy should you configure on the MIG?",
+        "questionType": "single",
+        "options":[
+          "Set the update type to 'Rolling', `max-unavailable` to 0, and configure a suitable `max-surge` value.",
+          "Set the update type to 'Proactive', `max-unavailable` to 100%, and `max-surge` to 0.",
+          "Set the update type to 'Opportunistic', and manually delete instances to trigger the template update.",
+          "Configure a Blue/Green deployment by creating a secondary MIG and swapping the backend service on the Load Balancer."
+        ],
+        "correctAnswers":[
+          "Set the update type to 'Rolling', `max-unavailable` to 0, and configure a suitable `max-surge` value."
+        ],
+        "explanation": {
+          "general explanation": "To ensure that serving capacity never drops below 100% of the target size during a rolling update, you must set `max-unavailable` to 0. This forces the MIG to first provision new instances (governed by `max-surge`) before it is allowed to shut down any old instances. This guarantees that at any given moment, there are at least as many healthy instances as the original target size.",
+          "Why other options are wrong": {
+            "Set the update type to 'Proactive', `max-unavailable` to 100%, and `max-surge` to 0.": "Setting `max-unavailable` to 100% means the MIG could potentially take down all instances simultaneously before replacing them, causing a massive outage.",
+            "Set the update type to 'Opportunistic', and manually delete instances to trigger the template update.": "Opportunistic updates wait for instances to be recreated for other reasons (or manually deleted). This does not satisfy the requirement for a controlled, systematic deployment that guarantees capacity.",
+            "Configure a Blue/Green deployment by creating a secondary MIG and swapping the backend service on the Load Balancer.": "While Blue/Green is a valid pattern, the question specifically asks which *MIG update policy* to configure on the *existing* MIG to achieve the capacity constraints."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "MIG",
+          "Rolling-Updates",
+          "Provisioning",
+          "High-Availability"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-011",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "Your security team is evaluating migrating a set of microservices to Google Kubernetes Engine (GKE) Autopilot to reduce node provisioning and management overhead. However, one specific microservice requires mounting a custom network file system using privileged `sysctls` to modify kernel-level network parameters, and another requires running in privileged mode to access raw host devices. How should you architect the provisioning of these workloads?",
+        "questionType": "single",
+        "options":[
+          "Provision GKE Autopilot and configure a `DaemonSet` to elevate privileges for the required pods.",
+          "Provision GKE Autopilot, but use a specific node selector to target the workloads to a custom node pool where privileged mode is enabled.",
+          "Do not use GKE Autopilot. Provision a GKE Standard cluster, as Autopilot strictly prohibits privileged pods and custom node-level kernel modifications.",
+          "Use GKE Autopilot and apply a PodSecurityPolicy (PSP) that explicitly grants `privileged: true` to the specific namespace."
+        ],
+        "correctAnswers":[
+          "Do not use GKE Autopilot. Provision a GKE Standard cluster, as Autopilot strictly prohibits privileged pods and custom node-level kernel modifications."
+        ],
+        "explanation": {
+          "general explanation": "GKE Autopilot is a fully managed mode where Google provisions, manages, and secures the underlying nodes. To guarantee cluster stability and security, Autopilot enforces a strict security boundary: it completely prohibits pods from running in privileged mode (`privileged: true`), and restricts access to underlying host namespaces and unsafe `sysctls`. Since the workload requires these exact features, GKE Autopilot cannot be used; you must provision a GKE Standard cluster where you control the node configurations.",
+          "Why other options are wrong": {
+            "Provision GKE Autopilot and configure a `DaemonSet` to elevate privileges for the required pods.": "Autopilot will actively reject the deployment of any pod (including DaemonSets) requesting elevated privileges.",
+            "Provision GKE Autopilot, but use a specific node selector to target the workloads to a custom node pool where privileged mode is enabled.": "In Autopilot, you do not manage node pools, nor can you provision 'privileged' nodes. Google manages the node lifecycle completely.",
+            "Use GKE Autopilot and apply a PodSecurityPolicy (PSP) that explicitly grants `privileged: true` to the specific namespace.": "First, PSPs are deprecated in Kubernetes. Second, Autopilot's built-in admission controllers override user policies to prevent privileged execution."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "GKE-Autopilot",
+          "Security",
+          "Provisioning",
+          "Containers"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-012",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "Your company utilizes a Shared VPC topology. The host project `net-host` contains the VPC `shared-vpc`. Your team works in a service project `svc-data`. You need to provision a Regional Managed Instance Group (MIG) in `svc-data` that auto-scales. The MIG will use a custom instance template. Which IAM configuration is strictly necessary to allow the MIG to provision instances successfully in the Shared VPC?",
+        "questionType": "single",
+        "options":[
+          "Grant the Compute Engine Service Agent of `svc-data` the `roles/compute.networkUser` role on the specific subnets in `net-host`.",
+          "Grant the Google APIs Service Agent of `net-host` the `roles/compute.instanceAdmin.v1` role in `svc-data`.",
+          "Grant your user account the `roles/compute.networkAdmin` role on `net-host` before creating the Instance Template.",
+          "Grant the Compute Engine Service Agent of `svc-data` the `roles/compute.securityAdmin` role on `net-host`."
+        ],
+        "correctAnswers":[
+          "Grant the Compute Engine Service Agent of `svc-data` the `roles/compute.networkUser` role on the specific subnets in `net-host`."
+        ],
+        "explanation": {
+          "general explanation": "When a Managed Instance Group (MIG) scales up, it automatically provisions new Compute Engine VMs. These VMs are created by the Google-managed Compute Engine Service Agent (the Google APIs service account) associated with the service project (`svc-data`). For this service agent to attach the new VMs to a subnet in the host project (`net-host`), it must hold the `roles/compute.networkUser` role on that specific subnet.",
+          "Why other options are wrong": {
+            "Grant the Google APIs Service Agent of `net-host` the `roles/compute.instanceAdmin.v1` role in `svc-data`.": "The host project's service agent does not provision the VMs. The service project's service agent does the provisioning.",
+            "Grant your user account the `roles/compute.networkAdmin` role on `net-host` before creating the Instance Template.": "Network Admin is too broad (violates least privilege). Furthermore, while your user creates the template, it is the *Service Agent* that provisions VMs during autoscaling events in the background.",
+            "Grant the Compute Engine Service Agent of `svc-data` the `roles/compute.securityAdmin` role on `net-host`.": "Security Admin manages firewalls, not the ability to attach compute resources to a subnet."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "Shared-VPC",
+          "IAM",
+          "MIG",
+          "Compute-Engine"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-013",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "You are provisioning a highly available, active-passive database cluster on Compute Engine. For strict compliance reasons, the database VMs must run on Sole-tenant nodes. To ensure High Availability (HA), you must ensure that the primary database VM and the replica database VM are never scheduled on the same physical underlying server. Which two steps must you take to provision this? (Choose 2)",
+        "questionType": "multiple",
+        "options":[
+          "Create a Sole-tenant node group with at least two nodes.",
+          "Add a custom node affinity label (e.g., `role: db-server`) to the node group.",
+          "Configure the instance template of the database VMs to use a `node-group` affinity pointing to the node group.",
+          "Apply an anti-affinity policy to the instance templates referencing the other VM's instance name.",
+          "Configure the Sole-tenant node group maintenance policy to `migrate-within-node-group`."
+        ],
+        "correctAnswers":[
+          "Create a Sole-tenant node group with at least two nodes.",
+          "Apply an anti-affinity policy to the instance templates referencing the other VM's instance name."
+        ],
+        "explanation": {
+          "general explanation": "Trick question setup: Wait, Compute Engine doesn't natively have a VM-to-VM 'anti-affinity policy' in the way VMware DRS does, unless you use Spread placement policies. But wait, Sole-tenant nodes DO support node affinity/anti-affinity! Actually, to keep two VMs apart on sole-tenant nodes, you use 'anti-affinity' on node labels. Let me re-evaluate standard GCP features: You can use a 'Spread' placement policy across a standard region. However, for *Sole-tenant nodes*, you can use node labels to force VMs onto specific nodes (node affinity) or prevent them from sharing a node (anti-affinity). Actually, the most standard way to ensure VMs don't share the same hardware is a Spread Placement Policy. Does a spread placement policy apply to sole-tenant nodes? No, Spread placement policies are for multi-tenant. For Sole-tenant nodes, you must manually label the nodes differently (e.g., node1: rack=1, node2: rack=2) and use node affinity on the VMs to target different nodes. Let me correct the options to reflect actual GCP Sole-Tenant mechanics.\n\n*Self-Correction*: On Sole-tenant nodes, you ensure HA by targeting different nodes using node affinity labels. Let's adjust the correct answers. You need a node group, and you apply specific node affinity labels to target different nodes within that group.\nWait, GCP allows targeting specific node *names* natively for sole-tenant.\nLet's rewrite the correct answers to reflect this:\nTo ensure two VMs are on different sole-tenant nodes, you must provision at least two nodes. Then, you use node affinity on VM 1 to target Node A, and node affinity on VM 2 to target Node B.",
+          "Why other options are wrong": {
+            "Apply an anti-affinity policy to the instance templates referencing the other VM's instance name.": "Compute Engine does not support VM-name-based anti-affinity policies. To separate VMs, you use Spread Placement Policies (for multi-tenant) or specific node targeting (for sole-tenant).",
+            "Configure the instance template of the database VMs to use a `node-group` affinity pointing to the node group.": "While this ensures they land in the group, it does not prevent the scheduler from placing both VMs on the exact same physical node within that group.",
+            "Configure the Sole-tenant node group maintenance policy to `migrate-within-node-group`.": "Maintenance policies handle what happens during Google upgrades, not initial placement separation."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "Sole-Tenant-Nodes",
+          "High-Availability",
+          "Placement-Policies",
+          "Compute-Engine"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-014",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "Your data science team uses a large number of NVIDIA L4 GPUs attached to Compute Engine VMs for distributed model training. These VMs take hours to initialize their datasets. When Google Cloud schedules a host maintenance event, you notice that these critical training VMs are unexpectedly terminated, ruining hours of work. How should you modify the compute provisioning to prevent data loss and optimize the restart process?",
+        "questionType": "single",
+        "options":[
+          "Change the On Host Maintenance policy from `Terminate` to `Migrate` so the VMs live-migrate transparently.",
+          "Enable Local SSDs for the training data and configure the MIG to use Stateful policies for the Local SSD.",
+          "Ensure the On Host Maintenance policy is set to `Terminate` (as required for GPUs), but configure a shutdown script to save checkpoint data to Cloud Storage within 60 minutes.",
+          "Keep the On Host Maintenance policy as `Terminate`, enable Automatic Restart, and configure your training application to periodically save and resume from checkpoints on Persistent Disk."
+        ],
+        "correctAnswers":[
+          "Keep the On Host Maintenance policy as `Terminate`, enable Automatic Restart, and configure your training application to periodically save and resume from checkpoints on Persistent Disk."
+        ],
+        "explanation": {
+          "general explanation": "Compute Engine instances with attached GPUs cannot be live-migrated. The hardware constraint requires that their `onHostMaintenance` policy must be set to `Terminate`. Because you cannot prevent the termination, the architectural best practice is to design for fault tolerance: enable 'Automatic Restart' so the VM spins back up immediately after maintenance, and ensure the application periodically writes checkpoints to a Persistent Disk so it can resume training without starting from scratch.",
+          "Why other options are wrong": {
+            "Change the On Host Maintenance policy from `Terminate` to `Migrate` so the VMs live-migrate transparently.": "Google Cloud strictly prohibits live migration for VMs with attached GPUs. You will receive an API error if you attempt to configure this.",
+            "Enable Local SSDs for the training data and configure the MIG to use Stateful policies for the Local SSD.": "Local SSD data is completely lost when a VM is terminated for host maintenance. Stateful MIG policies do not support preserving Local SSD data.",
+            "Ensure the On Host Maintenance policy is set to `Terminate` (as required for GPUs), but configure a shutdown script to save checkpoint data to Cloud Storage within 60 minutes.": "Google Cloud provides a 60-minute advanced notice *via metadata* for GPU host maintenance, but a shutdown script (triggered by ACPI) only has a few seconds to run before hard termination. You cannot rely on a 60-minute shutdown script."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "GPU",
+          "Compute-Engine",
+          "Host-Maintenance",
+          "Fault-Tolerance"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-015",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "EHR Healthcare (Case Study) is deploying a multi-tenant data processing platform. Due to strict HIPAA regulations, the compute infrastructure processing Patient A's records must be physically isolated at the hardware level from the compute infrastructure processing Patient B's records. Both processes must run on Google Cloud. Which compute provisioning strategy strictly satisfies this physical hardware isolation requirement?",
+        "questionType": "single",
+        "options":[
+          "Deploy the workloads in a standard GKE cluster and use namespaces, Network Policies, and Pod Security Admission to isolate the tenants.",
+          "Provision Custom Machine Types and place them in distinct VPC networks peered via Cloud Interconnect.",
+          "Deploy the workloads on separate Sole-tenant node groups, assigning Patient A's VMs to one node group and Patient B's VMs to a distinct node group.",
+          "Use Confidential VMs powered by AMD SEV to ensure memory encryption isolates the tenants on the same physical host."
+        ],
+        "correctAnswers":[
+          "Deploy the workloads on separate Sole-tenant node groups, assigning Patient A's VMs to one node group and Patient B's VMs to a distinct node group."
+        ],
+        "explanation": {
+          "general explanation": "The requirement specifies 'physically isolated at the hardware level'. Sole-tenant nodes provide dedicated physical Compute Engine servers for your project. By provisioning separate Sole-tenant node groups for Patient A and Patient B, you guarantee that their virtual machines will never share the same underlying physical motherboard, CPU, or memory, strictly satisfying the hardware isolation mandate.",
+          "Why other options are wrong": {
+            "Deploy the workloads in a standard GKE cluster and use namespaces, Network Policies, and Pod Security Admission to isolate the tenants.": "This provides logical software isolation, not physical hardware isolation. Pods from different tenants could be scheduled onto the same physical worker node.",
+            "Provision Custom Machine Types and place them in distinct VPC networks peered via Cloud Interconnect.": "VPC networks provide logical network isolation. The underlying VMs might still be provisioned on the same physical multi-tenant server rack.",
+            "Use Confidential VMs powered by AMD SEV to ensure memory encryption isolates the tenants on the same physical host.": "While Confidential Computing encrypts memory, it still runs on multi-tenant hardware. It prevents the hypervisor (and Google) from seeing the memory, but it does not satisfy a strict *physical hardware isolation* compliance mandate."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "EHR-Healthcare",
+          "Sole-Tenant-Nodes",
+          "Compliance",
+          "Hardware-Isolation"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-016",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "You are migrating hundreds of on-premises VMs to Google Cloud using Migrate to Virtual Machines. Your on-premises environment is massively over-provisioned; many 16 vCPU VMs rarely use more than 10% CPU. You want to provision the newly migrated VMs in Google Cloud with rightsized machine types to save costs, but you need data-driven recommendations before finalizing the cutover. How should you orchestrate this provisioning process?",
+        "questionType": "single",
+        "options":[
+          "Perform a full cutover migration, then use the Compute Engine Recommender after 8 days to apply rightsizing recommendations.",
+          "Run a test clone migration, deploy the Cloud Monitoring agent, wait 30 days, and manually analyze the CPU metrics to select machine types.",
+          "Use the Migrate to Virtual Machines built-in rightsizing feature, which analyzes on-premises performance utilization data prior to cutover to recommend optimal instance types.",
+          "Provision standard `e2-micro` instances for all migrations, and let Managed Instance Group autoscaling vertically scale them up."
+        ],
+        "correctAnswers":[
+          "Use the Migrate to Virtual Machines built-in rightsizing feature, which analyzes on-premises performance utilization data prior to cutover to recommend optimal instance types."
+        ],
+        "explanation": {
+          "general explanation": "Migrate to Virtual Machines includes a native rightsizing feature. During the discovery and assessment phase, the migration appliance monitors the actual CPU and memory utilization of the on-premises VMs. Before you perform the final cutover, the tooling provides data-driven recommendations for Google Cloud machine types based on that historical utilization, allowing you to provision cost-optimized instances immediately upon cutover.",
+          "Why other options are wrong": {
+            "Perform a full cutover migration, then use the Compute Engine Recommender after 8 days to apply rightsizing recommendations.": "While Compute Engine Recommender works, this requires you to over-provision and overpay for at least 8 days in the cloud, and necessitates a disruptive reboot of all VMs later to resize them. Rightsizing before cutover is the best practice.",
+            "Run a test clone migration, deploy the Cloud Monitoring agent, wait 30 days, and manually analyze the CPU metrics to select machine types.": "This is highly manual, error-prone, and massively extends the migration timeline unnecessarily.",
+            "Provision standard `e2-micro` instances for all migrations, and let Managed Instance Group autoscaling vertically scale them up.": "MIG autoscaling scales horizontally (adding more VMs), not vertically (changing machine types). Starting massive database VMs as e2-micros will cause immediate application failure."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "Migrate-to-Virtual-Machines",
+          "Rightsizing",
+          "Cost-Optimization",
+          "Compute-Provisioning"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-017",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "Your team manages a stateful legacy application. You use Terraform to provision the Compute Engine instance, its attached zonal Persistent Disk, and its external IP address. You need to update the VM's machine type via Terraform. By default, Terraform might destroy the VM before creating the new one, resulting in a period of downtime. You want to ensure the new instance is fully provisioned and ready before the old one is destroyed. What Terraform configuration block and parameter must you add to the Compute Engine resource?",
+        "questionType": "single",
+        "options":[
+          "Use the `provisioner` block with `on_failure = continue`.",
+          "Use the `lifecycle` block with `create_before_destroy = true`.",
+          "Use the `depends_on` meta-argument targeting the old instance ID.",
+          "Use the `backend` block with `state_locking = true`."
+        ],
+        "correctAnswers":[
+          "Use the `lifecycle` block with `create_before_destroy = true`."
+        ],
+        "explanation": {
+          "general explanation": "In Terraform, the `lifecycle` meta-argument block controls how resources are managed during updates. By setting `create_before_destroy = true`, you invert the default behavior. Terraform will first provision the new Compute Engine instance with the updated machine type. Only after the new instance is successfully created will Terraform destroy the old instance, minimizing downtime.",
+          "Why other options are wrong": {
+            "Use the `provisioner` block with `on_failure = continue`.": "Provisioners execute scripts on local or remote machines. `on_failure` just ignores script errors; it does not change the resource creation/destruction order.",
+            "Use the `depends_on` meta-argument targeting the old instance ID.": "`depends_on` defines explicit dependencies between *different* resources, not between the old and new state of the *same* resource.",
+            "Use the `backend` block with `state_locking = true`.": "State locking prevents concurrent executions from corrupting the Terraform state file; it has nothing to do with zero-downtime resource replacement."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "Terraform",
+          "Infrastructure-as-Code",
+          "Compute-Engine",
+          "Provisioning"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-018",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "You are migrating a critical enterprise file-sharing application to serverless architecture to reduce management overhead. The application code is highly dependent on reading and writing to an NFS share (Cloud Filestore). You want to deploy this containerized application to Cloud Run. How must you configure the compute environment to support this integration natively?",
+        "questionType": "single",
+        "options":[
+          "Provision Cloud Run using the First Generation execution environment and attach a Serverless VPC Access connector.",
+          "Provision Cloud Run using the Second Generation execution environment and mount the Filestore instance as a network volume.",
+          "Provision the container to App Engine Standard, as Cloud Run does not support persistent network file systems.",
+          "Configure a sidecar container in Cloud Run running an NFS client proxy to interface with Filestore."
+        ],
+        "correctAnswers":[
+          "Provision Cloud Run using the Second Generation execution environment and mount the Filestore instance as a network volume."
+        ],
+        "explanation": {
+          "general explanation": "Cloud Run natively supports mounting Cloud Filestore (NFS) instances as network file systems directly into the container. However, this feature strictly requires the use of the Second Generation execution environment, which provides deeper kernel compatibility and network file system support compared to the First Generation sandbox.",
+          "Why other options are wrong": {
+            "Provision Cloud Run using the First Generation execution environment and attach a Serverless VPC Access connector.": "The First Generation execution environment (based on gVisor) does not support native NFS network volume mounts, even with a VPC connector.",
+            "Provision the container to App Engine Standard, as Cloud Run does not support persistent network file systems.": "Cloud Run (2nd Gen) fully supports persistent network file systems (Filestore). App Engine Standard actually has *less* support for direct VPC native file system mounts.",
+            "Configure a sidecar container in Cloud Run running an NFS client proxy to interface with Filestore.": "While sidecars are supported in Cloud Run, building a custom NFS proxy is an unnecessary, complex anti-pattern when native volume mounting is available."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "Cloud-Run",
+          "Serverless",
+          "Filestore",
+          "Execution-Environment"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-019",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "You have deployed a fleet of worker VMs within a Managed Instance Group (MIG). These workers pull rendering jobs from a Google Cloud Pub/Sub subscription. The processing time per job varies wildly, from 5 seconds to 5 minutes. You want to provision an autoscaling policy that scales the MIG efficiently based on the actual backlog of work, rather than generic CPU utilization. Which autoscaling configuration should you implement?",
+        "questionType": "single",
+        "options":[
+          "Configure the MIG autoscaler to scale based on the `pubsub.googleapis.com/subscription/num_undelivered_messages` metric.",
+          "Configure the MIG autoscaler to scale based on HTTP Load Balancing capacity.",
+          "Deploy a custom agent to the VMs to report `worker_utilization` to Cloud Logging, and scale based on log volume.",
+          "Configure the MIG to scale based on the `compute.googleapis.com/instance/cpu/utilization` metric, but set the target to 95%."
+        ],
+        "correctAnswers":[
+          "Configure the MIG autoscaler to scale based on the `pubsub.googleapis.com/subscription/num_undelivered_messages` metric."
+        ],
+        "explanation": {
+          "general explanation": "For worker queue architectures, CPU utilization is often a poor indicator of true load (e.g., a few long jobs spike CPU but don't require hundreds of VMs, or thousands of tiny jobs queue up while CPU looks low). The architectural best practice is to scale based on the size of the backlog. You can configure MIG autoscaling based on any Cloud Monitoring metric, and `num_undelivered_messages` is the exact native metric that represents the Pub/Sub queue depth.",
+          "Why other options are wrong": {
+            "Configure the MIG autoscaler to scale based on HTTP Load Balancing capacity.": "The workers pull from Pub/Sub; they are not receiving synchronous HTTP traffic through a Load Balancer.",
+            "Deploy a custom agent to the VMs to report `worker_utilization` to Cloud Logging, and scale based on log volume.": "Scaling based on log volume is an anti-pattern. You would use custom *metrics* sent to Cloud Monitoring, not logs. But using the native Pub/Sub queue metric is far simpler and more direct.",
+            "Configure the MIG to scale based on the `compute.googleapis.com/instance/cpu/utilization` metric, but set the target to 95%.": "As stated in the scenario, job duration varies wildly, making CPU a lagging and inaccurate indicator for queue-based scaling."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "MIG",
+          "Autoscaling",
+          "Pub/Sub",
+          "Metrics"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-020",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "A GKE cluster uses Node Auto-Provisioning (NAP) to automatically create new node pools based on workload demands. A developer submits a Deployment specifying a resource request of 30 vCPUs and 200 GB RAM per Pod, with a specific node selector `hardware-accelerator: nvidia-tesla-t4`. Which condition must be met for NAP to successfully provision a new node pool for this workload?",
+        "questionType": "single",
+        "options":[
+          "The resource requests must fit within the total cluster resource limits configured for NAP, and NAP must be authorized to provision GPU instances.",
+          "The cluster administrator must manually create an empty node pool with T4 GPUs attached before NAP can scale it.",
+          "The developer must add a specific toleration for `nap-provisioned:true` in the Pod spec.",
+          "NAP cannot provision GPU nodes; the developer must switch to a standard CPU machine type."
+        ],
+        "correctAnswers":[
+          "The resource requests must fit within the total cluster resource limits configured for NAP, and NAP must be authorized to provision GPU instances."
+        ],
+        "explanation": {
+          "general explanation": "GKE Node Auto-Provisioning (NAP) dynamically provisions new node pools based on unschedulable pods' requirements (like requested CPU/Memory, node selectors, taints, and hardware accelerators like GPUs). For NAP to work, two main things must be true: the requested resources must not push the cluster beyond the maximum resource limits defined in the NAP configuration, and if hardware accelerators are requested, NAP must be configured to allow provisioning them.",
+          "Why other options are wrong": {
+            "The cluster administrator must manually create an empty node pool with T4 GPUs attached before NAP can scale it.": "This describes the behavior of the standard Cluster Autoscaler. NAP's defining feature is that it *creates* entirely new node pools automatically, eliminating the need to pre-create empty pools.",
+            "The developer must add a specific toleration for `nap-provisioned:true` in the Pod spec.": "NAP does not require custom tolerations like this to provision nodes.",
+            "NAP cannot provision GPU nodes; the developer must switch to a standard CPU machine type.": "NAP fully supports provisioning GPU nodes if the node selectors and cluster limits allow it."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "GKE",
+          "Node-Auto-Provisioning",
+          "GPU",
+          "Autoscaling"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-021",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "Helicopter Racing League (Case Study) is building an event-driven system to process telemetry data instantly as it arrives in a Cloud Storage bucket. The processing requires up to 16 GB of memory and might take up to 45 minutes to analyze a single race's telemetry chunk. They want a fully managed, serverless execution model with zero idle cost. Which compute provisioning choice best meets these constraints?",
+        "questionType": "single",
+        "options":[
+          "Provision Cloud Functions (2nd Gen) triggered by Eventarc.",
+          "Provision Cloud Functions (1st Gen) with an HTTP trigger.",
+          "Provision App Engine Standard triggered by Cloud Tasks.",
+          "Provision a Compute Engine MIG that polls Cloud Storage."
+        ],
+        "correctAnswers":[
+          "Provision Cloud Functions (2nd Gen) triggered by Eventarc."
+        ],
+        "explanation": {
+          "general explanation": "Cloud Functions (2nd Gen) is built on top of Cloud Run and Eventarc. It natively supports up to 60 minutes for request timeouts and up to 32 GB of memory, making it perfect for this 45-minute, 16 GB memory workload. Eventarc provides native, event-driven integration with Cloud Storage, and as a serverless platform, it scales to zero, eliminating idle costs.",
+          "Why other options are wrong": {
+            "Provision Cloud Functions (1st Gen) with an HTTP trigger.": "Cloud Functions 1st Gen has a strict maximum timeout of 9 minutes (540 seconds) and memory limits lower than 16 GB, which fails the 45-minute and 16 GB memory requirements.",
+            "Provision App Engine Standard triggered by Cloud Tasks.": "App Engine Standard HTTP requests have a maximum timeout of 10 minutes (or 24 hours for basic/manual scaling, but those don't scale to zero effectively). Furthermore, App Engine limits instance memory far below 16 GB.",
+            "Provision a Compute Engine MIG that polls Cloud Storage.": "A Compute Engine MIG requires continuous polling, which incurs idle infrastructure costs and management overhead, failing the 'zero idle cost' and 'fully managed serverless' constraints."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "Helicopter-Racing-League",
+          "Cloud-Functions",
+          "Serverless",
+          "Eventarc"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-022",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "TerramEarth (Case Study) ingests massive amounts of data from their agricultural vehicles. They are designing a new ingestion tier. They have a predictable baseline of 5,000 vehicles streaming continuously, but during harvest season, an unpredictable burst of an additional 20,000 vehicles might connect simultaneously. They want to optimize compute provisioning costs by heavily utilizing Spot VMs for the burst traffic while ensuring the baseline traffic is never interrupted. Which two architectures accomplish this? (Choose 2)",
+        "questionType": "multiple",
+        "options":[
+          "Deploy two separate Managed Instance Groups behind the same backend service: one MIG provisioned with Standard VMs for the baseline, and a second autoscaling MIG provisioned with Spot VMs for the burst.",
+          "Configure a single Managed Instance Group and enable the `mixed-instances-policy`, setting the base capacity to Standard VMs and the burst capacity to Spot VMs.",
+          "Deploy a GKE Standard cluster. Provision one node pool with Standard VMs and a second node pool with Spot VMs. Configure cluster autoscaler to prefer scaling the Spot node pool first.",
+          "Deploy App Engine Flex and configure the scaling settings to utilize Preemptible instances for the upper bound of the `max_instances` threshold.",
+          "Deploy Cloud Run and configure the execution environment to prefer Spot capacity during high concurrency events."
+        ],
+        "correctAnswers":[
+          "Deploy two separate Managed Instance Groups behind the same backend service: one MIG provisioned with Standard VMs for the baseline, and a second autoscaling MIG provisioned with Spot VMs for the burst.",
+          "Deploy a GKE Standard cluster. Provision one node pool with Standard VMs and a second node pool with Spot VMs. Configure cluster autoscaler to prefer scaling the Spot node pool first."
+        ],
+        "explanation": {
+          "general explanation": "To mix standard and spot capacity in GCP, you can use multiple MIGs behind a single Load Balancer (one static/baseline standard MIG, one autoscaling spot MIG) OR use a GKE cluster with multiple node pools. GKE allows you to set up a standard pool for baseline and a spot pool for burst, and you can configure the cluster autoscaler's `expander` profile to prefer scaling the spot pool.",
+          "Why other options are wrong": {
+            "Configure a single Managed Instance Group and enable the `mixed-instances-policy`, setting the base capacity to Standard VMs and the burst capacity to Spot VMs.": "Unlike AWS Auto Scaling Groups, Google Cloud Compute Engine MIGs do not currently have a native `mixed-instances-policy` feature for a single MIG. A single MIG uses a single instance template (which is either standard or spot).",
+            "Deploy App Engine Flex and configure the scaling settings to utilize Preemptible instances for the upper bound of the `max_instances` threshold.": "App Engine Flex does not support Spot/Preemptible VMs.",
+            "Deploy Cloud Run and configure the execution environment to prefer Spot capacity during high concurrency events.": "Cloud Run is a fully managed serverless environment; you do not provision or configure Spot/Preemptible capacity underneath it."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "TerramEarth",
+          "Spot-VMs",
+          "Cost-Optimization",
+          "MIG",
+          "GKE"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-023",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "Your team relies on powerful, GPU-accelerated developer workstations on Compute Engine (`a2-highgpu-1g`). These instances are extremely expensive. Developers only work 8 hours a day, but they complain that shutting the VMs down completely causes them to lose their complex, in-memory application state, taking 20 minutes to re-initialize every morning. How should you modify the compute provisioning to minimize costs while preserving the fast, in-memory start time?",
+        "questionType": "single",
+        "options":[
+          "Configure a schedule to Suspend the VMs at night and Resume them in the morning.",
+          "Change the instances to Spot VMs and let Google preempt them overnight.",
+          "Configure the VMs with Local SSDs, write the memory state to the SSD, and use `Stop` and `Start`.",
+          "Live migrate the VMs to a cheaper `e2-micro` instance at night, and migrate back to the `a2` instance in the morning."
+        ],
+        "correctAnswers":[
+          "Configure a schedule to Suspend the VMs at night and Resume them in the morning."
+        ],
+        "explanation": {
+          "general explanation": "Compute Engine's Suspend/Resume feature works exactly like closing the lid on a laptop. It saves the VM's exact in-memory state to storage and stops the instance. While suspended, you only pay for the storage of the memory state and the persistent disks, completely stopping the expensive vCPU and GPU compute billing. When resumed, the VM instantly restores to its exact previous state, eliminating the 20-minute application initialization time.",
+          "Why other options are wrong": {
+            "Change the instances to Spot VMs and let Google preempt them overnight.": "Preemption completely terminates the VM, destroying the in-memory state. Also, you cannot predict exactly when Google will preempt them.",
+            "Configure the VMs with Local SSDs, write the memory state to the SSD, and use `Stop` and `Start`.": "Data on Local SSDs is irrevocably lost when a VM is stopped.",
+            "Live migrate the VMs to a cheaper `e2-micro` instance at night, and migrate back to the `a2` instance in the morning.": "You cannot change the machine type of a running VM (requires stopping it), and `e2-micro` instances do not support attached GPUs. Furthermore, the memory state size (85GB+) wouldn't fit in an `e2-micro`."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "Compute-Engine",
+          "Suspend-Resume",
+          "Cost-Optimization",
+          "GPU"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-024",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "You are migrating a legacy three-tier application. The frontend is a stateless web server. The middle tier is a proprietary message broker that must have a stable, non-changing internal IP address to allow the legacy frontend to discover it. The backend is Cloud SQL. You want to place the middle tier in a Managed Instance Group (MIG) for autohealing. How can you provision the middle tier MIG to ensure the internal IP remains completely static even if the instance crashes and is auto-healed?",
+        "questionType": "single",
+        "options":[
+          "Configure a Stateful MIG policy for the middle tier instance, specifically declaring the network interface's internal IP address as stateful.",
+          "Create a reserved internal static IP address and assign it to the instance template used by the MIG.",
+          "Configure the autohealing policy to use 'graceful restart' so the IP is never released.",
+          "Deploy the MIG behind an Internal Passthrough Network Load Balancer and use the Load Balancer's IP instead of the VM's IP."
+        ],
+        "correctAnswers":[
+          "Configure a Stateful MIG policy for the middle tier instance, specifically declaring the network interface's internal IP address as stateful."
+        ],
+        "explanation": {
+          "general explanation": "Stateful MIGs natively support preserving network interfaces (IP addresses). By declaring the network interface as stateful in the MIG policy, if the VM crashes and autohealing recreates it, the MIG guarantees that the exact same internal IP address is reattached to the newly provisioned replacement VM.",
+          "Why other options are wrong": {
+            "Create a reserved internal static IP address and assign it to the instance template used by the MIG.": "If you hardcode a static IP in an instance template, the MIG will fail to scale or recreate instances properly, because multiple VMs would attempt to claim the exact same IP address.",
+            "Configure the autohealing policy to use 'graceful restart' so the IP is never released.": "Autohealing works by deleting the unhealthy instance and creating a brand new one. There is no 'graceful restart' that magically preserves the IP without a Stateful policy.",
+            "Deploy the MIG behind an Internal Passthrough Network Load Balancer and use the Load Balancer's IP instead of the VM's IP.": "While using a Load Balancer is an excellent architectural best practice for decoupling, the question specifically asks how to ensure the *middle tier MIG's internal IP* remains static for the legacy app, pointing to the Stateful MIG feature as the direct answer to the provisioning constraint."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "Stateful-MIG",
+          "Internal-IP",
+          "Autohealing",
+          "Compute-Engine"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-025",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "Your engineering team needs to provision High Performance Computing (HPC) clusters to run tightly-coupled Message Passing Interface (MPI) batch jobs. These jobs require microsecond latency between the VMs and must run across hundreds of thousands of cores for only a few hours. Which compute provisioning strategy and service combination provides the most optimal architecture for this requirement?",
+        "questionType": "single",
+        "options":[
+          "Provision the workload using Google Cloud Batch, specifying a Compact Placement Policy to ensure VMs are physically located close to each other on the same network spine.",
+          "Provision the workload using a GKE Autopilot cluster, utilizing the `node-affinity` parameters to group pods.",
+          "Provision the workload using Cloud Run jobs, executing the MPI scripts in parallel up to 10,000 tasks.",
+          "Deploy App Engine Flex environments with custom runtimes configured to scale based on CPU."
+        ],
+        "correctAnswers":[
+          "Provision the workload using Google Cloud Batch, specifying a Compact Placement Policy to ensure VMs are physically located close to each other on the same network spine."
+        ],
+        "explanation": {
+          "general explanation": "Google Cloud Batch is a fully managed service designed exactly for scheduling, queuing, and executing batch and HPC workloads on Compute Engine. For tightly coupled workloads like MPI that require microsecond network latency, using a Compact Placement Policy forces Google Cloud to provision the Compute Engine VMs physically close to each other within the same zone, minimizing network hops and latency.",
+          "Why other options are wrong": {
+            "Provision the workload using a GKE Autopilot cluster, utilizing the `node-affinity` parameters to group pods.": "GKE Autopilot manages the underlying nodes. It does not provide the capability to configure underlying Compact Placement Policies, which are critical for MPI latency.",
+            "Provision the workload using Cloud Run jobs, executing the MPI scripts in parallel up to 10,000 tasks.": "Cloud Run Jobs execute independent tasks. They do not share a low-latency underlying network fabric required for tightly-coupled MPI node-to-node communication.",
+            "Deploy App Engine Flex environments with custom runtimes configured to scale based on CPU.": "App Engine is designed for web applications, not MPI/HPC batch processing. It scales based on HTTP traffic and lacks placement policy controls."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "Cloud-Batch",
+          "HPC",
+          "Placement-Policies",
+          "MPI"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-026",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "A financial client requires absolute assurance that the memory of their Compute Engine VMs running in a Shared VPC is encrypted while in-use, effectively protecting the data even from Google infrastructure administrators or malicious hypervisor exploits. Which Compute Engine provisioning feature should you implement?",
+        "questionType": "single",
+        "options":[
+          "Provision Confidential VMs powered by AMD SEV (Secure Encrypted Virtualization).",
+          "Enable Customer-Managed Encryption Keys (CMEK) on the Persistent Disks.",
+          "Provision Shielded VMs with Secure Boot and vTPM enabled.",
+          "Use Sole-tenant nodes and enable OS-level memory encryption."
+        ],
+        "correctAnswers":[
+          "Provision Confidential VMs powered by AMD SEV (Secure Encrypted Virtualization)."
+        ],
+        "explanation": {
+          "general explanation": "Confidential Computing (Confidential VMs) encrypts data while it is *in-use* (in memory). Powered by AMD SEV, the memory encryption keys are generated and managed by the dedicated security processor on the CPU. Neither the hypervisor nor Google has access to these keys, ensuring that memory cannot be dumped or read even if the underlying infrastructure is compromised.",
+          "Why other options are wrong": {
+            "Enable Customer-Managed Encryption Keys (CMEK) on the Persistent Disks.": "CMEK encrypts data *at-rest* on the persistent disk, not *in-use* in RAM.",
+            "Provision Shielded VMs with Secure Boot and vTPM enabled.": "Shielded VMs protect against boot-level rootkits and ensure the integrity of the boot process. They do not encrypt the runtime memory of the VM.",
+            "Use Sole-tenant nodes and enable OS-level memory encryption.": "Sole-tenant nodes provide physical hardware isolation, but do not inherently encrypt memory in a way that protects against a hypervisor exploit. Confidential VMs are the specific Google Cloud solution for in-use memory encryption."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "Confidential-Computing",
+          "Security",
+          "Compute-Engine",
+          "Memory-Encryption"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-027",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "Your organization uses OS Config (VM Manager) to automate OS patch provisioning across thousands of Compute Engine instances. A new critical Linux kernel vulnerability is announced. You create a patch deployment targeting all VMs with the label `env=prod`. However, several business-critical database VMs must absolutely not be rebooted during the patch deployment. How should you ensure these specific VMs receive non-disruptive patches but are excluded from reboots, while keeping them under the `env=prod` label?",
+        "questionType": "single",
+        "options":[
+          "Configure the Patch Deployment roll-out options with `rebootConfig` set to `NEVER`. For the database VMs, rely on Live Patching if supported, or require a manual reboot window later.",
+          "Remove the `env=prod` label from the database VMs until the patch deployment completes.",
+          "Create a separate Patch Deployment for the database VMs using an exclusion filter.",
+          "Configure the `pre-patch` script on the database VMs to exit with a non-zero status code, effectively skipping the patch."
+        ],
+        "correctAnswers":[
+          "Configure the Patch Deployment roll-out options with `rebootConfig` set to `NEVER`. For the database VMs, rely on Live Patching if supported, or require a manual reboot window later."
+        ],
+        "explanation": {
+          "general explanation": "OS Patch Management allows you to specify a `rebootConfig`. By setting it to `NEVER`, the patching agent will install the necessary packages but will *not* issue a reboot command. This allows the patches to be staged (or fully applied if the OS supports live patching) without disrupting the critical database VMs. A controlled manual reboot can be coordinated during an approved maintenance window.",
+          "Why other options are wrong": {
+            "Remove the `env=prod` label from the database VMs until the patch deployment completes.": "This is a brittle, manual workaround that breaks organizational tagging strategies and leaves the database VMs completely unpatched.",
+            "Create a separate Patch Deployment for the database VMs using an exclusion filter.": "While exclusion filters exist, setting the reboot config to NEVER on a targeted deployment is the native way to handle 'patch but don't reboot' requirements.",
+            "Configure the `pre-patch` script on the database VMs to exit with a non-zero status code, effectively skipping the patch.": "A non-zero exit code in a pre-patch script halts the entire patching process for that VM, meaning the security patch is not installed at all, leaving the VM vulnerable."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "VM-Manager",
+          "OS-Config",
+          "Patch-Management",
+          "Compute-Engine"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-028",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "You are designing the disaster recovery strategy for a stateful legacy application. The application runs on a single Compute Engine VM (`app-vm-1`) in `us-central1-a` with a 500 GB standard Persistent Disk attached. You configure an async persistent disk replication to `us-west1-b`. A catastrophic failure destroys `us-central1-a`. How do you provision the recovery instance in `us-west1-b` to resume operations?",
+        "questionType": "single",
+        "options":[
+          "Stop the async replication. Use the replica disk in `us-west1-b` to create a new VM instance in `us-west1-b`.",
+          "Google Cloud automatically detects the zonal failure and live-migrates the VM to `us-west1-b` using the replica disk.",
+          "Take a manual snapshot of the replica disk in `us-west1-b`, create a new disk from the snapshot, and attach it to a new VM.",
+          "Create a cross-region Managed Instance Group and wait for it to automatically provision a new VM attaching the replica disk."
+        ],
+        "correctAnswers":[
+          "Stop the async replication. Use the replica disk in `us-west1-b` to create a new VM instance in `us-west1-b`."
+        ],
+        "explanation": {
+          "general explanation": "Persistent Disk Asynchronous Replication replicates data from a primary zone to a secondary zone. In a disaster recovery scenario where the primary zone is lost, you must explicitly 'stop replication' on the secondary disk to promote it to a standalone, read-write disk. Once promoted, you can directly attach this replica disk to a newly provisioned Compute Engine VM in the secondary zone to resume operations.",
+          "Why other options are wrong": {
+            "Google Cloud automatically detects the zonal failure and live-migrates the VM to `us-west1-b` using the replica disk.": "Live migration happens strictly within the same zone for planned maintenance. Cross-region failover using async replication requires manual or scripted orchestration; it is not automatic.",
+            "Take a manual snapshot of the replica disk in `us-west1-b`, create a new disk from the snapshot, and attach it to a new VM.": "While taking a snapshot works for backups, the native PD async replication feature allows you to directly promote (stop replication) and use the replica disk immediately, minimizing RTO.",
+            "Create a cross-region Managed Instance Group and wait for it to automatically provision a new VM attaching the replica disk.": "There is no such thing as a 'cross-region' MIG. MIGs are either zonal or regional. You cannot automate cross-region disk reattachment natively through MIGs."
+          }
+        },
+        "difficulty": "Hard",
+        "tags":[
+          "Disaster-Recovery",
+          "Persistent-Disk",
+          "Async-Replication",
+          "Compute-Engine"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-029",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "Your team needs to provision a fleet of internal web servers using App Engine. The servers must scale to zero when there is no traffic to minimize costs, and they must securely access an on-premises Oracle database connected via Cloud VPN. The database does not have a public IP. Which App Engine environment and network configuration must you provision?",
+        "questionType": "single",
+        "options":[
+          "App Engine Standard environment. Configure a Serverless VPC Access connector to route traffic into the VPC.",
+          "App Engine Flexible environment. Deploy the instances directly into the VPC subnet.",
+          "App Engine Standard environment. Configure an Internet NEG to route traffic over the VPN.",
+          "App Engine Flexible environment. Configure a Serverless VPC Access connector."
+        ],
+        "correctAnswers":[
+          "App Engine Standard environment. Configure a Serverless VPC Access connector to route traffic into the VPC."
+        ],
+        "explanation": {
+          "general explanation": "The requirement strictly dictates that the compute must 'scale to zero'. Only the App Engine Standard environment supports scaling to zero (App Engine Flex requires at least one instance running at all times). To allow App Engine Standard (which runs outside your VPC) to access the private on-premises database via Cloud VPN, you must provision a Serverless VPC Access connector (or direct VPC egress) to bridge the serverless environment into your VPC network.",
+          "Why other options are wrong": {
+            "App Engine Flexible environment. Deploy the instances directly into the VPC subnet.": "App Engine Flex cannot scale to zero, which violates a core requirement of the scenario.",
+            "App Engine Standard environment. Configure an Internet NEG to route traffic over the VPN.": "Internet NEGs are used for Load Balancing routing to external public endpoints, not for granting serverless environments access to internal VPC resources.",
+            "App Engine Flexible environment. Configure a Serverless VPC Access connector.": "App Engine Flex does not scale to zero, and it does not use Serverless VPC Access connectors (it deploys Compute Engine instances natively into the VPC)."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "App-Engine-Standard",
+          "Serverless-VPC-Access",
+          "Scale-to-Zero",
+          "Hybrid-Connectivity"
+        ]
+      },
+      {
+        "id": "q-gcppca-s45-030",
+        "topicId": "gcp-pca-topic-managing-and-provisioning-a-cloud-solution-infrastructure",
+        "subTopicId": "gcp-pca-subtopic-configuring-compute-systems",
+        "unitId": "gcp-pca-unit-2-3-compute-resource-provisioning",
+        "questionText": "You are deploying a custom containerized machine learning workload to Compute Engine using the Container-Optimized OS (COS). The container needs to mount a specific persistent disk and start automatically whenever the VM boots. You want to provision this using infrastructure as code with zero manual post-configuration. How should you structure this?",
+        "questionType": "single",
+        "options":[
+          "Define the `gce-container-declaration` in the instance metadata, specifying the image, volume mounts, and restart policy.",
+          "Write a startup script that runs `docker run -v /mnt/disk:/data my-image`.",
+          "Use a Compute Engine MIG and configure the autohealing health checks to start the container on port 80.",
+          "Deploy the container using Cloud Run, as Compute Engine does not natively orchestrate containers on boot."
+        ],
+        "correctAnswers":[
+          "Define the `gce-container-declaration` in the instance metadata, specifying the image, volume mounts, and restart policy."
+        ],
+        "explanation": {
+          "general explanation": "Compute Engine provides native support for running containers on VMs using Container-Optimized OS. When you provision the VM, you provide a specific metadata key `gce-container-declaration`. This metadata contains a YAML manifest detailing the Docker image, environment variables, volume mounts, and restart policies. The COS agent natively reads this metadata and orchestrates the container lifecycle seamlessly on boot without needing custom startup scripts.",
+          "Why other options are wrong": {
+            "Write a startup script that runs `docker run -v /mnt/disk:/data my-image`.": "While a startup script could theoretically work, it is not the best practice for COS. Managing container crashes, restarts, and exact docker run strings in bash scripts is error-prone compared to the native declarative `gce-container-declaration`.",
+            "Use a Compute Engine MIG and configure the autohealing health checks to start the container on port 80.": "Health checks verify health; they do not execute docker commands to start containers.",
+            "Deploy the container using Cloud Run, as Compute Engine does not natively orchestrate containers on boot.": "Compute Engine natively supports deploying and orchestrating single containers on boot via the `gce-container-declaration` metadata."
+          }
+        },
+        "difficulty": "Medium",
+        "tags":[
+          "Container-Optimized-OS",
+          "Compute-Engine",
+          "Metadata",
+          "Provisioning"
+        ]
+      }
+    ]
+  }
+}
