@@ -98,8 +98,8 @@ RUN apk add --no-cache libstdc++
 # All root-level filesystem operations are consolidated here before USER is set.
 # Guide §1.5: minimise root operations; §2.6.5: explicit UID/GID, --no-log-init.
 # --no-log-init prevents disk exhaustion from sparse /var/log/faillog (Go bug).
-RUN addgroup -g 1001 -S appgroup && \
-    adduser -u 1001 -S appuser -G appgroup --no-create-home --no-log-init && \
+RUN addgroup -S appgroup && \
+    adduser -S appuser -G appgroup --no-create-home --no-log-init && \
     mkdir -p /app/data && \
     chown appuser:appgroup /app/data
 
