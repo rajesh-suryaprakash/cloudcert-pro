@@ -96,10 +96,15 @@ RUN apk add --no-cache libstdc++
 
 # ── Non-root user + data directory ───────────────────────────────────────────
 # All root-level filesystem operations are consolidated here before USER is set.
-# Guide §1.5: minimise root operations; §2.6.5: explicit UID/GID, --no-log-init.
-# --no-log-init prevents disk exhaustion from sparse /var/log/faillog (Go bug).
+# Alpine BusyBox adduser flags (NOT the same as Debian/Ubuntu adduser):
+#   -S  = system user (no password, no aging)
+#   -D  = do not assign a password
+#   -H  = do not create home directory (Alpine equivalent of --no-create-home)
+#   -G  = primary group
+# Note: --no-create-home and --no-log-init are Debian-only flags and do NOT
+#       exist in Alpine's BusyBox implementation.
 RUN addgroup -S appgroup && \
-    adduser -S appuser -G appgroup --no-create-home --no-log-init && \
+    adduser -S -D -H -G appgroup appuser && \
     mkdir -p /app/data && \
     chown appuser:appgroup /app/data
 
