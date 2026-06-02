@@ -16,13 +16,13 @@
  *   const wInput = useClampedInput(weight, (v) => setWeight(v), 0, 100, 0, true);
  *   <input {...wInput.inputProps} step="0.1" />
  */
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, type ChangeEvent } from 'react';
 
 interface ClampedInputResult {
   /** Bind directly to the <input> element */
   inputProps: {
     value: string;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onChange: (e: ChangeEvent<HTMLInputElement>) => void;
     onBlur: () => void;
   };
 }
@@ -54,7 +54,7 @@ export function useClampedInput(
     setRaw(String(committedValue));
   }, [committedValue]);
 
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     // Allow empty string and any numeric characters — no clamping here
     setRaw(e.target.value);
   }, []);

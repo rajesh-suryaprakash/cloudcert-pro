@@ -95,7 +95,7 @@ export default function ROIStudyRecommendations({
 
     if (onStartSubtopicQuiz) {
       // Pass all selected subtopics as an array
-      const subtopicIds = Array.from(selectedSubtopics);
+      const subtopicIds = Array.from(selectedSubtopics) as string[];
       onStartSubtopicQuiz(selectedTopic.id, selectedTopic.name, subtopicIds);
     } else {
       alert(

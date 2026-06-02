@@ -102,7 +102,7 @@ export default function CertificationsPanel({ onSelectCert }: CertificationsPane
     setPage(1);
   }, [search, filterVendor]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const paginated = paginate(filtered, page, pageSize);
+  const paginated = paginate(filtered as any[], page, pageSize);
 
   const openAdd = () => {
     setCertForm(EMPTY_FORM);

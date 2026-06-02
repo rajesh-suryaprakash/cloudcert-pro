@@ -210,7 +210,7 @@ export default function SubTopicsPanel({ onSelectSubTopic }: SubTopicsPanelProps
   }, [subtopics, search, activeTopicId, activeCertId]);
 
   const { page, pageSize, setPage, setPageSize } = usePagination();
-  const paginated = paginate(filtered, page, pageSize);
+  const paginated = paginate(filtered as any[], page, pageSize);
 
   return (
     <>

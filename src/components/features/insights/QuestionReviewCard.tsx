@@ -13,7 +13,7 @@ interface QuestionReviewData {
   distractorExplanations?: Record<string, string>;
 }
 
-interface QuestionReviewCardProps {
+export interface QuestionReviewCardProps {
   question: QuestionReviewData;
   questionNumber: number;
 }

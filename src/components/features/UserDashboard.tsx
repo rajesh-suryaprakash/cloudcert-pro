@@ -380,7 +380,7 @@ export default function UserDashboard({
       const bFav = favorites.has(b.id) ? 0 : 1;
       return aFav - bFav;
     });
-  const paginatedCerts = paginate(filteredCerts, certPage, certPageSize);
+  const paginatedCerts = paginate(filteredCerts as any[], certPage, certPageSize);
 
   if (loading) {
     return (

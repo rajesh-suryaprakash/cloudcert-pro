@@ -265,13 +265,15 @@ export default function QuestionReviewView({
 
       {/* Questions */}
       <div className="space-y-6">
-        {questions.map((question, index) => (
-          <QuestionReviewCard
-            key={question.id}
-            question={question}
-            questionNumber={(currentPage - 1) * (pagination?.limit || 20) + index + 1}
-          />
-        ))}
+        {questions.map((question: QuestionReviewData, index: number) =>
+          // key is passed as the 3rd arg to createElement — separate from props,
+          // avoiding TS 5.8's JSX key-in-props type error (TS2322).
+          React.createElement(QuestionReviewCard, {
+            key: question.id,
+            question,
+            questionNumber: (currentPage - 1) * (pagination?.limit || 20) + index + 1,
+          })
+        )}
       </div>
 
       {/* Pagination */}

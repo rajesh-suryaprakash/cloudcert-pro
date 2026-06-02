@@ -180,8 +180,10 @@ export interface NavigationActions {
   updateContext: (ids: string[]) => void;
   clearError: () => void;
   onNavigationError?: (error: NavigationError, message: string) => void;
-  cacheCurrentData: (data: unknown) => void;
-  getCachedData: (id: string) => unknown | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  cacheCurrentData: (data: any) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getCachedData: <T = any>(id: string) => T | null;
   getCacheStats: () => { size: number; estimatedMemoryBytes: number };
 }
 
@@ -285,12 +287,10 @@ export function useAdminNavigation(
   /**
    * Get cached data for a specific record ID
    */
-  const getCachedData = useCallback(
-    (id: string): unknown | null => {
-      return globalNavigationCache.get(getCacheKey(id));
-    },
-    [getCacheKey],
-  );
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const getCachedData = useCallback(<T = any>(id: string): T | null => {
+    return globalNavigationCache.get(getCacheKey(id)) as T | null;
+  }, [getCacheKey]);
 
   /**
    * Get cache statistics
