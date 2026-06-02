@@ -90,9 +90,13 @@ LABEL org.opencontainers.image.title="cloudcert-pro" \
       org.opencontainers.image.source="https://github.com/org/cloudcert-pro"
 
 # ── System dependencies ───────────────────────────────────────────────────────
+# Upgrade all Alpine packages first to pull in latest security patches.
+# The base image digest is pinned for supply-chain integrity, but Alpine
+# packages receive security updates independently — upgrading at build time
+# ensures Trivy's ignore-unfixed scan gate passes.
 # better-sqlite3 is a native module — it needs the shared C++ runtime at runtime
 # (not the full build toolchain, just the runtime library)
-RUN apk add --no-cache libstdc++
+RUN apk upgrade --no-cache && apk add --no-cache libstdc++
 
 # ── Non-root user + data directory ───────────────────────────────────────────
 # All root-level filesystem operations are consolidated here before USER is set.
