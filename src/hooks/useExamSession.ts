@@ -274,9 +274,7 @@ export function useExamSession() {
       // Check unseen question count for each subtopic (question-history-tracking feature)
       const unseenChecks = await Promise.all(
         subtopicIds.map((subtopicId) =>
-          fetchApi(
-            `/certifications/${cert.id}/questions/unseen?subtopicId=${subtopicId}`,
-          ),
+          fetchApi(`/certifications/${cert.id}/questions/unseen?subtopicId=${subtopicId}`),
         ),
       );
       const totalUnseen = unseenChecks.reduce(
