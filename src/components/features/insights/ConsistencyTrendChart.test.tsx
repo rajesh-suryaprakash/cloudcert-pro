@@ -175,7 +175,7 @@ describe('ConsistencyTrendChart', () => {
         <ConsistencyTrendChart consistencyMetric={mockConsistencyMetric} />,
       );
 
-      const circles = container.querySelectorAll('circle');
+      const circles = container.querySelectorAll('.rounded-full.bg-indigo-700');
       expect(circles.length).toBe(mockConsistencyMetric.recentSessions.length);
     });
   });

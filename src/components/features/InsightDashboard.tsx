@@ -471,6 +471,12 @@ export default function InsightDashboard({
           </h3>
           <p className="text-sm text-slate-500">{certificationTitle}</p>
         </div>
+        <button
+          onClick={() => setShowRealExamForm(true)}
+          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl shadow-sm transition-all"
+        >
+          Report Real Exam Result
+        </button>
         <div className="text-right">
           <p className="text-xs text-slate-400">Last updated</p>
           <p className="text-xs font-bold text-slate-600">

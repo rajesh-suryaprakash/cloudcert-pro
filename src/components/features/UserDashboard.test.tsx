@@ -4,13 +4,17 @@ import { render, screen, fireEvent, act, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom';
 import UserDashboard from './UserDashboard';
 
-// Mock motion/react so animations resolve instantly in jsdom (no real timer delays)
-vi.mock('motion/react', async () => {
-  const React = await import('react');
-  const passThrough =
-    (tag: string) =>
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ({ children, ...rest }: any) => {
+process.on('uncaughtException', (err) => {
+  console.log('CRITICAL ERROR: Uncaught Exception:', err.message, err.stack);
+});
+process.on('unhandledRejection', (reason: any) => {
+  console.log('CRITICAL ERROR: Unhandled Rejection:', reason?.message || reason, reason?.stack);
+});
+
+vi.mock('motion/react', () => {
+  const React = require('react');
+  const mockMotion = (tag: string) =>
+    React.forwardRef(({ children, ...props }: any, ref: any) => {
       // Strip motion-only props that would cause React DOM warnings
       const {
         initial,
@@ -27,28 +31,23 @@ vi.mock('motion/react', async () => {
         dragConstraints,
         onDragEnd,
         ...domProps
-      } = rest;
-      void initial;
-      void animate;
-      void exit;
-      void transition;
-      void whileHover;
-      void whileTap;
-      void whileFocus;
-      void variants;
-      void layout;
-      void layoutId;
-      void drag;
-      void dragConstraints;
-      void onDragEnd;
-      return React.createElement(tag, domProps, children);
-    };
-  const motion = new Proxy({} as Record<string, unknown>, {
-    get: (_t, prop: string) => passThrough(prop),
+      } = props;
+      return React.createElement(tag, { ...domProps, ref }, children);
+    });
+
+  const cache: Record<string, any> = {};
+  const motion = new Proxy({} as any, {
+    get: (_, prop: string) => {
+      if (!cache[prop]) {
+        cache[prop] = mockMotion(prop);
+      }
+      return cache[prop];
+    },
   });
+
   return {
     motion,
-    AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
+    AnimatePresence: ({ children }: any) => children,
   };
 });
 
@@ -64,8 +63,9 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
+const mockUser = { id: 'user-1', name: 'Test User' };
 vi.mock('../../hooks/useAuth', () => ({
-  useAuth: () => ({ user: { id: 'user-1', name: 'Test User' } }),
+  useAuth: () => ({ user: mockUser }),
 }));
 
 vi.mock('../../api', () => ({
@@ -126,7 +126,6 @@ async function renderDashboard(onStartQuiz: (...args: unknown[]) => unknown) {
 
 // Helper: open the session config modal by clicking the exam card
 async function openSessionModal() {
-  // The exam card button is rendered inside the cert detail view (certificationId is set via useParams mock)
   const startButton = await screen.findByText('GCP PCA Mock Exam');
   await act(async () => {
     fireEvent.click(startButton);
@@ -269,36 +268,26 @@ describe('Property 1: Bug Condition - Missing Await Causes Silent Rejection', ()
   });
 
   it('for all rejection error messages: sessionError is set, error banner renders, modal stays open', async () => {
-    // Use a single concrete error message representative of the bug condition.
-    // The property holds for ALL non-empty strings; one mount keeps the test fast.
-    // fc.sample is used to document the PBT intent while avoiding repeated mounts.
     const [errorMessage] = fc
       .sample(fc.string({ minLength: 1 }), 1)
-      .map((s) => s.replace(/[<>&"']/g, 'x') || 'No active questions with difficulty Medium');
+      .map((s) => s.replace(/[^a-zA-Z0-9 ]/g, 'x') || 'No active questions with difficulty Medium');
 
     const onStartQuiz = vi.fn().mockRejectedValue(new Error(errorMessage));
 
     await renderDashboard(onStartQuiz);
     await openSessionModal();
 
-    // Act: click "Start Session" and flush all microtasks
     const startSessionBtn = screen.getByRole('button', { name: /Start Session/i });
     await act(async () => {
       fireEvent.click(startSessionBtn);
     });
 
-    // Assert 1: sessionError IS set to the error message
-    // (on unfixed code this fails — catch block never entered, sessionError stays null)
     await waitFor(() => {
       expect(screen.getByText(errorMessage)).toBeInTheDocument();
     });
 
-    // Assert 2: the error banner IS rendered in the modal
-    // (on unfixed code this fails — no error banner visible)
     expect(screen.getByText(errorMessage)).toBeVisible();
 
-    // Assert 3: the modal remains open (examToStart is NOT null)
-    // (on unfixed code this fails — setExamToStart(null) runs synchronously before rejection)
     expect(screen.getByText('Configure your session before starting')).toBeInTheDocument();
   }, 45_000);
 });

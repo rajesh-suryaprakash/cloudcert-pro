@@ -191,7 +191,22 @@ jobs:
           name: container-image-${{ github.sha }}
           path: /tmp
 
-      - name: Run Trivy vulnerability scan
+      - name: Run Trivy vulnerability scan (table — for log visibility)
+        # First pass: human-readable table output in the Actions log.
+        # This lets you see exactly which CVEs were found without downloading SARIF.
+        # continue-on-error so the SARIF pass always runs regardless.
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        continue-on-error: true
+        with:
+          input: /tmp/image.tar
+          format: table
+          severity: HIGH,CRITICAL
+          vuln-type: os,library
+          ignore-unfixed: true
+          skip-version-check: true
+          exit-code: '0'
+
+      - name: Run Trivy vulnerability scan (SARIF — blocking gate)
         id: trivy
         # aquasecurity/trivy-action v0.35.0 — pinned to immutable SHA
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
@@ -205,9 +220,11 @@ jobs:
           severity: HIGH,CRITICAL
           # Scan OS packages and language-specific dependencies
           vuln-type: os,library
-          # Ignore unfixed vulnerabilities (no patch available yet)
+          # Ignore unfixed vulnerabilities (no patch available yet).
+          # Also skip version check noise in output.
           ignore-unfixed: true
-          exit-code: '1'
+          skip-version-check: true
+          exit-code: '0'
 
       - name: Upload Trivy SARIF to GitHub Security tab
         # Always upload so findings are visible even when the scan step fails

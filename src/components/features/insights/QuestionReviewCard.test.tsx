@@ -87,7 +87,12 @@ describe('QuestionReviewCard', () => {
     });
 
     it('should display "Why this is correct:" label for correct answer explanation', () => {
-      render(<QuestionReviewCard question={baseQuestion} questionNumber={1} />);
+      const correctQuestion = {
+        ...baseQuestion,
+        userAnswers: ['To control access to AWS resources'],
+        isCorrect: true,
+      };
+      render(<QuestionReviewCard question={correctQuestion} questionNumber={1} />);
 
       expect(screen.getByText('Why this is correct:')).toBeInTheDocument();
     });
@@ -107,7 +112,11 @@ describe('QuestionReviewCard', () => {
     });
 
     it('should display distractor explanation for another incorrect option', () => {
-      render(<QuestionReviewCard question={baseQuestion} questionNumber={1} />);
+      const question = {
+        ...baseQuestion,
+        userAnswers: ['To store data in the cloud'],
+      };
+      render(<QuestionReviewCard question={question} questionNumber={1} />);
 
       expect(
         screen.getByText('This is the purpose of S3 and other storage services, not IAM.'),
@@ -115,7 +124,11 @@ describe('QuestionReviewCard', () => {
     });
 
     it('should display generic explanation when distractor explanation is missing', () => {
-      render(<QuestionReviewCard question={baseQuestion} questionNumber={1} />);
+      const question = {
+        ...baseQuestion,
+        userAnswers: ['To monitor application performance'],
+      };
+      render(<QuestionReviewCard question={question} questionNumber={1} />);
 
       // The fourth option has no distractor explanation - use getAllByText since there might be multiple
       const genericExplanations = screen.getAllByText(/The correct answer is:/);

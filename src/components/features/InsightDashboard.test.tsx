@@ -564,7 +564,9 @@ describe('InsightDashboard', () => {
       );
 
       await waitFor(() => {
-        expect(client.fetchApi).toHaveBeenCalledWith('/insights/dashboard/cert123');
+        expect(client.fetchApi).toHaveBeenCalledWith(
+          '/insights/dashboard/cert123?examType=mock&difficulty=Easy',
+        );
       });
     });
 
