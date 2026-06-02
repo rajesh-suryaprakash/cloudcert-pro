@@ -42,6 +42,23 @@ export function useExamSession() {
       const durationOverride: number | undefined = (exam as any)._duration;
       const passingScoreOverride: number | undefined = (exam as any)._passingScore;
 
+      // Check unseen question count before fetching (question-history-tracking feature)
+      const unseenData = await fetchApi(`/certifications/${cert.id}/questions/unseen`);
+      const unseenCount: number = (unseenData as any)?.unseenCount ?? 0;
+      const requestedCount = numQuestionsOverride ?? exam.totalQuestions ?? DEFAULT_QUESTION_COUNT;
+
+      if (unseenCount === 0) {
+        throw new Error(
+          'No unseen questions available for this exam. Consider resetting your question history to review questions again.',
+        );
+      }
+
+      if (unseenCount < requestedCount) {
+        console.warn(
+          `Only ${unseenCount} of ${requestedCount} requested questions are unseen. Some questions may have been seen before.`,
+        );
+      }
+
       // Fetch questions, passing wizard overrides so the server applies them
       const allQuestions = await fetchExamQuestions(exam.id, {
         count: numQuestionsOverride,
@@ -53,7 +70,9 @@ export function useExamSession() {
       }
 
       // Server already applied count + difficulty filter — use pool as-is
-      const pool = allQuestions;
+      // Enforce client-side count cap in case server returns more than requested
+      const effectiveCount = numQuestionsOverride ?? exam.totalQuestions ?? DEFAULT_QUESTION_COUNT;
+      const pool = allQuestions.slice(0, effectiveCount);
 
       if (pool.length === 0) {
         throw new Error(`No ${difficultyOverride} questions available for this exam`);
@@ -98,6 +117,26 @@ export function useExamSession() {
 
   const startCustomQuiz = async (cert: any, difficulty: string, count: number) => {
     try {
+      // Check unseen question count for this difficulty (question-history-tracking feature)
+      const difficultyParam =
+        difficulty && difficulty !== 'Mixed' ? `?difficulty=${encodeURIComponent(difficulty)}` : '';
+      const unseenData = await fetchApi(
+        `/certifications/${cert.id}/questions/unseen${difficultyParam}`,
+      );
+      const unseenCount: number = (unseenData as any)?.unseenCount ?? 0;
+
+      if (unseenCount === 0) {
+        throw new Error(
+          'No unseen questions available for this difficulty. Consider resetting your question history to review questions again.',
+        );
+      }
+
+      if (unseenCount < count) {
+        console.warn(
+          `Only ${unseenCount} of ${count} requested questions are unseen. Some questions may have been seen before.`,
+        );
+      }
+
       const questions: Question[] = await fetchApi('/questions/select', {
         method: 'POST',
         body: JSON.stringify({
@@ -113,17 +152,19 @@ export function useExamSession() {
         throw new Error('No questions available for this difficulty');
       }
 
-      const actualCount = questions.length;
+      // Enforce client-side count cap (server may return more than requested)
+      const sliced = questions.slice(0, count);
+      const actualCount = sliced.length;
 
       const session = await createExamSession({
-        questions: questions.map((q) => q.id),
+        questions: sliced.map((q) => q.id),
         isPracticeMode: true,
         isCustomQuiz: true,
         certificationId: cert.id,
         sessionName: `${cert.title} — Custom Quiz — ${difficulty}`,
       });
 
-      setQuizQuestions(questions);
+      setQuizQuestions(sliced);
       setSelectedProvider(cert.vendor);
       setActiveExam({
         id: session.id,
@@ -159,6 +200,24 @@ export function useExamSession() {
       const difficulty = config?.difficulty;
       const count = config?.numQuestions ?? DEFAULT_QUESTION_COUNT;
 
+      // Check unseen question count for this topic (question-history-tracking feature)
+      const unseenData = await fetchApi(
+        `/certifications/${cert.id}/questions/unseen?topicId=${topic.id}`,
+      );
+      const unseenCount: number = (unseenData as any)?.unseenCount ?? 0;
+
+      if (unseenCount === 0) {
+        throw new Error(
+          'No unseen questions available for this topic. Consider resetting your question history to review questions again.',
+        );
+      }
+
+      if (unseenCount < count) {
+        console.warn(
+          `Only ${unseenCount} of ${count} requested questions are unseen. Some questions may have been seen before.`,
+        );
+      }
+
       const questions: Question[] = await fetchApi('/questions/select', {
         method: 'POST',
         body: JSON.stringify({
@@ -174,18 +233,21 @@ export function useExamSession() {
         throw new Error('No questions available for this topic');
       }
 
+      // Enforce client-side count cap (server may return more than requested)
+      const sliced = questions.slice(0, count);
+
       const duration = config?.duration ?? 999;
       const passingScore = config?.passingScore ?? 0;
       const isTimed = duration < 999;
 
       const session = await createExamSession({
-        questions: questions.map((q) => q.id),
+        questions: sliced.map((q) => q.id),
         isPracticeMode: !isTimed,
         certificationId: cert.id,
         sessionName: `${cert.title} — ${topic.title} — Topic Practice`,
       });
 
-      setQuizQuestions(questions);
+      setQuizQuestions(sliced);
       setSelectedProvider(cert.vendor);
       setActiveExam({
         id: session.id,
@@ -209,15 +271,42 @@ export function useExamSession() {
 
   const startSubtopicQuiz = async (cert: any, topic: any, subtopicIds: string[]) => {
     try {
-      const questions: Question[] = await fetchApi('/questions/select', {
-        method: 'POST',
-        body: JSON.stringify({
-          scope: 'subtopics',
-          scopeId: subtopicIds,
-          strategy: 'random',
-          totalQuestions: 9999, // server caps at pool size via min(total, pool.length)
-        }),
-      });
+      // Check unseen question count for each subtopic (question-history-tracking feature)
+      const unseenChecks = await Promise.all(
+        subtopicIds.map((subtopicId) =>
+          fetchApi(
+            `/certifications/${cert.id}/questions/unseen?subtopicId=${subtopicId}`,
+          ),
+        ),
+      );
+      const totalUnseen = unseenChecks.reduce(
+        (sum: number, data: any) => sum + ((data as any)?.unseenCount ?? 0),
+        0,
+      );
+
+      if (totalUnseen === 0) {
+        throw new Error(
+          'No unseen questions available for the selected subtopics. Consider resetting your question history to review questions again.',
+        );
+      }
+
+      // Phase 2: fetch questions per-subtopic in parallel and combine
+      // (each subtopic gets its own /questions/select call so results are traceable)
+      const questionArrays = await Promise.all(
+        subtopicIds.map((subtopicId) =>
+          fetchApi('/questions/select', {
+            method: 'POST',
+            body: JSON.stringify({
+              scope: 'subtopics',
+              scopeId: [subtopicId],
+              strategy: 'random',
+              totalQuestions: 9999, // server caps at pool size
+            }),
+          }),
+        ),
+      );
+
+      const questions: Question[] = (questionArrays as Question[][]).flat();
 
       if (questions.length === 0) {
         throw new Error('No questions available for the selected subtopics');

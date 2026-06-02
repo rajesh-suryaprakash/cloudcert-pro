@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { useAdminNavigation } from './useAdminNavigation';
+import { useAdminNavigation, clearNavigationCache } from './useAdminNavigation';
 import type { ReactNode } from 'react';
 
 // Mock react-router-dom hooks
@@ -23,6 +23,8 @@ describe('useAdminNavigation - Prefetching (Task 21.2)', () => {
     mockSearchParams = new URLSearchParams();
     mockNavigate.mockClear();
     mockSetSearchParams.mockClear();
+    // Clear global navigation cache to prevent state bleed between tests
+    clearNavigationCache();
   });
 
   const wrapper = ({ children }: { children: ReactNode }) => (
@@ -236,7 +238,7 @@ describe('useAdminNavigation - Prefetching (Task 21.2)', () => {
 
       const mockFetchRecord = vi.fn().mockResolvedValue({ id: 'cert-2', name: 'Test' });
 
-      const { result: _result } = renderHook(
+      const { result } = renderHook(
         () =>
           useAdminNavigation('certifications', 'cert-1', {
             prefetch: {
@@ -270,7 +272,7 @@ describe('useAdminNavigation - Prefetching (Task 21.2)', () => {
 
       const mockFetchRecord = vi.fn().mockRejectedValue(new Error('Network error'));
 
-      const { result: _result } = renderHook(
+      const { result } = renderHook(
         () =>
           useAdminNavigation('certifications', 'cert-1', {
             prefetch: {
