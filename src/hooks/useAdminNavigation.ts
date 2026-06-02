@@ -5,7 +5,13 @@ import { encodeNavigationContext, decodeNavigationContext } from '../utils/navig
 /**
  * Entity types supported by the navigation system
  */
-export type EntityType = 'certifications' | 'exams' | 'topics' | 'subtopics' | 'units' | 'questions';
+export type EntityType =
+  | 'certifications'
+  | 'exams'
+  | 'topics'
+  | 'subtopics'
+  | 'units'
+  | 'questions';
 
 /**
  * Cache entry for storing recently viewed records
@@ -288,9 +294,12 @@ export function useAdminNavigation(
    * Get cached data for a specific record ID
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const getCachedData = useCallback(<T = any>(id: string): T | null => {
-    return globalNavigationCache.get(getCacheKey(id)) as T | null;
-  }, [getCacheKey]);
+  const getCachedData = useCallback(
+    <T = any>(id: string): T | null => {
+      return globalNavigationCache.get(getCacheKey(id)) as T | null;
+    },
+    [getCacheKey],
+  );
 
   /**
    * Get cache statistics

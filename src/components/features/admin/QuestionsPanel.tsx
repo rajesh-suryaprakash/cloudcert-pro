@@ -478,7 +478,9 @@ export default function QuestionsPanel({ onSelectQuestion }: QuestionsPanelProps
       const matchCert =
         !activeCertId ||
         qu._certTitle === (allCerts.find((c) => c.id === activeCertId)?.title ?? '');
-      return matchSearch && matchDiff && matchType && matchSub && matchUnit && matchTopic && matchCert;
+      return (
+        matchSearch && matchDiff && matchType && matchSub && matchUnit && matchTopic && matchCert
+      );
     });
   }, [
     questions,
@@ -683,7 +685,10 @@ export default function QuestionsPanel({ onSelectQuestion }: QuestionsPanelProps
                       const sub = filteredSubTopics.find((s) => s.id === e.target.value) ?? null;
                       setActiveSubTopic(sub);
                       if (sub) loadFormUnits(sub.id);
-                      else { setFormUnits([]); setFormUnitId(''); }
+                      else {
+                        setFormUnits([]);
+                        setFormUnitId('');
+                      }
                     }}
                     className="w-full p-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-600 bg-white"
                     required

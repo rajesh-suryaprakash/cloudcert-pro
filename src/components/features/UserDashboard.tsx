@@ -155,7 +155,13 @@ export default function UserDashboard({
     numQuestions: number;
     duration: number;
     passingScore: number;
-  }>({ selectedTopic: null, difficulty: 'Mixed', numQuestions: 20, duration: 30, passingScore: 70 });
+  }>({
+    selectedTopic: null,
+    difficulty: 'Mixed',
+    numQuestions: 20,
+    duration: 30,
+    passingScore: 70,
+  });
   const [topicFlowStarting, setTopicFlowStarting] = useState(false);
   const [topicFlowError, setTopicFlowError] = useState<string | null>(null);
   const [customConfig, setCustomConfig] = useState<{
@@ -169,32 +175,38 @@ export default function UserDashboard({
   const sessionNumQuestionsInput = useClampedInput(
     sessionConfig.numQuestions,
     (v) => setSessionConfig((prev) => ({ ...prev, numQuestions: v })),
-    5, 60,
+    5,
+    60,
   );
   const sessionDurationInput = useClampedInput(
     sessionConfig.duration,
     (v) => setSessionConfig((prev) => ({ ...prev, duration: v })),
-    5, 120,
+    5,
+    120,
   );
   const sessionPassingScoreInput = useClampedInput(
     sessionConfig.passingScore,
     (v) => setSessionConfig((prev) => ({ ...prev, passingScore: v })),
-    70, 100,
+    70,
+    100,
   );
   const topicNumQuestionsInput = useClampedInput(
     topicFlowConfig.numQuestions,
     (v) => setTopicFlowConfig((prev) => ({ ...prev, numQuestions: v })),
-    5, 60,
+    5,
+    60,
   );
   const topicDurationInput = useClampedInput(
     topicFlowConfig.duration,
     (v) => setTopicFlowConfig((prev) => ({ ...prev, duration: v })),
-    5, 120,
+    5,
+    120,
   );
   const customNumQuestionsInput = useClampedInput(
     customConfig.numQuestions,
     (v) => setCustomConfig((prev) => ({ ...prev, numQuestions: v })),
-    5, 60,
+    5,
+    60,
   );
 
   const fetchData = useCallback(async () => {
@@ -265,7 +277,8 @@ export default function UserDashboard({
   // Helper function to determine exam type from session data
   const getExamType = (session: any): 'mock' | 'practice' | 'topic' | 'custom' => {
     if (session.isCustomQuiz === 1) return 'custom';
-    if (session.isTopicQuiz === 1 || (session.topicId && session.isPracticeMode === 1)) return 'topic';
+    if (session.isTopicQuiz === 1 || (session.topicId && session.isPracticeMode === 1))
+      return 'topic';
     if (session.isPracticeMode === 1) return 'practice';
     if (session.isPracticeMode === 0) return 'mock';
 
@@ -807,30 +820,42 @@ export default function UserDashboard({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* Topic-wise */}
               <button
-                onClick={() => { setShowTopicFlow(true); setShowCustomFlow(false); }}
+                onClick={() => {
+                  setShowTopicFlow(true);
+                  setShowCustomFlow(false);
+                }}
                 className="p-4 bg-amber-50 hover:bg-amber-100 border border-amber-200 hover:border-amber-300 rounded-xl transition-all text-left group"
               >
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
                     <Layers className="w-4 h-4 text-amber-600" />
                   </div>
-                  <p className="font-bold text-slate-900 text-sm group-hover:text-amber-700">Topic-wise Practice</p>
+                  <p className="font-bold text-slate-900 text-sm group-hover:text-amber-700">
+                    Topic-wise Practice
+                  </p>
                 </div>
                 <p className="text-xs text-slate-500">Practice questions from a specific topic</p>
               </button>
               {/* Custom Quiz */}
               {onStartCustomQuiz && (
                 <button
-                  onClick={() => { setShowCustomFlow(true); setShowTopicFlow(false); }}
+                  onClick={() => {
+                    setShowCustomFlow(true);
+                    setShowTopicFlow(false);
+                  }}
                   className="p-4 bg-violet-50 hover:bg-violet-100 border border-violet-200 hover:border-violet-300 rounded-xl transition-all text-left group"
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <div className="w-8 h-8 bg-violet-100 rounded-lg flex items-center justify-center">
                       <Shuffle className="w-4 h-4 text-violet-600" />
                     </div>
-                    <p className="font-bold text-slate-900 text-sm group-hover:text-violet-700">Custom Quiz</p>
+                    <p className="font-bold text-slate-900 text-sm group-hover:text-violet-700">
+                      Custom Quiz
+                    </p>
                   </div>
-                  <p className="text-xs text-slate-500">Build your own quiz with custom difficulty and count</p>
+                  <p className="text-xs text-slate-500">
+                    Build your own quiz with custom difficulty and count
+                  </p>
                 </button>
               )}
             </div>
@@ -859,7 +884,9 @@ export default function UserDashboard({
                   </div>
                   {!topicFlowConfig.selectedTopic ? (
                     <>
-                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Select Topic</p>
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                        Select Topic
+                      </p>
                       <div className="grid gap-2 max-h-48 overflow-y-auto">
                         {certTopics.length === 0 ? (
                           <p className="text-xs text-slate-400 text-center py-4">
@@ -870,11 +897,17 @@ export default function UserDashboard({
                             <button
                               key={topic.id}
                               type="button"
-                              onClick={() => setTopicFlowConfig((prev) => ({ ...prev, selectedTopic: topic }))}
+                              onClick={() =>
+                                setTopicFlowConfig((prev) => ({ ...prev, selectedTopic: topic }))
+                              }
                               className="flex items-center justify-between p-3 bg-white border border-amber-100 rounded-xl hover:bg-amber-100 transition-colors text-left"
                             >
-                              <span className="font-bold text-slate-800 text-sm">{topic.title}</span>
-                              <span className="text-xs font-bold text-amber-600">Configure &#x2192;</span>
+                              <span className="font-bold text-slate-800 text-sm">
+                                {topic.title}
+                              </span>
+                              <span className="text-xs font-bold text-amber-600">
+                                Configure &#x2192;
+                              </span>
                             </button>
                           ))
                         )}
@@ -885,7 +918,9 @@ export default function UserDashboard({
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          onClick={() => setTopicFlowConfig((prev) => ({ ...prev, selectedTopic: null }))}
+                          onClick={() =>
+                            setTopicFlowConfig((prev) => ({ ...prev, selectedTopic: null }))
+                          }
                           className="text-xs font-bold text-amber-700 hover:text-amber-900"
                         >
                           &#x2190; Back
@@ -904,7 +939,9 @@ export default function UserDashboard({
                             <button
                               key={d}
                               type="button"
-                              onClick={() => setTopicFlowConfig((prev) => ({ ...prev, difficulty: d }))}
+                              onClick={() =>
+                                setTopicFlowConfig((prev) => ({ ...prev, difficulty: d }))
+                              }
                               className={`px-3 py-1.5 rounded-lg font-bold text-xs border-2 transition-all ${
                                 topicFlowConfig.difficulty === d
                                   ? 'border-amber-600 bg-amber-600 text-white'
@@ -919,7 +956,8 @@ export default function UserDashboard({
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
                           <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                            Questions <span className="normal-case font-normal text-slate-400">(5-60)</span>
+                            Questions{' '}
+                            <span className="normal-case font-normal text-slate-400">(5-60)</span>
                           </label>
                           <input
                             type="number"
@@ -931,7 +969,8 @@ export default function UserDashboard({
                         </div>
                         <div className="space-y-1">
                           <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                            Duration (min) <span className="normal-case font-normal text-slate-400">(5-120)</span>
+                            Duration (min){' '}
+                            <span className="normal-case font-normal text-slate-400">(5-120)</span>
                           </label>
                           <input
                             type="number"
@@ -954,12 +993,16 @@ export default function UserDashboard({
                           setTopicFlowStarting(true);
                           setTopicFlowError(null);
                           try {
-                            await onStartTopicQuiz(selectedCertForExams, topicFlowConfig.selectedTopic, {
-                              difficulty: topicFlowConfig.difficulty,
-                              numQuestions: topicFlowConfig.numQuestions,
-                              duration: topicFlowConfig.duration,
-                              passingScore: topicFlowConfig.passingScore,
-                            });
+                            await onStartTopicQuiz(
+                              selectedCertForExams,
+                              topicFlowConfig.selectedTopic,
+                              {
+                                difficulty: topicFlowConfig.difficulty,
+                                numQuestions: topicFlowConfig.numQuestions,
+                                duration: topicFlowConfig.duration,
+                                passingScore: topicFlowConfig.passingScore,
+                              },
+                            );
                             setShowTopicFlow(false);
                             setTopicFlowConfig((prev) => ({ ...prev, selectedTopic: null }));
                           } catch (e: any) {
@@ -989,7 +1032,10 @@ export default function UserDashboard({
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-bold text-violet-800">Custom Quiz</p>
                     <button
-                      onClick={() => { setShowCustomFlow(false); setCustomError(null); }}
+                      onClick={() => {
+                        setShowCustomFlow(false);
+                        setCustomError(null);
+                      }}
                       className="text-xs text-slate-400 hover:text-slate-600 font-bold"
                     >
                       &#x2715; Close
@@ -1018,7 +1064,8 @@ export default function UserDashboard({
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                      Number of Questions <span className="normal-case font-normal text-slate-400">(5-60)</span>
+                      Number of Questions{' '}
+                      <span className="normal-case font-normal text-slate-400">(5-60)</span>
                     </label>
                     <input
                       type="number"
@@ -1040,7 +1087,11 @@ export default function UserDashboard({
                       setCustomStarting(true);
                       setCustomError(null);
                       try {
-                        await onStartCustomQuiz(selectedCertForExams, customConfig.difficulty, customConfig.numQuestions);
+                        await onStartCustomQuiz(
+                          selectedCertForExams,
+                          customConfig.difficulty,
+                          customConfig.numQuestions,
+                        );
                         setShowCustomFlow(false);
                       } catch (e: any) {
                         setCustomError(e?.message ?? 'Failed to start custom quiz.');
@@ -1099,7 +1150,8 @@ export default function UserDashboard({
                           iterMap.set(a.id, counters[name]);
                         });
                         return displayed.map((attempt: any, i: number) => {
-                          const baseName = attempt.sessionName ?? attempt.examName ?? 'Exam Attempt';
+                          const baseName =
+                            attempt.sessionName ?? attempt.examName ?? 'Exam Attempt';
                           const iter = iterMap.get(attempt.id) ?? 1;
                           const totalForName = counters[baseName] ?? 1;
                           const displayName = totalForName > 1 ? `${baseName} #${iter}` : baseName;
@@ -1236,7 +1288,9 @@ export default function UserDashboard({
                       >
                         <p
                           className={`font-bold text-sm ${
-                            sessionConfig.testType === t.value ? 'text-indigo-700' : 'text-slate-700'
+                            sessionConfig.testType === t.value
+                              ? 'text-indigo-700'
+                              : 'text-slate-700'
                           }`}
                         >
                           {t.label}
@@ -1257,8 +1311,8 @@ export default function UserDashboard({
                           Difficulty Balanced Strategy
                         </p>
                         <p className="text-xs text-slate-600 leading-relaxed">
-                          This exam automatically distributes questions proportionally across
-                          Easy, Medium, and Hard levels. No difficulty filter is needed.
+                          This exam automatically distributes questions proportionally across Easy,
+                          Medium, and Hard levels. No difficulty filter is needed.
                         </p>
                       </div>
                     </div>

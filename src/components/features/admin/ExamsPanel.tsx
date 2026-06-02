@@ -397,8 +397,19 @@ export default function ExamsPanel({ onSelectExam }: ExamsPanelProps) {
                   <input
                     type="number"
                     value={examForm.duration}
-                    onChange={(e) => setExamForm({ ...examForm, duration: e.target.value === '' ? '' : parseInt(e.target.value) })}
-                    onBlur={(e) => { const v = parseInt(e.target.value); setExamForm({ ...examForm, duration: isNaN(v) ? 15 : Math.min(480, Math.max(15, v)) }); }}
+                    onChange={(e) =>
+                      setExamForm({
+                        ...examForm,
+                        duration: e.target.value === '' ? '' : parseInt(e.target.value),
+                      })
+                    }
+                    onBlur={(e) => {
+                      const v = parseInt(e.target.value);
+                      setExamForm({
+                        ...examForm,
+                        duration: isNaN(v) ? 15 : Math.min(480, Math.max(15, v)),
+                      });
+                    }}
                     className="w-full p-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-600"
                     min="15"
                     max="480"
@@ -412,8 +423,19 @@ export default function ExamsPanel({ onSelectExam }: ExamsPanelProps) {
                   <input
                     type="number"
                     value={examForm.totalQuestions}
-                    onChange={(e) => setExamForm({ ...examForm, totalQuestions: e.target.value === '' ? '' : parseInt(e.target.value) })}
-                    onBlur={(e) => { const v = parseInt(e.target.value); setExamForm({ ...examForm, totalQuestions: isNaN(v) ? 5 : Math.min(500, Math.max(5, v)) }); }}
+                    onChange={(e) =>
+                      setExamForm({
+                        ...examForm,
+                        totalQuestions: e.target.value === '' ? '' : parseInt(e.target.value),
+                      })
+                    }
+                    onBlur={(e) => {
+                      const v = parseInt(e.target.value);
+                      setExamForm({
+                        ...examForm,
+                        totalQuestions: isNaN(v) ? 5 : Math.min(500, Math.max(5, v)),
+                      });
+                    }}
                     className="w-full p-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-600"
                     min="5"
                     max="500"

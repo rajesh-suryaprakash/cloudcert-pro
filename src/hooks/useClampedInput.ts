@@ -61,9 +61,7 @@ export function useClampedInput(
 
   const handleBlur = useCallback(() => {
     const parsed = isFloat ? parseFloat(raw) : parseInt(raw, 10);
-    const clamped = isNaN(parsed)
-      ? resolvedFallback
-      : Math.min(max, Math.max(min, parsed));
+    const clamped = isNaN(parsed) ? resolvedFallback : Math.min(max, Math.max(min, parsed));
     onCommit(clamped);
     setRaw(String(clamped));
   }, [raw, min, max, resolvedFallback, onCommit, isFloat]);

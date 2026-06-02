@@ -86,7 +86,8 @@ export default function QuestionReviewCard({ question, questionNumber }: Questio
       if (question.explanation) {
         try {
           const parsed = JSON.parse(question.explanation);
-          const wrongOptions: Record<string, string> = parsed?.['why other options are wrong'] ?? {};
+          const wrongOptions: Record<string, string> =
+            parsed?.['why other options are wrong'] ?? {};
           const alreadyCovered = Object.keys(wrongOptions).some(
             (key) => key.trim().toLowerCase() === option.trim().toLowerCase(),
           );
@@ -233,7 +234,12 @@ export default function QuestionReviewCard({ question, questionNumber }: Questio
           <div className="flex items-start gap-2 mb-3">
             <CheckCircle className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
             <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider">
-              Correct answer{question.options.filter((opt) => getOptionStatus(opt, 0) === 'correct-missed').length > 1 ? 's' : ''} you missed
+              Correct answer
+              {question.options.filter((opt) => getOptionStatus(opt, 0) === 'correct-missed')
+                .length > 1
+                ? 's'
+                : ''}{' '}
+              you missed
             </p>
           </div>
           <div className="space-y-3">

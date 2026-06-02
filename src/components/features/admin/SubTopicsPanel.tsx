@@ -396,8 +396,19 @@ export default function SubTopicsPanel({ onSelectSubTopic }: SubTopicsPanelProps
                     type="number"
                     min="0"
                     value={subtopicForm.orderIndex}
-                    onChange={(e) => setSubtopicForm({ ...subtopicForm, orderIndex: e.target.value === '' ? '' : parseInt(e.target.value) })}
-                    onBlur={(e) => { const v = parseInt(e.target.value); setSubtopicForm({ ...subtopicForm, orderIndex: isNaN(v) ? 0 : Math.max(0, v) }); }}
+                    onChange={(e) =>
+                      setSubtopicForm({
+                        ...subtopicForm,
+                        orderIndex: e.target.value === '' ? '' : parseInt(e.target.value),
+                      })
+                    }
+                    onBlur={(e) => {
+                      const v = parseInt(e.target.value);
+                      setSubtopicForm({
+                        ...subtopicForm,
+                        orderIndex: isNaN(v) ? 0 : Math.max(0, v),
+                      });
+                    }}
                     className="w-full p-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-600"
                   />
                 </div>

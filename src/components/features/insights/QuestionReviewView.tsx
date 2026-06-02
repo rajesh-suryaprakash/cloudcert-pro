@@ -272,7 +272,7 @@ export default function QuestionReviewView({
             key: question.id,
             question,
             questionNumber: (currentPage - 1) * (pagination?.limit || 20) + index + 1,
-          })
+          }),
         )}
       </div>
 
