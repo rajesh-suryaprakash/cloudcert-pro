@@ -4,7 +4,7 @@
 #
 # Architecture: React (Vite) SPA + Express API server + SQLite
 # Build strategy: Multi-stage — build tools stay out of the runtime image
-# Runtime: Node.js 20 LTS (Alpine) running server.ts via tsx
+# Runtime: Node.js 24 LTS (Alpine) running server.ts via tsx
 #
 # Required secrets at runtime (never bake into the image):
 #   JWT_SECRET          — min 32 chars, for signing session tokens
@@ -24,10 +24,10 @@
 # =============================================================================
 # Stage 1: deps — install ALL dependencies (prod + dev) for the build
 # =============================================================================
-# Pinned to the multi-platform manifest digest for node:20-alpine (2026-04-15).
+# Pinned to the multi-platform manifest digest for node:24-alpine.
 # Guide §2.1.1: "Pin base images to a digest for full supply-chain integrity."
-# To update: docker pull node:20-alpine && docker inspect node:20-alpine --format '{{index .RepoDigests 0}}'
-FROM node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 AS deps
+# To update: docker pull node:24-alpine && docker inspect node:24-alpine --format '{{index .RepoDigests 0}}'
+FROM node:24-alpine@sha256:2bdb65ed1dab192432bc31c95f94155ca5ad7fc1392fb7eb7526ab682fa5bf14 AS deps
 
 # Install build tools required by native modules (better-sqlite3 uses node-gyp)
 RUN apk add --no-cache python3 make g++
@@ -57,7 +57,7 @@ RUN NODE_ENV=production npm run build
 # Separating this from the builder stage keeps native module compilation
 # isolated and ensures no dev tools leak into the final image.
 # =============================================================================
-FROM node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 AS prod-deps
+FROM node:24-alpine@sha256:2bdb65ed1dab192432bc31c95f94155ca5ad7fc1392fb7eb7526ab682fa5bf14 AS prod-deps
 
 RUN apk add --no-cache python3 make g++
 
@@ -71,7 +71,7 @@ RUN npm ci --omit=dev
 # =============================================================================
 # Stage 4: runtime — the final, minimal production image
 # =============================================================================
-FROM node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 AS runtime
+FROM node:24-alpine@sha256:2bdb65ed1dab192432bc31c95f94155ca5ad7fc1392fb7eb7526ab682fa5bf14 AS runtime
 
 # ── OCI metadata ─────────────────────────────────────────────────────────────
 # Populate COMMIT_SHA and BUILD_DATE from CI/CD at build time:
