@@ -446,8 +446,16 @@ export default function TopicDetailPanel({ topicId, onDelete, onBack }: TopicDet
                   type="number"
                   min="0"
                   value={editForm.orderIndex}
-                  onChange={(e) => setEditForm({ ...editForm, orderIndex: e.target.value === '' ? '' : parseInt(e.target.value) })}
-                  onBlur={(e) => { const v = parseInt(e.target.value); setEditForm({ ...editForm, orderIndex: isNaN(v) ? 0 : Math.max(0, v) }); }}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      orderIndex: e.target.value === '' ? '' : parseInt(e.target.value),
+                    })
+                  }
+                  onBlur={(e) => {
+                    const v = parseInt(e.target.value);
+                    setEditForm({ ...editForm, orderIndex: isNaN(v) ? 0 : Math.max(0, v) });
+                  }}
                   className="w-full p-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-600 bg-white"
                 />
               </div>
@@ -461,8 +469,19 @@ export default function TopicDetailPanel({ topicId, onDelete, onBack }: TopicDet
                   max="100"
                   step="0.1"
                   value={editForm.weightPercentage}
-                  onChange={(e) => setEditForm({ ...editForm, weightPercentage: e.target.value === '' ? '' : parseFloat(e.target.value) })}
-                  onBlur={(e) => { const v = parseFloat(e.target.value); setEditForm({ ...editForm, weightPercentage: isNaN(v) ? 0 : Math.min(100, Math.max(0, v)) }); }}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      weightPercentage: e.target.value === '' ? '' : parseFloat(e.target.value),
+                    })
+                  }
+                  onBlur={(e) => {
+                    const v = parseFloat(e.target.value);
+                    setEditForm({
+                      ...editForm,
+                      weightPercentage: isNaN(v) ? 0 : Math.min(100, Math.max(0, v)),
+                    });
+                  }}
                   className="w-full p-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-600 bg-white"
                 />
               </div>

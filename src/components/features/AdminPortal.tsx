@@ -693,11 +693,7 @@ export default function AdminPortal() {
         ) : view === 'units' ? (
           <UnitsPanel onSelectUnit={handleSelectUnit} />
         ) : view === 'unit-detail' && certId ? (
-          <UnitDetailPanel
-            unitId={certId}
-            onDelete={handleDeleteUnit}
-            onBack={handleBackToUnits}
-          />
+          <UnitDetailPanel unitId={certId} onDelete={handleDeleteUnit} onBack={handleBackToUnits} />
         ) : view === 'questions' ? (
           <QuestionsPanel onSelectQuestion={handleSelectQuestion} />
         ) : view === 'question-detail' && certId ? (

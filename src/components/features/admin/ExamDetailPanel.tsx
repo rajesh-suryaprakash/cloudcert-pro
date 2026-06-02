@@ -492,8 +492,19 @@ export default function ExamDetailPanel({
                 <input
                   type="number"
                   value={editForm.duration}
-                  onChange={(e) => setEditForm({ ...editForm, duration: e.target.value === '' ? '' : parseInt(e.target.value) })}
-                  onBlur={(e) => { const v = parseInt(e.target.value); setEditForm({ ...editForm, duration: isNaN(v) ? 15 : Math.min(480, Math.max(15, v)) }); }}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      duration: e.target.value === '' ? '' : parseInt(e.target.value),
+                    })
+                  }
+                  onBlur={(e) => {
+                    const v = parseInt(e.target.value);
+                    setEditForm({
+                      ...editForm,
+                      duration: isNaN(v) ? 15 : Math.min(480, Math.max(15, v)),
+                    });
+                  }}
                   className="w-full p-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-600 bg-white"
                   min="15"
                   max="480"
@@ -507,8 +518,19 @@ export default function ExamDetailPanel({
                 <input
                   type="number"
                   value={editForm.totalQuestions}
-                  onChange={(e) => setEditForm({ ...editForm, totalQuestions: e.target.value === '' ? '' : parseInt(e.target.value) })}
-                  onBlur={(e) => { const v = parseInt(e.target.value); setEditForm({ ...editForm, totalQuestions: isNaN(v) ? 5 : Math.min(500, Math.max(5, v)) }); }}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      totalQuestions: e.target.value === '' ? '' : parseInt(e.target.value),
+                    })
+                  }
+                  onBlur={(e) => {
+                    const v = parseInt(e.target.value);
+                    setEditForm({
+                      ...editForm,
+                      totalQuestions: isNaN(v) ? 5 : Math.min(500, Math.max(5, v)),
+                    });
+                  }}
                   className="w-full p-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-600 bg-white"
                   min="5"
                   max="500"

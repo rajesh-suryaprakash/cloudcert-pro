@@ -101,7 +101,7 @@ export default function CertificationDetailPanel({
       for (const topic of topics) {
         const subtopics = await fetchApi(`/topics/${topic.id}/subtopics`);
         totalSubtopics += subtopics.length;
-        
+
         // Gracefully handle topics with no questions (returns 400)
         try {
           const questions = await fetchApi(`/topics/${topic.id}/questions`);

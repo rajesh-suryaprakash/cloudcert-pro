@@ -31,10 +31,10 @@
 
 **CloudCert Pro** is a full-stack, production-ready certification study platform designed for individuals and engineering teams preparing for cloud and IT certifications. The platform provides an intelligent, data-driven study experience covering:
 
-| Certification Domain | Supported Exams |
-|---|---|
-| **Google Cloud Platform** | Professional Cloud Architect (PCA) |
-| **Template-ready** | AWS, Azure, CompTIA (via the JSON seeder template system) |
+| Certification Domain      | Supported Exams                                           |
+| ------------------------- | --------------------------------------------------------- |
+| **Google Cloud Platform** | Professional Cloud Architect (PCA)                        |
+| **Template-ready**        | AWS, Azure, CompTIA (via the JSON seeder template system) |
 
 ### Core Features
 
@@ -50,12 +50,12 @@
 
 ### Audience
 
-| Role | What you do here |
-|---|---|
-| **Learners** | Take mock exams, track progress, review answers, study weak topics |
-| **Admins** | Manage question banks, configure exams, set domain weights |
-| **Developers** | Extend the API, add certification data, integrate via the TypeScript SDK |
-| **DevOps / Platform** | Deploy containers, configure CI/CD, manage secrets |
+| Role                  | What you do here                                                         |
+| --------------------- | ------------------------------------------------------------------------ |
+| **Learners**          | Take mock exams, track progress, review answers, study weak topics       |
+| **Admins**            | Manage question banks, configure exams, set domain weights               |
+| **Developers**        | Extend the API, add certification data, integrate via the TypeScript SDK |
+| **DevOps / Platform** | Deploy containers, configure CI/CD, manage secrets                       |
 
 ---
 
@@ -107,51 +107,51 @@ CloudCert Pro is a **monorepo full-stack application** — a single Node.js proc
 
 #### Frontend
 
-| Technology | Version | Role |
-|---|---|---|
-| React | 19 | UI framework |
-| React Router DOM | 7 | Client-side routing with role-based guards |
-| TypeScript | 5.8 | Type safety across the SPA |
-| Tailwind CSS | 4 | Utility-first styling |
-| Motion (Framer) | 12 | Page transition and micro-animations |
-| Lucide React | 0.546 | Icon library |
-| Vite | 6 | Build tool and dev server (HMR) |
+| Technology       | Version | Role                                       |
+| ---------------- | ------- | ------------------------------------------ |
+| React            | 19      | UI framework                               |
+| React Router DOM | 7       | Client-side routing with role-based guards |
+| TypeScript       | 5.8     | Type safety across the SPA                 |
+| Tailwind CSS     | 4       | Utility-first styling                      |
+| Motion (Framer)  | 12      | Page transition and micro-animations       |
+| Lucide React     | 0.546   | Icon library                               |
+| Vite             | 6       | Build tool and dev server (HMR)            |
 
 #### Backend
 
-| Technology | Version | Role |
-|---|---|---|
-| Node.js | 20 LTS | Runtime |
-| Express | 4 | HTTP server and REST API |
-| TypeScript (tsx) | 5.8 / 4.x | Server-side TypeScript without a compile step |
-| better-sqlite3 | 12 | Synchronous, embedded SQLite driver |
-| jsonwebtoken | 9 | JWT session tokens (httpOnly cookie) |
-| bcryptjs | 3 | Password hashing (bcrypt, cost factor 12) |
-| Zod | 4 | Request body validation and OpenAPI schema generation |
-| pino / pino-http | 10 / 11 | Structured JSON logging with PII redaction |
-| helmet | 8 | HTTP security headers and CSP |
-| express-rate-limit | 8 | Request rate limiting |
-| nodemailer | 8 | Transactional email (password reset) |
-| uuid | 14 | UUID v4 (correlation IDs) and UUID v5 (deterministic cert IDs) |
+| Technology         | Version   | Role                                                           |
+| ------------------ | --------- | -------------------------------------------------------------- |
+| Node.js            | 20 LTS    | Runtime                                                        |
+| Express            | 4         | HTTP server and REST API                                       |
+| TypeScript (tsx)   | 5.8 / 4.x | Server-side TypeScript without a compile step                  |
+| better-sqlite3     | 12        | Synchronous, embedded SQLite driver                            |
+| jsonwebtoken       | 9         | JWT session tokens (httpOnly cookie)                           |
+| bcryptjs           | 3         | Password hashing (bcrypt, cost factor 12)                      |
+| Zod                | 4         | Request body validation and OpenAPI schema generation          |
+| pino / pino-http   | 10 / 11   | Structured JSON logging with PII redaction                     |
+| helmet             | 8         | HTTP security headers and CSP                                  |
+| express-rate-limit | 8         | Request rate limiting                                          |
+| nodemailer         | 8         | Transactional email (password reset)                           |
+| uuid               | 14        | UUID v4 (correlation IDs) and UUID v5 (deterministic cert IDs) |
 
 #### API & Documentation
 
-| Technology | Role |
-|---|---|
-| `@asteasolutions/zod-to-openapi` | Generates OpenAPI 3.0 spec from Zod schemas |
-| swagger-ui-express | Interactive API docs at `/api-docs` |
+| Technology                            | Role                                              |
+| ------------------------------------- | ------------------------------------------------- |
+| `@asteasolutions/zod-to-openapi`      | Generates OpenAPI 3.0 spec from Zod schemas       |
+| swagger-ui-express                    | Interactive API docs at `/api-docs`               |
 | `@openapitools/openapi-generator-cli` | Generates TypeScript/JavaScript SDK from the spec |
 
 #### Infrastructure & DevOps
 
-| Technology | Role |
-|---|---|
+| Technology                   | Role                                                                      |
+| ---------------------------- | ------------------------------------------------------------------------- |
 | Docker (multi-stage, Alpine) | Container packaging; 4-stage build (deps → builder → prod-deps → runtime) |
-| GitHub Actions | 8-job CI/CD pipeline |
-| OWASP ZAP | DAST (dynamic security testing) |
-| CodeQL | SAST (static application security testing) |
-| OWASP Dependency-Check | SCA (software composition analysis) |
-| TruffleHog | Secret scanning across git history |
+| GitHub Actions               | 8-job CI/CD pipeline                                                      |
+| OWASP ZAP                    | DAST (dynamic security testing)                                           |
+| CodeQL                       | SAST (static application security testing)                                |
+| OWASP Dependency-Check       | SCA (software composition analysis)                                       |
+| TruffleHog                   | Secret scanning across git history                                        |
 
 ---
 
@@ -159,12 +159,12 @@ CloudCert Pro is a **monorepo full-stack application** — a single Node.js proc
 
 ### Prerequisites
 
-| Tool | Minimum Version | Notes |
-|---|---|---|
-| Node.js | 20 LTS | Required for running the server and tests |
-| npm | 10+ | Installed with Node 20 |
-| Git | 2.x | Required for cloning |
-| Docker | 20+ | Optional — for containerised runs |
+| Tool    | Minimum Version | Notes                                     |
+| ------- | --------------- | ----------------------------------------- |
+| Node.js | 20 LTS          | Required for running the server and tests |
+| npm     | 10+             | Installed with Node 20                    |
+| Git     | 2.x             | Required for cloning                      |
+| Docker  | 20+             | Optional — for containerised runs         |
 
 ### 1. Clone the repository
 
@@ -211,15 +211,16 @@ The server starts on **http://localhost:3000** by default.
 - **Swagger UI** → `http://localhost:3000/api-docs/`
 
 On first startup, the server automatically:
+
 1. Runs all pending schema migrations (v1–v11)
 2. Seeds the admin and learner accounts from `SEED_ADMIN_*` env vars
 3. Seeds all GCP certification data from `src/server/db/seed-data/gcp/`
 
 ### 5. Default accounts
 
-| Role | Email | Password |
-|---|---|---|
-| Admin | `admin@example.com` | `ChangeMe123!` |
+| Role    | Email                 | Password       |
+| ------- | --------------------- | -------------- |
+| Admin   | `admin@example.com`   | `ChangeMe123!` |
 | Learner | `learner@example.com` | `ChangeMe123!` |
 
 > **⚠️ Change default passwords immediately** in any non-local environment.
@@ -316,24 +317,24 @@ cloudcert-pro/
 
 ### Environment Variables
 
-| Variable | Required | Default | Description |
-|---|---|---|---|
-| `JWT_SECRET` | ✅ | — | Min 32 chars. Signs session JWT tokens |
-| `RESET_TOKEN_SECRET` | ✅ | — | Min 32 chars. Signs password-reset tokens. Must differ from `JWT_SECRET` |
-| `ALLOWED_ORIGIN` | ❌ | `http://localhost:5173` | CORS allowed origin for the React SPA |
-| `PORT` | ❌ | `3000` | HTTP port the Express server listens on |
-| `NODE_ENV` | ❌ | `development` | Set to `production` to disable Vite HMR and enable strict CSP |
-| `SEED_ADMIN_EMAIL` | ❌ | `admin@example.com` | Admin account email created on first startup |
-| `SEED_ADMIN_PASSWORD` | ❌ | `ChangeMe123!` | Admin account password — **change before deploying** |
-| `SEED_LEARNER_EMAIL` | ❌ | `learner@example.com` | Test learner account email |
-| `SEED_LEARNER_PASSWORD` | ❌ | `ChangeMe123!` | Test learner account password |
-| `APP_URL` | ❌ | `http://localhost:5173` | Public URL used to build password-reset email links |
-| `SMTP_HOST` | ❌ | — | SMTP server hostname. Omit to use console-log fallback in dev |
-| `SMTP_PORT` | ❌ | `587` | SMTP port (587 for STARTTLS, 465 for SSL) |
-| `SMTP_USER` | ❌ | — | SMTP auth username / API key |
-| `SMTP_PASS` | ❌ | — | SMTP auth password / API secret |
-| `SMTP_FROM` | ❌ | `noreply@cloudcertpro.com` | Sender address shown in outbound emails |
-| `NVD_API_KEY` | ❌ | — | OWASP Dependency-Check NVD API key — reduces rate-limiting |
+| Variable                | Required | Default                    | Description                                                              |
+| ----------------------- | -------- | -------------------------- | ------------------------------------------------------------------------ |
+| `JWT_SECRET`            | ✅       | —                          | Min 32 chars. Signs session JWT tokens                                   |
+| `RESET_TOKEN_SECRET`    | ✅       | —                          | Min 32 chars. Signs password-reset tokens. Must differ from `JWT_SECRET` |
+| `ALLOWED_ORIGIN`        | ❌       | `http://localhost:5173`    | CORS allowed origin for the React SPA                                    |
+| `PORT`                  | ❌       | `3000`                     | HTTP port the Express server listens on                                  |
+| `NODE_ENV`              | ❌       | `development`              | Set to `production` to disable Vite HMR and enable strict CSP            |
+| `SEED_ADMIN_EMAIL`      | ❌       | `admin@example.com`        | Admin account email created on first startup                             |
+| `SEED_ADMIN_PASSWORD`   | ❌       | `ChangeMe123!`             | Admin account password — **change before deploying**                     |
+| `SEED_LEARNER_EMAIL`    | ❌       | `learner@example.com`      | Test learner account email                                               |
+| `SEED_LEARNER_PASSWORD` | ❌       | `ChangeMe123!`             | Test learner account password                                            |
+| `APP_URL`               | ❌       | `http://localhost:5173`    | Public URL used to build password-reset email links                      |
+| `SMTP_HOST`             | ❌       | —                          | SMTP server hostname. Omit to use console-log fallback in dev            |
+| `SMTP_PORT`             | ❌       | `587`                      | SMTP port (587 for STARTTLS, 465 for SSL)                                |
+| `SMTP_USER`             | ❌       | —                          | SMTP auth username / API key                                             |
+| `SMTP_PASS`             | ❌       | —                          | SMTP auth password / API secret                                          |
+| `SMTP_FROM`             | ❌       | `noreply@cloudcertpro.com` | Sender address shown in outbound emails                                  |
+| `NVD_API_KEY`           | ❌       | —                          | OWASP Dependency-Check NVD API key — reduces rate-limiting               |
 
 ### Adding a New Certification
 
@@ -359,22 +360,22 @@ The full API is documented in the **Swagger UI** at `/api-docs` when the server 
 
 ### API Domains
 
-| Route Prefix | Domain | Auth Required |
-|---|---|---|
-| `POST /api/auth/login` | Authentication | ❌ |
-| `POST /api/auth/register` | Authentication | ❌ |
-| `POST /api/auth/forgot-password` | Password Reset | ❌ |
-| `POST /api/auth/reset-password` | Password Reset | ❌ |
-| `GET /api/certifications` | Certification Catalogue | ✅ |
-| `POST /api/certifications` | Certification Management | ✅ Admin |
-| `GET /api/certifications/:id/topics` | Topic Hierarchy | ✅ |
-| `POST /api/certifications/:id/exam-sessions` | Start Mock Exam | ✅ |
-| `POST /api/exam-sessions/:id/submit` | Submit Exam | ✅ |
-| `GET /api/insights/:certId` | Analytics Dashboard | ✅ |
-| `GET /api/srs` | Spaced Repetition Queue | ✅ |
-| `GET /api/achievements` | Achievement Tracking | ✅ |
-| `GET /api/study-plan/:certId` | Study Plan | ✅ |
-| `GET /api/units/:certId` | Learning Units | ✅ |
+| Route Prefix                                 | Domain                   | Auth Required |
+| -------------------------------------------- | ------------------------ | ------------- |
+| `POST /api/auth/login`                       | Authentication           | ❌            |
+| `POST /api/auth/register`                    | Authentication           | ❌            |
+| `POST /api/auth/forgot-password`             | Password Reset           | ❌            |
+| `POST /api/auth/reset-password`              | Password Reset           | ❌            |
+| `GET /api/certifications`                    | Certification Catalogue  | ✅            |
+| `POST /api/certifications`                   | Certification Management | ✅ Admin      |
+| `GET /api/certifications/:id/topics`         | Topic Hierarchy          | ✅            |
+| `POST /api/certifications/:id/exam-sessions` | Start Mock Exam          | ✅            |
+| `POST /api/exam-sessions/:id/submit`         | Submit Exam              | ✅            |
+| `GET /api/insights/:certId`                  | Analytics Dashboard      | ✅            |
+| `GET /api/srs`                               | Spaced Repetition Queue  | ✅            |
+| `GET /api/achievements`                      | Achievement Tracking     | ✅            |
+| `GET /api/study-plan/:certId`                | Study Plan               | ✅            |
+| `GET /api/units/:certId`                     | Learning Units           | ✅            |
 
 ### Authentication
 
@@ -403,21 +404,21 @@ CloudCert Pro uses a **property-based testing** (PBT) approach alongside traditi
 
 ### Test Suite Structure
 
-| Layer | Files | What is tested |
-|---|---|---|
-| **Config** | `config.test.ts`, `validation.test.ts` | Env var loading, fail-fast guards, domain validators |
-| **Logger** | `logger.test.ts`, `utils/time.test.ts` | pino config, PII redaction, time utilities |
-| **DB** | `db/connection.test.ts`, `migrations.test.ts` (×3), `seeds.test.ts` | Connection singleton, migration runner idempotency, seeder |
-| **Middleware** | `middleware/*.test.ts` (×4) | correlationId injection, error serialisation, request logging, Zod validation |
-| **Errors** | `errors/errors.test.ts` | AppError hierarchy, HTTP status mapping |
-| **Repositories** | `*Repository.test.ts` (×7) | CRUD operations, FK constraints, property-based data access |
-| **Services** | `*Service.test.ts` (×16+) | Analytics, benchmarking, exam grading, question selection, SRS, study list |
-| **Routes** | `routes/*.test.ts` (×8) | HTTP integration tests with in-memory SQLite |
-| **OpenAPI** | `openapi/*.test.ts` (×3+) | Spec integrity, response-time SLOs, route coverage |
-| **Seed Data** | `seedData.test.ts` | JSON data file validation (FK references, weight sums, MCQ format) |
-| **Components** | `components/**/*.test.tsx` (×7) | React component rendering, user interactions |
-| **Hooks** | `hooks/*.test.tsx` (×6) | State management, navigation, exam session logic |
-| **Utilities** | `utils/*.test.ts` | URL encoding, session storage, filter serialisation |
+| Layer            | Files                                                               | What is tested                                                                |
+| ---------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| **Config**       | `config.test.ts`, `validation.test.ts`                              | Env var loading, fail-fast guards, domain validators                          |
+| **Logger**       | `logger.test.ts`, `utils/time.test.ts`                              | pino config, PII redaction, time utilities                                    |
+| **DB**           | `db/connection.test.ts`, `migrations.test.ts` (×3), `seeds.test.ts` | Connection singleton, migration runner idempotency, seeder                    |
+| **Middleware**   | `middleware/*.test.ts` (×4)                                         | correlationId injection, error serialisation, request logging, Zod validation |
+| **Errors**       | `errors/errors.test.ts`                                             | AppError hierarchy, HTTP status mapping                                       |
+| **Repositories** | `*Repository.test.ts` (×7)                                          | CRUD operations, FK constraints, property-based data access                   |
+| **Services**     | `*Service.test.ts` (×16+)                                           | Analytics, benchmarking, exam grading, question selection, SRS, study list    |
+| **Routes**       | `routes/*.test.ts` (×8)                                             | HTTP integration tests with in-memory SQLite                                  |
+| **OpenAPI**      | `openapi/*.test.ts` (×3+)                                           | Spec integrity, response-time SLOs, route coverage                            |
+| **Seed Data**    | `seedData.test.ts`                                                  | JSON data file validation (FK references, weight sums, MCQ format)            |
+| **Components**   | `components/**/*.test.tsx` (×7)                                     | React component rendering, user interactions                                  |
+| **Hooks**        | `hooks/*.test.tsx` (×6)                                             | State management, navigation, exam session logic                              |
+| **Utilities**    | `utils/*.test.ts`                                                   | URL encoding, session storage, filter serialisation                           |
 
 ### Running Tests
 
@@ -439,12 +440,12 @@ npx vitest
 
 All four coverage axes are gated at **≥ 80%** in CI. The pipeline will fail if any threshold is breached.
 
-| Metric | Threshold |
-|---|---|
-| Lines | ≥ 80% |
-| Functions | ≥ 80% |
-| Branches | ≥ 80% |
-| Statements | ≥ 80% |
+| Metric     | Threshold |
+| ---------- | --------- |
+| Lines      | ≥ 80%     |
+| Functions  | ≥ 80%     |
+| Branches   | ≥ 80%     |
+| Statements | ≥ 80%     |
 
 Coverage reports are uploaded as CI artifacts (30-day retention on `main`, 7 days for PRs) and are available in `coverage/` locally after running `npm run test:coverage`.
 
@@ -482,18 +483,19 @@ The pipeline runs on every push to `main`, `develop`, and all pull requests. It 
  sca ───────────────────────────────── (parallel)
 ```
 
-| Job | Tool | What it checks |
-|---|---|---|
-| **quality** | ESLint + tsc + Prettier | Lint, type safety, formatting |
-| **test** | Vitest | All tests + ≥80% coverage |
-| **build** | Vite | Production frontend build |
-| **security** | npm audit | High/critical CVE dependencies |
-| **secret-scan** | TruffleHog v3 | Accidentally committed secrets across full git history |
-| **sast** | GitHub CodeQL | Static analysis (OWASP Top 10, CWE Top 25, SQL injection, XSS, path traversal, …) |
-| **sca** | OWASP Dependency-Check | NVD + OSS Index CVE cross-reference (fails on CVSS ≥ 7) |
-| **dast** | OWASP ZAP Baseline | Runtime security headers, cookie attributes, clickjacking, info disclosure |
+| Job             | Tool                    | What it checks                                                                    |
+| --------------- | ----------------------- | --------------------------------------------------------------------------------- |
+| **quality**     | ESLint + tsc + Prettier | Lint, type safety, formatting                                                     |
+| **test**        | Vitest                  | All tests + ≥80% coverage                                                         |
+| **build**       | Vite                    | Production frontend build                                                         |
+| **security**    | npm audit               | High/critical CVE dependencies                                                    |
+| **secret-scan** | TruffleHog v3           | Accidentally committed secrets across full git history                            |
+| **sast**        | GitHub CodeQL           | Static analysis (OWASP Top 10, CWE Top 25, SQL injection, XSS, path traversal, …) |
+| **sca**         | OWASP Dependency-Check  | NVD + OSS Index CVE cross-reference (fails on CVSS ≥ 7)                           |
+| **dast**        | OWASP ZAP Baseline      | Runtime security headers, cookie attributes, clickjacking, info disclosure        |
 
 **Security features:**
+
 - All Actions are pinned to **immutable full commit SHAs** to prevent supply-chain attacks from moving tags
 - Principle of least privilege: `permissions: contents: read` at the workflow level; jobs declare additional permissions explicitly
 - Concurrency control: in-progress runs for the same branch are cancelled to avoid wasted compute
@@ -534,6 +536,7 @@ docker run -d \
 #### Health check
 
 The container exposes a built-in Docker health check:
+
 ```
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3
   CMD wget -qO- http://localhost:3000/api/health
@@ -543,11 +546,11 @@ This is compatible with Kubernetes liveness and readiness probes.
 
 ### Required GitHub Secrets for CI
 
-| Secret | Description |
-|---|---|
-| `JWT_SECRET` | Min 32 chars — used by the DAST job to start the server |
-| `RESET_TOKEN_SECRET` | Min 32 chars — used by the DAST job |
-| `NVD_API_KEY` | *(Optional but recommended)* — OWASP NVD API key to avoid rate-limiting |
+| Secret               | Description                                                             |
+| -------------------- | ----------------------------------------------------------------------- |
+| `JWT_SECRET`         | Min 32 chars — used by the DAST job to start the server                 |
+| `RESET_TOKEN_SECRET` | Min 32 chars — used by the DAST job                                     |
+| `NVD_API_KEY`        | _(Optional but recommended)_ — OWASP NVD API key to avoid rate-limiting |
 
 ---
 
@@ -565,13 +568,13 @@ This is compatible with Kubernetes liveness and readiness probes.
 
 Managed by `helmet` with environment-specific CSP:
 
-| Header | Production value |
-|---|---|
+| Header                    | Production value                                        |
+| ------------------------- | ------------------------------------------------------- |
 | `Content-Security-Policy` | `default-src 'self'`; CDN allowlist for Swagger UI only |
-| `X-Powered-By` | Removed entirely (not just suppressed) |
-| `X-Frame-Options` | `DENY` (via `frameAncestors 'none'`) |
-| `X-Content-Type-Options` | `nosniff` |
-| `Referrer-Policy` | Set by helmet defaults |
+| `X-Powered-By`            | Removed entirely (not just suppressed)                  |
+| `X-Frame-Options`         | `DENY` (via `frameAncestors 'none'`)                    |
+| `X-Content-Type-Options`  | `nosniff`                                               |
+| `Referrer-Policy`         | Set by helmet defaults                                  |
 
 ### PII and Logging
 
@@ -580,13 +583,13 @@ Managed by `helmet` with environment-specific CSP:
 
 ### Dependency Security
 
-| Layer | Tool | Threshold |
-|---|---|---|
-| npm advisories | `npm audit` | Fails on HIGH/CRITICAL |
-| NVD CVE database | OWASP Dependency-Check | Fails on CVSS ≥ 7 |
-| Secret history scan | TruffleHog | Fails on verified secrets |
-| Static analysis | CodeQL (security-extended) | OWASP Top 10 + CWE Top 25 |
-| Runtime headers | OWASP ZAP Baseline | Fails on HIGH risk findings |
+| Layer               | Tool                       | Threshold                   |
+| ------------------- | -------------------------- | --------------------------- |
+| npm advisories      | `npm audit`                | Fails on HIGH/CRITICAL      |
+| NVD CVE database    | OWASP Dependency-Check     | Fails on CVSS ≥ 7           |
+| Secret history scan | TruffleHog                 | Fails on verified secrets   |
+| Static analysis     | CodeQL (security-extended) | OWASP Top 10 + CWE Top 25   |
+| Runtime headers     | OWASP ZAP Baseline         | Fails on HIGH risk findings |
 
 ### Rate Limiting
 
@@ -604,28 +607,28 @@ The SQLite database is managed by a schema-guard migration runner (v1–v11). Mi
 
 ### Core Tables
 
-| Table | Description |
-|---|---|
-| `users` | Learner and admin accounts (email, bcrypt password, role, XP) |
-| `certifications` | Certification catalogue (title, vendor, level, exam code, icon) |
-| `exam_configurations` | Per-certification exam settings (duration, question count, pass score, strategy) |
-| `topics` | Certification topic hierarchy (ordered, weighted) |
-| `subtopics` | Sub-level of topics (ordered) |
-| `questions` | MCQ question bank (single/multi-select, difficulty, options, correct answers, explanation) |
-| `exam_sessions` | Exam attempt records (userId, certificationId, config, score, status, timestamps) |
-| `exam_answers` | Per-question answers within a session |
-| `question_history` | Aggregated per-user-per-question statistics (times seen, times correct, confidence) |
-| `srs_items` | Spaced repetition scheduling records (due date, interval, easiness factor) |
-| `study_plan_completions` | Tracks completed study plan items |
-| `achievements` | Achievement definitions (name, description, XP reward, criteria) |
-| `user_achievements` | Per-user unlocked achievements |
-| `units` | Learning unit definitions associated with topics |
+| Table                    | Description                                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------------ |
+| `users`                  | Learner and admin accounts (email, bcrypt password, role, XP)                              |
+| `certifications`         | Certification catalogue (title, vendor, level, exam code, icon)                            |
+| `exam_configurations`    | Per-certification exam settings (duration, question count, pass score, strategy)           |
+| `topics`                 | Certification topic hierarchy (ordered, weighted)                                          |
+| `subtopics`              | Sub-level of topics (ordered)                                                              |
+| `questions`              | MCQ question bank (single/multi-select, difficulty, options, correct answers, explanation) |
+| `exam_sessions`          | Exam attempt records (userId, certificationId, config, score, status, timestamps)          |
+| `exam_answers`           | Per-question answers within a session                                                      |
+| `question_history`       | Aggregated per-user-per-question statistics (times seen, times correct, confidence)        |
+| `srs_items`              | Spaced repetition scheduling records (due date, interval, easiness factor)                 |
+| `study_plan_completions` | Tracks completed study plan items                                                          |
+| `achievements`           | Achievement definitions (name, description, XP reward, criteria)                           |
+| `user_achievements`      | Per-user unlocked achievements                                                             |
+| `units`                  | Learning unit definitions associated with topics                                           |
 
 ### Database File Location
 
-| Environment | Path |
-|---|---|
-| Development | `./cloudcert.db` (project root) |
+| Environment         | Path                                                                                         |
+| ------------------- | -------------------------------------------------------------------------------------------- |
+| Development         | `./cloudcert.db` (project root)                                                              |
 | Docker (production) | `/app/data/cloudcert.db` (mounted volume — see [Persistent storage](#deploying-with-docker)) |
 
 > **Production note:** Update `src/server/db/connection.ts` or set a `DB_PATH` environment variable to point to the volume path before deploying to production.
@@ -659,19 +662,20 @@ All commits must follow the [Conventional Commits](https://www.conventionalcommi
 [optional footer: BREAKING CHANGE or issue refs]
 ```
 
-| Type | When to use |
-|---|---|
-| `feat` | New functionality (routes, components, hooks) |
-| `fix` | Bug fixes |
-| `test` | Adding or updating tests |
-| `chore` | Maintenance (deps, config, seed data) |
-| `ci` | CI/CD pipeline changes |
-| `docs` | Documentation only |
-| `refactor` | Code restructuring without behaviour change |
-| `perf` | Performance improvements |
-| `style` | Formatting only (no logic change) |
+| Type       | When to use                                   |
+| ---------- | --------------------------------------------- |
+| `feat`     | New functionality (routes, components, hooks) |
+| `fix`      | Bug fixes                                     |
+| `test`     | Adding or updating tests                      |
+| `chore`    | Maintenance (deps, config, seed data)         |
+| `ci`       | CI/CD pipeline changes                        |
+| `docs`     | Documentation only                            |
+| `refactor` | Code restructuring without behaviour change   |
+| `perf`     | Performance improvements                      |
+| `style`    | Formatting only (no logic change)             |
 
 **Examples:**
+
 ```bash
 git commit -m "feat(server): add GCP ACE exam configuration"
 git commit -m "fix(auth): prevent JWT secret leaking to logs"
@@ -708,6 +712,7 @@ git commit -m "docs: update README with Docker deployment steps"
 ### Adding Seed Data
 
 When adding a new certification:
+
 - All JSON files must pass the `seedData.test.ts` property-based tests.
 - Topic weight percentages in `metadata.json` must sum to exactly 100.
 - All `topicId`, `subtopicId`, and `unitId` foreign key references must resolve within the same certification's data.
@@ -716,12 +721,12 @@ When adding a new certification:
 
 ## Support and SLA
 
-| Channel | Details |
-|---|---|
-| **Bug reports** | Open a GitHub Issue with the `bug` label and include the `X-Correlation-ID` from the failing request |
-| **Feature requests** | Open a GitHub Issue with the `enhancement` label |
+| Channel                      | Details                                                                                                      |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| **Bug reports**              | Open a GitHub Issue with the `bug` label and include the `X-Correlation-ID` from the failing request         |
+| **Feature requests**         | Open a GitHub Issue with the `enhancement` label                                                             |
 | **Security vulnerabilities** | **Do not open public issues.** Email the maintainer directly or use GitHub's private vulnerability reporting |
-| **CI failures** | Check the GitHub Actions tab — all jobs upload artifacts (coverage, SARIF, HTML reports) |
+| **CI failures**              | Check the GitHub Actions tab — all jobs upload artifacts (coverage, SARIF, HTML reports)                     |
 
 ### Uptime Target
 
@@ -764,4 +769,4 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 
 ---
 
-*Generated from codebase analysis on 2026-05-30. Keep this document in sync with the codebase — update version references, environment variables, and API domains when they change.*
+_Generated from codebase analysis on 2026-05-30. Keep this document in sync with the codebase — update version references, environment variables, and API domains when they change._

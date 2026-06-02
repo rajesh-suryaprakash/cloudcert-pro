@@ -465,14 +465,19 @@ function seedOneCertification(
           JSON.stringify(q.options),
           JSON.stringify(q.correctAnswers),
           q.explanation !== null && q.explanation !== undefined
-            ? (typeof q.explanation === 'string' ? q.explanation : JSON.stringify(q.explanation))
+            ? typeof q.explanation === 'string'
+              ? q.explanation
+              : JSON.stringify(q.explanation)
             : null,
           q.distractorExplanations ? JSON.stringify(q.distractorExplanations) : null,
           q.difficulty,
           JSON.stringify(q.tags ?? []),
         ];
         if (params.length !== 13) {
-          logger.error({ questionId: q.id, paramCount: params.length }, 'insertQuestion param count mismatch');
+          logger.error(
+            { questionId: q.id, paramCount: params.length },
+            'insertQuestion param count mismatch',
+          );
           continue;
         }
         const result = stmts.insertQuestion.run(...params);
@@ -704,7 +709,7 @@ export const seedGcpCertifications = (): void => {
     const certDirName = path.basename(certDir); // e.g. "gcp-pca"
     const certSlug = certDirName.startsWith(`${provider}-`)
       ? certDirName.slice(provider.length + 1) // "pca"
-      : certDirName;                            // fallback: use as-is
+      : certDirName; // fallback: use as-is
 
     // Build file paths using the naming convention: {provider}-{cert-slug}-{file-type}.json
     const certFile = path.join(certDir, `${provider}-${certSlug}-certification.json`);

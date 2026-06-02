@@ -158,9 +158,7 @@ describe('SubtopicBreakdownView', () => {
     });
 
     it('should not display proficiency score for insufficient data subtopics', () => {
-      render(
-        <SubtopicBreakdownView topicName={topicName} subtopics={mockSubtopics} />,
-      );
+      render(<SubtopicBreakdownView topicName={topicName} subtopics={mockSubtopics} />);
 
       const vpnSubtopic = screen.getByText('VPN Connections').closest('.bg-slate-50');
       const scoreCircle = vpnSubtopic?.querySelector('.rounded-full.ring-4');
@@ -169,9 +167,7 @@ describe('SubtopicBreakdownView', () => {
     });
 
     it('should not display progress bar for insufficient data subtopics', () => {
-      render(
-        <SubtopicBreakdownView topicName={topicName} subtopics={mockSubtopics} />,
-      );
+      render(<SubtopicBreakdownView topicName={topicName} subtopics={mockSubtopics} />);
 
       const vpnSubtopic = screen.getByText('VPN Connections').closest('.bg-slate-50');
       const progressBar = vpnSubtopic?.querySelector('.bg-slate-200.rounded-full');

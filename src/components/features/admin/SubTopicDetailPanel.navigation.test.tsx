@@ -128,26 +128,28 @@ const subtopics = [
 function setupApiMocks(subtopicId: string = 'subtopic-1') {
   (certifications.fetchCertifications as ReturnType<typeof vi.fn>).mockResolvedValue(certList);
 
-  (client.fetchApi as ReturnType<typeof vi.fn>).mockImplementation((url: string, opts?: { method?: string }) => {
-    if (opts?.method === 'PUT') return Promise.resolve({ success: true });
+  (client.fetchApi as ReturnType<typeof vi.fn>).mockImplementation(
+    (url: string, opts?: { method?: string }) => {
+      if (opts?.method === 'PUT') return Promise.resolve({ success: true });
 
-    if (url.includes('/certifications/cert-1/topics')) {
-      return Promise.resolve(topics.filter((t) => t._certId === 'cert-1').map((t) => ({ ...t })));
-    }
-    if (url.includes('/certifications/cert-2/topics')) {
+      if (url.includes('/certifications/cert-1/topics')) {
+        return Promise.resolve(topics.filter((t) => t._certId === 'cert-1').map((t) => ({ ...t })));
+      }
+      if (url.includes('/certifications/cert-2/topics')) {
+        return Promise.resolve([]);
+      }
+      if (url.includes('/topics/topic-1/subtopics')) {
+        return Promise.resolve(
+          subtopics.filter((s) => s._topicId === 'topic-1').map((s) => ({ ...s })),
+        );
+      }
+      if (url.includes('/topics/topic-2/subtopics')) {
+        return Promise.resolve([]);
+      }
+      if (url.includes('/subtopics/')) return Promise.resolve({});
       return Promise.resolve([]);
-    }
-    if (url.includes('/topics/topic-1/subtopics')) {
-      return Promise.resolve(
-        subtopics.filter((s) => s._topicId === 'topic-1').map((s) => ({ ...s })),
-      );
-    }
-    if (url.includes('/topics/topic-2/subtopics')) {
-      return Promise.resolve([]);
-    }
-    if (url.includes('/subtopics/')) return Promise.resolve({});
-    return Promise.resolve([]);
-  });
+    },
+  );
 
   return subtopics.find((s) => s.id === subtopicId) ?? subtopics[0];
 }

@@ -220,9 +220,7 @@ describe('CommunityBenchmarkComparison', () => {
     });
 
     it('should sort benchmarks by difference (lowest first)', () => {
-      render(
-        <CommunityBenchmarkComparison communityBenchmarks={mockCommunityBenchmarks} />,
-      );
+      render(<CommunityBenchmarkComparison communityBenchmarks={mockCommunityBenchmarks} />);
 
       // Get all benchmark names in order
       const benchmarkNames = screen.getAllByRole('heading', { level: 6 });

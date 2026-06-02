@@ -158,8 +158,8 @@ export interface UnitProficiency {
   unitId: string;
   unitName: string;
   subtopicId: string;
-  proficiencyScore: number;       // 0-100
+  proficiencyScore: number; // 0-100
   questionsAttempted: number;
   questionsCorrect: number;
-  hasInsufficientData: boolean;   // true when questionsAttempted < 3
+  hasInsufficientData: boolean; // true when questionsAttempted < 3
 }

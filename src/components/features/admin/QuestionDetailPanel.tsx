@@ -119,9 +119,9 @@ function explanationToEditText(raw: string, options?: string[]): string {
     if (wrongEntries.length > 0) {
       result += '\n\nWhy other options are wrong:\n';
       wrongEntries.forEach(([optionText, reason], i) => {
-        const optionIndex = options?.findIndex(
-          (o) => o.trim().toLowerCase() === optionText.trim().toLowerCase(),
-        ) ?? -1;
+        const optionIndex =
+          options?.findIndex((o) => o.trim().toLowerCase() === optionText.trim().toLowerCase()) ??
+          -1;
         const letter = optionIndex >= 0 ? String.fromCharCode(65 + optionIndex) + ')' : `${i + 1})`;
         result += `${letter} ${optionText} — ${reason}\n`;
       });
@@ -301,7 +301,10 @@ export default function QuestionDetailPanel({
               ? (foundQuestion.correctAnswers[0] ?? '')
               : foundQuestion.correctAnswers
             : (foundQuestion.correctAnswers ?? ''),
-          explanation: explanationToEditText(foundQuestion.explanation || '', Array.isArray(foundQuestion.options) ? foundQuestion.options : []),
+          explanation: explanationToEditText(
+            foundQuestion.explanation || '',
+            Array.isArray(foundQuestion.options) ? foundQuestion.options : [],
+          ),
           difficulty: foundQuestion.difficulty || 'Medium',
           tags: Array.isArray(foundQuestion.tags) ? foundQuestion.tags : [],
           points: foundQuestion.points || 1,
@@ -331,7 +334,10 @@ export default function QuestionDetailPanel({
           ? (question.correctAnswers[0] ?? '')
           : question.correctAnswers
         : (question.correctAnswers ?? ''),
-      explanation: explanationToEditText(question.explanation || '', Array.isArray(question.options) ? question.options : []),
+      explanation: explanationToEditText(
+        question.explanation || '',
+        Array.isArray(question.options) ? question.options : [],
+      ),
       difficulty: question.difficulty || 'Medium',
       tags: Array.isArray(question.tags) ? question.tags : [],
       points: question.points || 1,
@@ -391,7 +397,7 @@ export default function QuestionDetailPanel({
     fetchApi(`/subtopics/${editForm.subTopicId}/units`)
       .then((data: any) => setAllUnits(Array.isArray(data) ? data : []))
       .catch(() => setAllUnits([]));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editForm.subTopicId, showEditForm]);
 
   if (loading) {
@@ -671,7 +677,10 @@ export default function QuestionDetailPanel({
                   Explanation
                 </label>
                 <div className="w-full p-3 rounded-xl border border-slate-200 bg-white min-h-[80px]">
-                  <ExplanationDisplay text={question.explanation || 'No explanation provided.'} options={question.options} />
+                  <ExplanationDisplay
+                    text={question.explanation || 'No explanation provided.'}
+                    options={question.options}
+                  />
                 </div>
               </div>
 
@@ -767,7 +776,12 @@ export default function QuestionDetailPanel({
                 <select
                   value={editForm.topicId}
                   onChange={(e) =>
-                    setEditForm({ ...editForm, topicId: e.target.value, subTopicId: '', unitId: '' })
+                    setEditForm({
+                      ...editForm,
+                      topicId: e.target.value,
+                      subTopicId: '',
+                      unitId: '',
+                    })
                   }
                   className="w-full p-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-600 bg-white"
                   required
@@ -786,7 +800,9 @@ export default function QuestionDetailPanel({
                 </label>
                 <select
                   value={editForm.subTopicId}
-                  onChange={(e) => setEditForm({ ...editForm, subTopicId: e.target.value, unitId: '' })}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, subTopicId: e.target.value, unitId: '' })
+                  }
                   className="w-full p-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-600 bg-white"
                   required
                 >
@@ -1028,8 +1044,19 @@ export default function QuestionDetailPanel({
                 <input
                   type="number"
                   value={editForm.points}
-                  onChange={(e) => setEditForm({ ...editForm, points: e.target.value === '' ? '' : parseInt(e.target.value) })}
-                  onBlur={(e) => { const v = parseInt(e.target.value); setEditForm({ ...editForm, points: isNaN(v) ? 1 : Math.min(10, Math.max(1, v)) }); }}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      points: e.target.value === '' ? '' : parseInt(e.target.value),
+                    })
+                  }
+                  onBlur={(e) => {
+                    const v = parseInt(e.target.value);
+                    setEditForm({
+                      ...editForm,
+                      points: isNaN(v) ? 1 : Math.min(10, Math.max(1, v)),
+                    });
+                  }}
                   className="w-full p-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-600"
                   min="1"
                   max="10"

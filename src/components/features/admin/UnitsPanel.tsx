@@ -232,9 +232,7 @@ export default function UnitsPanel({ onSelectUnit }: UnitsPanelProps) {
     const q = search.toLowerCase();
     return units.filter((u) => {
       const matchSearch =
-        !q ||
-        u.title.toLowerCase().includes(q) ||
-        (u.description ?? '').toLowerCase().includes(q);
+        !q || u.title.toLowerCase().includes(q) || (u.description ?? '').toLowerCase().includes(q);
       const matchSubTopic = !activeSubTopicId || u._subTopicId === activeSubTopicId;
       const matchTopic = !activeTopicId || u._topicId === activeTopicId;
       const matchCert = !activeCertId || u._certId === activeCertId;
@@ -383,7 +381,9 @@ export default function UnitsPanel({ onSelectUnit }: UnitsPanelProps) {
                 </label>
                 <select
                   value={activeCert?.id ?? ''}
-                  onChange={(e) => setActiveCert(allCerts.find((c) => c.id === e.target.value) ?? null)}
+                  onChange={(e) =>
+                    setActiveCert(allCerts.find((c) => c.id === e.target.value) ?? null)
+                  }
                   className="w-full p-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-600 bg-white"
                   required
                 >
@@ -422,7 +422,9 @@ export default function UnitsPanel({ onSelectUnit }: UnitsPanelProps) {
                 <select
                   value={activeSubTopic?.id ?? ''}
                   onChange={(e) =>
-                    setActiveSubTopic(filteredSubTopics.find((s) => s.id === e.target.value) ?? null)
+                    setActiveSubTopic(
+                      filteredSubTopics.find((s) => s.id === e.target.value) ?? null,
+                    )
                   }
                   className="w-full p-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-600 bg-white"
                   required
@@ -457,8 +459,16 @@ export default function UnitsPanel({ onSelectUnit }: UnitsPanelProps) {
                     type="number"
                     min="0"
                     value={unitForm.orderIndex}
-                    onChange={(e) => setUnitForm({ ...unitForm, orderIndex: e.target.value === '' ? '' : parseInt(e.target.value) })}
-                    onBlur={(e) => { const v = parseInt(e.target.value); setUnitForm({ ...unitForm, orderIndex: isNaN(v) ? 0 : Math.max(0, v) }); }}
+                    onChange={(e) =>
+                      setUnitForm({
+                        ...unitForm,
+                        orderIndex: e.target.value === '' ? '' : parseInt(e.target.value),
+                      })
+                    }
+                    onBlur={(e) => {
+                      const v = parseInt(e.target.value);
+                      setUnitForm({ ...unitForm, orderIndex: isNaN(v) ? 0 : Math.max(0, v) });
+                    }}
                     className="w-full p-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-600"
                   />
                 </div>
@@ -489,140 +499,142 @@ export default function UnitsPanel({ onSelectUnit }: UnitsPanelProps) {
             animate={{ opacity: 1 }}
             className="space-y-4"
           >
-        {/* Search and filters */}
-        <div className="flex flex-col gap-3">
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-indigo-400 text-sm text-slate-900 bg-white"
-              placeholder="Search units..."
-            />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {/* Certification filter */}
-            <select
-              value={activeCert?.id ?? ''}
-              onChange={(e) => {
-                setActiveCert(allCerts.find((c) => c.id === e.target.value) ?? null);
-              }}
-              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-indigo-400 text-sm bg-white text-slate-600 font-bold"
-            >
-              <option value="">All Certifications</option>
-              {allCerts.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.title}
-                </option>
-              ))}
-            </select>
-            {/* Topic filter */}
-            <select
-              value={activeTopic?.id ?? ''}
-              onChange={(e) =>
-                setActiveTopic(filteredTopics.find((t) => t.id === e.target.value) ?? null)
-              }
-              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-indigo-400 text-sm bg-white text-slate-600 font-bold"
-            >
-              <option value="">All Topics</option>
-              {filteredTopics.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.title}
-                </option>
-              ))}
-            </select>
-            {/* Subtopic filter */}
-            <select
-              value={activeSubTopic?.id ?? ''}
-              onChange={(e) =>
-                setActiveSubTopic(filteredSubTopics.find((s) => s.id === e.target.value) ?? null)
-              }
-              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-indigo-400 text-sm bg-white text-slate-600 font-bold"
-            >
-              <option value="">All Sub Topics</option>
-              {filteredSubTopics.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.title}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Result count */}
-        <p className="text-sm text-slate-500 font-medium">
-          Showing{' '}
-          <span className="font-bold text-slate-700">
-            {filtered.length === 0
-              ? 0
-              : Math.min((page - 1) * pageSize + 1, filtered.length)}
-            –{Math.min(page * pageSize, filtered.length)}
-          </span>{' '}
-          of <span className="font-bold text-slate-700">{filtered.length}</span> units
-          {filtered.length < units.length && (
-            <span className="text-slate-400"> (filtered from {units.length})</span>
-          )}
-        </p>
-
-        {/* Loading / empty / list */}
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <Loader2 className="w-10 h-10 text-indigo-600 animate-spin" />
-            <p className="text-slate-400 font-bold animate-pulse">Loading data...</p>
-          </div>
-        ) : filtered.length === 0 ? (
-          <p className="text-center py-12 text-slate-400 font-bold">
-            {allSubTopics.length === 0 ? 'Select a subtopic to view units.' : 'No units found.'}
-          </p>
-        ) : (
-          paginated.map((unit: any) => (
-            <div
-              key={unit.id}
-              className="group flex items-center justify-between p-5 bg-white border border-slate-100 rounded-2xl hover:border-indigo-100 hover:shadow-sm transition-all"
-            >
-              <div
-                className="flex-1 cursor-pointer"
-                onClick={() => buildNavigationContextAndNavigate(unit)}
-              >
-                <div className="flex flex-wrap items-center gap-2 mb-1">
-                  {!unit.isActive && (
-                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-rose-100 text-rose-700">
-                      Inactive
-                    </span>
-                  )}
-                </div>
-                <h3 className="font-bold text-slate-900 text-base">{unit.title}</h3>
-                {unit.description && (
-                  <p className="text-sm text-slate-500 line-clamp-1 mt-0.5">{unit.description}</p>
-                )}
+            {/* Search and filters */}
+            <div className="flex flex-col gap-3">
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-indigo-400 text-sm text-slate-900 bg-white"
+                  placeholder="Search units..."
+                />
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => openEdit(unit)}
-                  className="p-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors"
-                  aria-label="Edit unit"
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* Certification filter */}
+                <select
+                  value={activeCert?.id ?? ''}
+                  onChange={(e) => {
+                    setActiveCert(allCerts.find((c) => c.id === e.target.value) ?? null);
+                  }}
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-indigo-400 text-sm bg-white text-slate-600 font-bold"
                 >
-                  <Pencil className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setPendingDeleteId(unit.id)}
-                  className="p-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg transition-colors"
-                  aria-label="Delete unit"
+                  <option value="">All Certifications</option>
+                  {allCerts.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.title}
+                    </option>
+                  ))}
+                </select>
+                {/* Topic filter */}
+                <select
+                  value={activeTopic?.id ?? ''}
+                  onChange={(e) =>
+                    setActiveTopic(filteredTopics.find((t) => t.id === e.target.value) ?? null)
+                  }
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-indigo-400 text-sm bg-white text-slate-600 font-bold"
                 >
-                  <Trash2 className="w-5 h-5" />
-                </button>
+                  <option value="">All Topics</option>
+                  {filteredTopics.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.title}
+                    </option>
+                  ))}
+                </select>
+                {/* Subtopic filter */}
+                <select
+                  value={activeSubTopic?.id ?? ''}
+                  onChange={(e) =>
+                    setActiveSubTopic(
+                      filteredSubTopics.find((s) => s.id === e.target.value) ?? null,
+                    )
+                  }
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-indigo-400 text-sm bg-white text-slate-600 font-bold"
+                >
+                  <option value="">All Sub Topics</option>
+                  {filteredSubTopics.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.title}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
-          ))
-        )}
 
-        <Pagination
-          page={page}
-          pageSize={pageSize}
-          total={filtered.length}
-          onPageChange={setPage}
-          onPageSizeChange={setPageSize}
-        />
+            {/* Result count */}
+            <p className="text-sm text-slate-500 font-medium">
+              Showing{' '}
+              <span className="font-bold text-slate-700">
+                {filtered.length === 0 ? 0 : Math.min((page - 1) * pageSize + 1, filtered.length)}–
+                {Math.min(page * pageSize, filtered.length)}
+              </span>{' '}
+              of <span className="font-bold text-slate-700">{filtered.length}</span> units
+              {filtered.length < units.length && (
+                <span className="text-slate-400"> (filtered from {units.length})</span>
+              )}
+            </p>
+
+            {/* Loading / empty / list */}
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <Loader2 className="w-10 h-10 text-indigo-600 animate-spin" />
+                <p className="text-slate-400 font-bold animate-pulse">Loading data...</p>
+              </div>
+            ) : filtered.length === 0 ? (
+              <p className="text-center py-12 text-slate-400 font-bold">
+                {allSubTopics.length === 0 ? 'Select a subtopic to view units.' : 'No units found.'}
+              </p>
+            ) : (
+              paginated.map((unit: any) => (
+                <div
+                  key={unit.id}
+                  className="group flex items-center justify-between p-5 bg-white border border-slate-100 rounded-2xl hover:border-indigo-100 hover:shadow-sm transition-all"
+                >
+                  <div
+                    className="flex-1 cursor-pointer"
+                    onClick={() => buildNavigationContextAndNavigate(unit)}
+                  >
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      {!unit.isActive && (
+                        <span className="px-2 py-0.5 rounded text-xs font-medium bg-rose-100 text-rose-700">
+                          Inactive
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="font-bold text-slate-900 text-base">{unit.title}</h3>
+                    {unit.description && (
+                      <p className="text-sm text-slate-500 line-clamp-1 mt-0.5">
+                        {unit.description}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => openEdit(unit)}
+                      className="p-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors"
+                      aria-label="Edit unit"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setPendingDeleteId(unit.id)}
+                      className="p-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg transition-colors"
+                      aria-label="Delete unit"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+
+            <Pagination
+              page={page}
+              pageSize={pageSize}
+              total={filtered.length}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+            />
           </motion.div>
         )}
       </AnimatePresence>

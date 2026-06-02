@@ -10,31 +10,35 @@ folder, rename it to your cert's slug, and fill in the data.
 ## 🎯 Choose Your Documentation Path
 
 ### 👔 **Enterprise Users** (Managers, Coordinators, Non-Technical Staff)
+
 **Start here:** [README-ENTERPRISE.md](README-ENTERPRISE.md) - Enterprise overview, workflows, governance
 
 ### 🎓 **Content Creators** (Certification Coordinators, Content Managers)
+
 **Start here:** [ADMIN-GUIDE.md](ADMIN-GUIDE.md) - Complete step-by-step guide for adding certifications
 
 ### 💻 **Developers** (Technical Staff, DevOps)
+
 **Start here:** This document (you are here) - Technical documentation and architecture
 
 ### 🔍 **Quick Reference** (All Users)
+
 **Start here:** [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - Field definitions and validation rules
 
 ---
 
 ## 📚 Complete Documentation Index
 
-| Document | Audience | Purpose | Time |
-|----------|----------|---------|------|
-| **[README-ENTERPRISE.md](README-ENTERPRISE.md)** | Enterprise | Overview, workflows, governance | 10 min |
-| **[ADMIN-GUIDE.md](ADMIN-GUIDE.md)** | Non-technical | Step-by-step configuration guide | 30 min |
-| **[README.md](README.md)** | Developers | Technical documentation (you are here) | 20 min |
-| **[QUICK-REFERENCE.md](QUICK-REFERENCE.md)** | All | Field reference and validation rules | 5 min |
-| **[ARCHITECTURE.md](ARCHITECTURE.md)** | Technical | System architecture and data flow | 15 min |
-| **[MIGRATION-GUIDE.md](MIGRATION-GUIDE.md)** | Technical | Schema migration instructions | 15 min |
-| **[CHANGELOG.md](CHANGELOG.md)** | All | Version history | 5 min |
-| **[UPDATE-SUMMARY.md](UPDATE-SUMMARY.md)** | All | Latest version highlights | 5 min |
+| Document                                         | Audience      | Purpose                                | Time   |
+| ------------------------------------------------ | ------------- | -------------------------------------- | ------ |
+| **[README-ENTERPRISE.md](README-ENTERPRISE.md)** | Enterprise    | Overview, workflows, governance        | 10 min |
+| **[ADMIN-GUIDE.md](ADMIN-GUIDE.md)**             | Non-technical | Step-by-step configuration guide       | 30 min |
+| **[README.md](README.md)**                       | Developers    | Technical documentation (you are here) | 20 min |
+| **[QUICK-REFERENCE.md](QUICK-REFERENCE.md)**     | All           | Field reference and validation rules   | 5 min  |
+| **[ARCHITECTURE.md](ARCHITECTURE.md)**           | Technical     | System architecture and data flow      | 15 min |
+| **[MIGRATION-GUIDE.md](MIGRATION-GUIDE.md)**     | Technical     | Schema migration instructions          | 15 min |
+| **[CHANGELOG.md](CHANGELOG.md)**                 | All           | Version history                        | 5 min  |
+| **[UPDATE-SUMMARY.md](UPDATE-SUMMARY.md)**       | All           | Latest version highlights              | 5 min  |
 
 ## 🚀 Quick Start
 
@@ -101,14 +105,14 @@ the DB. You never need to generate UUIDs manually — just use readable slugs.
 
 ## Slug Naming Conventions
 
-| Entity        | Pattern                                    | Example                                    |
-| ------------- | ------------------------------------------ | ------------------------------------------ |
-| Certification | `<vendor>-<abbrev>`                        | `aws-saa`, `az-900`                        |
-| Exam Config   | `exam-config-<cert-slug>-s<N>`             | `exam-config-aws-saa-s1`                   |
-| Topic         | `topic-<cert-abbrev>-<domain>`             | `topic-saa-storage`                        |
-| Subtopic      | `sub-<cert-abbrev>-<area>`                 | `sub-saa-s3`                               |
-| Unit          | `unit-<cert-abbrev>-<subtopic>-<concept>`  | `unit-saa-s3-storage-classes`  ⭐ NEW      |
-| Question      | `q-<cert-abbrev>-s<N>-<NNN>`              | `q-saa-s1-001`                             |
+| Entity        | Pattern                                   | Example                              |
+| ------------- | ----------------------------------------- | ------------------------------------ |
+| Certification | `<vendor>-<abbrev>`                       | `aws-saa`, `az-900`                  |
+| Exam Config   | `exam-config-<cert-slug>-s<N>`            | `exam-config-aws-saa-s1`             |
+| Topic         | `topic-<cert-abbrev>-<domain>`            | `topic-saa-storage`                  |
+| Subtopic      | `sub-<cert-abbrev>-<area>`                | `sub-saa-s3`                         |
+| Unit          | `unit-<cert-abbrev>-<subtopic>-<concept>` | `unit-saa-s3-storage-classes` ⭐ NEW |
+| Question      | `q-<cert-abbrev>-s<N>-<NNN>`              | `q-saa-s1-001`                       |
 
 **Note:** Domain slugs are deprecated. Topics now represent domains directly.
 

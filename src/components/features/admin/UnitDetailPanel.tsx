@@ -193,18 +193,13 @@ export default function UnitDetailPanel({ unitId, onDelete, onBack }: UnitDetail
     try {
       await onDelete(unitId);
       showToast('success', 'Unit deleted successfully');
-      setTimeout(
-        () => onBack(unit?._certId, unit?._topicId, unit?._subTopicId),
-        1500,
-      );
+      setTimeout(() => onBack(unit?._certId, unit?._topicId, unit?._subTopicId), 1500);
     } catch (error: any) {
       showToast('error', error?.message ?? 'Failed to delete unit');
     }
   };
 
-  const filteredTopics = allTopics.filter(
-    (t) => t._certId === (editForm.certId || unit?._certId),
-  );
+  const filteredTopics = allTopics.filter((t) => t._certId === (editForm.certId || unit?._certId));
 
   const filteredSubTopics = allSubTopics.filter(
     (s) => s._topicId === (editForm.topicId || unit?._topicId),
@@ -440,7 +435,12 @@ export default function UnitDetailPanel({ unitId, onDelete, onBack }: UnitDetail
                 <select
                   value={editForm.certId}
                   onChange={(e) =>
-                    setEditForm({ ...editForm, certId: e.target.value, topicId: '', subtopicId: '' })
+                    setEditForm({
+                      ...editForm,
+                      certId: e.target.value,
+                      topicId: '',
+                      subtopicId: '',
+                    })
                   }
                   className="w-full p-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-600 bg-white"
                   required
@@ -511,8 +511,16 @@ export default function UnitDetailPanel({ unitId, onDelete, onBack }: UnitDetail
                   type="number"
                   min="0"
                   value={editForm.orderIndex}
-                  onChange={(e) => setEditForm({ ...editForm, orderIndex: e.target.value === '' ? '' : parseInt(e.target.value) })}
-                  onBlur={(e) => { const v = parseInt(e.target.value); setEditForm({ ...editForm, orderIndex: isNaN(v) ? 0 : Math.max(0, v) }); }}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      orderIndex: e.target.value === '' ? '' : parseInt(e.target.value),
+                    })
+                  }
+                  onBlur={(e) => {
+                    const v = parseInt(e.target.value);
+                    setEditForm({ ...editForm, orderIndex: isNaN(v) ? 0 : Math.max(0, v) });
+                  }}
                   className="w-full p-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-600 bg-white"
                 />
               </div>

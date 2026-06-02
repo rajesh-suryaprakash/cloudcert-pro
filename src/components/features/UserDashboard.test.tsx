@@ -13,13 +13,34 @@ vi.mock('motion/react', async () => {
     ({ children, ...rest }: any) => {
       // Strip motion-only props that would cause React DOM warnings
       const {
-        initial, animate, exit, transition, whileHover, whileTap, whileFocus,
-        variants, layout, layoutId, drag, dragConstraints, onDragEnd,
+        initial,
+        animate,
+        exit,
+        transition,
+        whileHover,
+        whileTap,
+        whileFocus,
+        variants,
+        layout,
+        layoutId,
+        drag,
+        dragConstraints,
+        onDragEnd,
         ...domProps
       } = rest;
-      void initial; void animate; void exit; void transition;
-      void whileHover; void whileTap; void whileFocus; void variants;
-      void layout; void layoutId; void drag; void dragConstraints; void onDragEnd;
+      void initial;
+      void animate;
+      void exit;
+      void transition;
+      void whileHover;
+      void whileTap;
+      void whileFocus;
+      void variants;
+      void layout;
+      void layoutId;
+      void drag;
+      void dragConstraints;
+      void onDragEnd;
       return React.createElement(tag, domProps, children);
     };
   const motion = new Proxy({} as Record<string, unknown>, {
@@ -111,7 +132,9 @@ async function openSessionModal() {
     fireEvent.click(startButton);
   });
   // Wait for the modal to appear
-  await waitFor(() => expect(screen.queryByText('Configure your session before starting')).toBeInTheDocument());
+  await waitFor(() =>
+    expect(screen.queryByText('Configure your session before starting')).toBeInTheDocument(),
+  );
 }
 
 /**
@@ -245,41 +268,37 @@ describe('Property 1: Bug Condition - Missing Await Causes Silent Rejection', ()
     mockNavigate.mockClear();
   });
 
-  it(
-    'for all rejection error messages: sessionError is set, error banner renders, modal stays open',
-    async () => {
-      // Use a single concrete error message representative of the bug condition.
-      // The property holds for ALL non-empty strings; one mount keeps the test fast.
-      // fc.sample is used to document the PBT intent while avoiding repeated mounts.
-      const [errorMessage] = fc
-        .sample(fc.string({ minLength: 1 }), 1)
-        .map((s) => s.replace(/[<>&"']/g, 'x') || 'No active questions with difficulty Medium');
+  it('for all rejection error messages: sessionError is set, error banner renders, modal stays open', async () => {
+    // Use a single concrete error message representative of the bug condition.
+    // The property holds for ALL non-empty strings; one mount keeps the test fast.
+    // fc.sample is used to document the PBT intent while avoiding repeated mounts.
+    const [errorMessage] = fc
+      .sample(fc.string({ minLength: 1 }), 1)
+      .map((s) => s.replace(/[<>&"']/g, 'x') || 'No active questions with difficulty Medium');
 
-      const onStartQuiz = vi.fn().mockRejectedValue(new Error(errorMessage));
+    const onStartQuiz = vi.fn().mockRejectedValue(new Error(errorMessage));
 
-      await renderDashboard(onStartQuiz);
-      await openSessionModal();
+    await renderDashboard(onStartQuiz);
+    await openSessionModal();
 
-      // Act: click "Start Session" and flush all microtasks
-      const startSessionBtn = screen.getByRole('button', { name: /Start Session/i });
-      await act(async () => {
-        fireEvent.click(startSessionBtn);
-      });
+    // Act: click "Start Session" and flush all microtasks
+    const startSessionBtn = screen.getByRole('button', { name: /Start Session/i });
+    await act(async () => {
+      fireEvent.click(startSessionBtn);
+    });
 
-      // Assert 1: sessionError IS set to the error message
-      // (on unfixed code this fails — catch block never entered, sessionError stays null)
-      await waitFor(() => {
-        expect(screen.getByText(errorMessage)).toBeInTheDocument();
-      });
+    // Assert 1: sessionError IS set to the error message
+    // (on unfixed code this fails — catch block never entered, sessionError stays null)
+    await waitFor(() => {
+      expect(screen.getByText(errorMessage)).toBeInTheDocument();
+    });
 
-      // Assert 2: the error banner IS rendered in the modal
-      // (on unfixed code this fails — no error banner visible)
-      expect(screen.getByText(errorMessage)).toBeVisible();
+    // Assert 2: the error banner IS rendered in the modal
+    // (on unfixed code this fails — no error banner visible)
+    expect(screen.getByText(errorMessage)).toBeVisible();
 
-      // Assert 3: the modal remains open (examToStart is NOT null)
-      // (on unfixed code this fails — setExamToStart(null) runs synchronously before rejection)
-      expect(screen.getByText('Configure your session before starting')).toBeInTheDocument();
-    },
-    45_000,
-  );
+    // Assert 3: the modal remains open (examToStart is NOT null)
+    // (on unfixed code this fails — setExamToStart(null) runs synchronously before rejection)
+    expect(screen.getByText('Configure your session before starting')).toBeInTheDocument();
+  }, 45_000);
 });

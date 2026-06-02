@@ -441,13 +441,15 @@ describe('Edit mode preserving navigation context', () => {
     setNavigationContext(['cert-1', 'cert-2', 'cert-3'], 'cert-2');
 
     // Mock PUT and re-fetch
-    (client.fetchApi as ReturnType<typeof vi.fn>).mockImplementation((url: string, opts?: { method?: string }) => {
-      if (opts?.method === 'PUT') return Promise.resolve({ success: true });
-      if (url === '/certifications') return Promise.resolve(certifications);
-      if (url.includes('/topics')) return Promise.resolve([]);
-      if (url.includes('/exams')) return Promise.resolve([]);
-      return Promise.resolve([]);
-    });
+    (client.fetchApi as ReturnType<typeof vi.fn>).mockImplementation(
+      (url: string, opts?: { method?: string }) => {
+        if (opts?.method === 'PUT') return Promise.resolve({ success: true });
+        if (url === '/certifications') return Promise.resolve(certifications);
+        if (url.includes('/topics')) return Promise.resolve([]);
+        if (url.includes('/exams')) return Promise.resolve([]);
+        return Promise.resolve([]);
+      },
+    );
 
     renderPanel('cert-2');
 
@@ -475,13 +477,15 @@ describe('Edit mode preserving navigation context', () => {
     setupApiMocks('cert-2');
     setNavigationContext(['cert-1', 'cert-2', 'cert-3'], 'cert-2');
 
-    (client.fetchApi as ReturnType<typeof vi.fn>).mockImplementation((url: string, opts?: { method?: string }) => {
-      if (opts?.method === 'PUT') return Promise.resolve({ success: true });
-      if (url === '/certifications') return Promise.resolve(certifications);
-      if (url.includes('/topics')) return Promise.resolve([]);
-      if (url.includes('/exams')) return Promise.resolve([]);
-      return Promise.resolve([]);
-    });
+    (client.fetchApi as ReturnType<typeof vi.fn>).mockImplementation(
+      (url: string, opts?: { method?: string }) => {
+        if (opts?.method === 'PUT') return Promise.resolve({ success: true });
+        if (url === '/certifications') return Promise.resolve(certifications);
+        if (url.includes('/topics')) return Promise.resolve([]);
+        if (url.includes('/exams')) return Promise.resolve([]);
+        return Promise.resolve([]);
+      },
+    );
 
     renderPanel('cert-2');
 

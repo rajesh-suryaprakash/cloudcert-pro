@@ -167,26 +167,28 @@ const questions = [
 function setupApiMocks(questionId: string = 'question-1') {
   (certifications.fetchCertifications as ReturnType<typeof vi.fn>).mockResolvedValue(certList);
 
-  (client.fetchApi as ReturnType<typeof vi.fn>).mockImplementation((url: string, opts?: { method?: string }) => {
-    if (opts?.method === 'PUT') return Promise.resolve({ success: true });
+  (client.fetchApi as ReturnType<typeof vi.fn>).mockImplementation(
+    (url: string, opts?: { method?: string }) => {
+      if (opts?.method === 'PUT') return Promise.resolve({ success: true });
 
-    if (url.includes('/certifications/cert-1/topics')) {
-      return Promise.resolve(topics.filter((t) => t._certId === 'cert-1').map((t) => ({ ...t })));
-    }
-    if (url.includes('/certifications/cert-2/topics')) {
+      if (url.includes('/certifications/cert-1/topics')) {
+        return Promise.resolve(topics.filter((t) => t._certId === 'cert-1').map((t) => ({ ...t })));
+      }
+      if (url.includes('/certifications/cert-2/topics')) {
+        return Promise.resolve([]);
+      }
+      if (url.includes('/topics/topic-1/subtopics')) {
+        return Promise.resolve(
+          subtopics.filter((s) => s._topicId === 'topic-1').map((s) => ({ ...s })),
+        );
+      }
+      if (url.includes('/subtopics/subtopic-1/questions')) {
+        return Promise.resolve(questions.map((q) => ({ ...q })));
+      }
+      if (url.includes('/questions/')) return Promise.resolve({});
       return Promise.resolve([]);
-    }
-    if (url.includes('/topics/topic-1/subtopics')) {
-      return Promise.resolve(
-        subtopics.filter((s) => s._topicId === 'topic-1').map((s) => ({ ...s })),
-      );
-    }
-    if (url.includes('/subtopics/subtopic-1/questions')) {
-      return Promise.resolve(questions.map((q) => ({ ...q })));
-    }
-    if (url.includes('/questions/')) return Promise.resolve({});
-    return Promise.resolve([]);
-  });
+    },
+  );
 
   return questions.find((q) => q.id === questionId) ?? questions[0];
 }

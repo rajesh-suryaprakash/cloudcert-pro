@@ -195,11 +195,17 @@ export default function DomainWeightsPanel() {
                           step="0.1"
                           value={domain.weightPercentage}
                           onChange={(e) =>
-                            handleWeightChange(domain.id, e.target.value === '' ? 0 : parseFloat(e.target.value))
+                            handleWeightChange(
+                              domain.id,
+                              e.target.value === '' ? 0 : parseFloat(e.target.value),
+                            )
                           }
                           onBlur={(e) => {
                             const v = parseFloat(e.target.value);
-                            handleWeightChange(domain.id, isNaN(v) ? 0 : Math.min(100, Math.max(0, v)));
+                            handleWeightChange(
+                              domain.id,
+                              isNaN(v) ? 0 : Math.min(100, Math.max(0, v)),
+                            );
                           }}
                           className="w-24 p-2 rounded-lg border border-slate-200 text-right font-bold text-slate-900 outline-none focus:border-indigo-600"
                         />

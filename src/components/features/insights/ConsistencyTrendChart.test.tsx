@@ -216,9 +216,7 @@ describe('ConsistencyTrendChart', () => {
         hasHighVariance: true,
       };
 
-      render(
-        <ConsistencyTrendChart consistencyMetric={highVarianceMetric} />,
-      );
+      render(<ConsistencyTrendChart consistencyMetric={highVarianceMetric} />);
 
       // Standard deviation should have amber color class
       const stdDevElement = screen.getByText('12.5');
@@ -226,9 +224,7 @@ describe('ConsistencyTrendChart', () => {
     });
 
     it('should display standard deviation with emerald color when variance is low', () => {
-      render(
-        <ConsistencyTrendChart consistencyMetric={mockConsistencyMetric} />,
-      );
+      render(<ConsistencyTrendChart consistencyMetric={mockConsistencyMetric} />);
 
       // Standard deviation should have emerald color class
       const stdDevElement = screen.getByText('3.5');

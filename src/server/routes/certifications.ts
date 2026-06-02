@@ -30,17 +30,21 @@ router.get('/certifications', authenticate, (_req, res) => {
   res.json(certs.map((c) => ({ ...c, isActive: Boolean(c.isActive) })));
 });
 
-router.get('/certifications/:id', authenticate, (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const cert = certRepo.findAll().find((c) => c.id === req.params.id);
-    if (!cert) {
-      throw new NotFoundError('Certification not found');
+router.get(
+  '/certifications/:id',
+  authenticate,
+  (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const cert = certRepo.findAll().find((c) => c.id === req.params.id);
+      if (!cert) {
+        throw new NotFoundError('Certification not found');
+      }
+      res.json({ ...cert, isActive: Boolean(cert.isActive) });
+    } catch (err) {
+      next(err);
     }
-    res.json({ ...cert, isActive: Boolean(cert.isActive) });
-  } catch (err) {
-    next(err);
-  }
-});
+  },
+);
 
 router.post(
   '/certifications',
@@ -228,14 +232,12 @@ router.put(
         WHERE id = ? AND certificationId = ?
       `);
 
-      const transaction = db.transaction(
-        (topics: { id: string; weightPercentage: number }[]) => {
-          const now = new Date().toISOString();
-          for (const topic of topics) {
-            updateStmt.run(topic.weightPercentage || null, now, topic.id, certificationId);
-          }
-        },
-      );
+      const transaction = db.transaction((topics: { id: string; weightPercentage: number }[]) => {
+        const now = new Date().toISOString();
+        for (const topic of topics) {
+          updateStmt.run(topic.weightPercentage || null, now, topic.id, certificationId);
+        }
+      });
 
       transaction(topics);
 

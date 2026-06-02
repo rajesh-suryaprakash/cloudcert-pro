@@ -115,17 +115,19 @@ function setupApiMocks(examId: string = 'exam-1') {
 
   (certifications.fetchCertifications as ReturnType<typeof vi.fn>).mockResolvedValue(certList);
 
-  (client.fetchApi as ReturnType<typeof vi.fn>).mockImplementation((url: string, opts?: { method?: string }) => {
-    if (opts?.method === 'PUT') return Promise.resolve({ success: true });
-    if (url.includes('/exams?all=true')) {
-      // Return the exam(s) belonging to the cert in the URL
-      const certId = url.split('/certifications/')[1]?.split('/')[0];
-      return Promise.resolve(exams.filter((e) => e._certId === certId).map((e) => ({ ...e })));
-    }
-    if (url.includes('/effective-topic-weights')) return Promise.resolve({ topics: [] });
-    if (url.includes('/topics')) return Promise.resolve([]);
-    return Promise.resolve([]);
-  });
+  (client.fetchApi as ReturnType<typeof vi.fn>).mockImplementation(
+    (url: string, opts?: { method?: string }) => {
+      if (opts?.method === 'PUT') return Promise.resolve({ success: true });
+      if (url.includes('/exams?all=true')) {
+        // Return the exam(s) belonging to the cert in the URL
+        const certId = url.split('/certifications/')[1]?.split('/')[0];
+        return Promise.resolve(exams.filter((e) => e._certId === certId).map((e) => ({ ...e })));
+      }
+      if (url.includes('/effective-topic-weights')) return Promise.resolve({ topics: [] });
+      if (url.includes('/topics')) return Promise.resolve([]);
+      return Promise.resolve([]);
+    },
+  );
 
   return exam;
 }

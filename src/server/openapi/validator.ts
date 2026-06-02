@@ -19,9 +19,10 @@ export async function validateOpenAPISpec(
     const rawErrors = result.errors;
     const errors: { message: string }[] = Array.isArray(rawErrors)
       ? rawErrors.map((e) => ({
-          message: typeof e === 'object' && e !== null && 'message' in e
-            ? String((e as { message: unknown }).message)
-            : String(e),
+          message:
+            typeof e === 'object' && e !== null && 'message' in e
+              ? String((e as { message: unknown }).message)
+              : String(e),
         }))
       : [{ message: String(rawErrors ?? 'Validation failed') }];
 
