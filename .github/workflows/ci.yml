@@ -50,9 +50,16 @@ jobs:
   # ── Job 2: Tests + Coverage ────────────────────────────────────────────────
   # Vitest suite with coverage enforcement (≥80% threshold configured in vitest.config.ts).
   # Runs in parallel with the quality job for faster feedback.
+  # Produces: JUnit XML, JSON, HTML test reports + LCOV/HTML coverage reports.
   test:
     name: Tests + Coverage
     runs-on: ubuntu-latest
+    # dorny/test-reporter needs write access to post check annotations on PRs.
+    # pull-requests:write allows it to post the results summary as a PR comment.
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -66,15 +73,55 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests
-        run: npm test
+      - name: Run tests with coverage + reports
+        # Single test run that generates everything:
+        #   • test-results/junit.xml   — JUnit for dorny/test-reporter annotations
+        #   • test-results/results.json — machine-readable JSON results
+        #   • test-results/index.html  — interactive HTML report artifact
+        #   • coverage/lcov.info       — LCOV for Codecov upload
+        #   • coverage/index.html      — browseable HTML coverage report
+        # The CI reporters are enabled automatically because GitHub Actions sets
+        # the CI=true environment variable, which is checked in vitest.config.ts.
+        run: mkdir -p test-results && npm run test:coverage
 
-      - name: Run tests with coverage
-        # Separate step so plain test failures are clearly reported before coverage runs.
-        # Fails if any threshold defined in vitest.config.ts (lines/functions/branches/statements ≥ 80%) is not met.
-        run: npm run test:coverage
+      - name: Publish test results
+        # dorny/test-reporter v1.9.1 — posts check annotations + job summary to GitHub
+        # Runs even if the test step failed so failures are always annotated.
+        if: always()
+        uses: dorny/test-reporter@6c357194179c694acfcad2100dbf27c5b9b0d5e0
+        with:
+          name: Vitest Results
+          path: test-results/junit.xml
+          reporter: jest-junit
+          # Don't double-fail the job — the test step already sets the exit code.
+          fail-on-error: 'false'
 
-      - name: Upload coverage report
+      - name: Upload test result artifacts
+        # Uploads JUnit XML, JSON results, and interactive HTML report.
+        # Always uploaded so failure reports are accessible even on a failing run.
+        if: always()
+        # actions/upload-artifact v4.6.2
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: test-results-${{ github.sha }}
+          path: test-results/
+          retention-days: ${{ github.ref == 'refs/heads/main' && 30 || 7 }}
+
+      - name: Upload coverage to Codecov
+        # codecov/codecov-action v5.4.3 — uploads LCOV to Codecov for trend tracking.
+        # fail_ci_if_error: false so a Codecov outage doesn't break the pipeline.
+        # Set the CODECOV_TOKEN repository secret in Settings → Secrets → Actions.
+        if: always()
+        uses: codecov/codecov-action@4650159d642e33fdc30954ca22638caf0df6cac8
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/lcov.info
+          flags: unittests
+          name: cloudcert-pro-${{ github.sha }}
+          fail_ci_if_error: false
+          verbose: false
+
+      - name: Upload coverage report artifact
         if: always()
         # actions/upload-artifact v4.6.2
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
