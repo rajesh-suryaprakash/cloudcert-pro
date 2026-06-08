@@ -21,14 +21,19 @@
         ],
         "explanation": {
           "general explanation": "Google Cloud Client Libraries utilize Application Default Credentials (ADC) to automatically find credentials. ADC evaluates credentials in a strict, predefined order. It first checks if the `GOOGLE_APPLICATION_CREDENTIALS` environment variable is set. If it is, the SDK uses the specified JSON key file. If it is not set, it falls back to user credentials (via `gcloud auth application-default login`), and finally falls back to the attached service account of the underlying compute environment (like the Compute Engine metadata server or Workload Identity). Because the environment variable is explicitly set, it overrides the Workload Identity configuration.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "The SDK will use `sa-gke-workload@project.iam.gserviceaccount.com` because Workload Identity supersedes environment variables in GKE.": "Workload Identity replaces the default node-level service account, but it does not supersede the explicit `GOOGLE_APPLICATION_CREDENTIALS` environment variable in the ADC chain.",
             "The SDK will fail to initialize and throw a `DefaultCredentialsError` due to conflicting authentication mechanisms.": "ADC does not throw an error for conflicts; it simply resolves to the first valid credential mechanism it finds in its hierarchy.",
             "The SDK will use the default Compute Engine service account attached to the underlying GKE node pool.": "Both the environment variable and Workload Identity take precedence over the base node service account in modern GKE configurations."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Application Default Credentials", "Google Cloud SDK", "Authentication", "GKE"]
+        "tags": [
+          "Application Default Credentials",
+          "Google Cloud SDK",
+          "Authentication",
+          "GKE"
+        ]
       },
       {
         "id": "q-gcppca-s89-002",
@@ -48,7 +53,7 @@
         ],
         "explanation": {
           "general explanation": "In Google Cloud Client Libraries, API calls that initiate Long-Running Operations (LROs) return an `Operation` object (specifically `google.api_core.operation.Operation` in Python). To synchronously wait for the operation to complete, you call the `.result()` method on this object. This method natively blocks the current thread and handles the exponential backoff polling against the GCP API under the hood, returning the final response when the operation is finished or raising an exception if it fails.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Pass the `sync_mode=True` parameter directly into the `create_cluster` client method.": "Google Cloud client libraries do not generally use a `sync_mode` parameter. They return Operation objects for LROs to allow the developer to choose between synchronous waiting or asynchronous callbacks.",
             "Use the `google.api_core.wait()` function, passing the Operation ID as an argument.": "There is no global `api_core.wait()` function. The wait logic is encapsulated within the `.result()` method of the specific Operation instance.",
             "Attach an `add_done_callback()` function to the Operation object to pause the main thread.": "Callbacks execute asynchronously on a background thread when the operation completes; they do not natively block or pause the main execution thread."
@@ -82,14 +87,19 @@
         ],
         "explanation": {
           "general explanation": "The standard BigQuery REST API is highly inefficient for downloading massive datasets (like a 5 TB table) to a local DataFrame because it relies on paginated JSON HTTP responses. To drastically accelerate this, the BigQuery Client Library can automatically switch to using the BigQuery Storage Read API, which streams data using gRPC and Apache Arrow formats. To enable this optimization, the Python environment must have two specific libraries installed: `google-cloud-bigquery-storage` (the API client) and `pyarrow` (the C++ backed Apache Arrow processing engine). When these are present, `to_dataframe()` uses them automatically.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "The `google-cloud-datacatalog` library.": "Data Catalog is for metadata management and data discovery, completely unrelated to extracting bulk data payloads from BigQuery.",
             "The `fastparquet` library.": "While fastparquet is a Parquet parser, the BigQuery Storage Read API primarily relies on Apache Arrow (`pyarrow`) for its in-memory columnar data transfer format.",
             "The `google-api-python-client` library.": "This is the legacy, discovery-based API client library. Modern optimization features like the Storage Read API integration are built into the newer `google-cloud-bigquery` idiomatic client libraries."
           }
         },
         "difficulty": "Hard",
-        "tags": ["BigQuery", "Python SDK", "Storage Read API", "Performance Optimization"]
+        "tags": [
+          "BigQuery",
+          "Python SDK",
+          "Storage Read API",
+          "Performance Optimization"
+        ]
       },
       {
         "id": "q-gcppca-s89-004",
@@ -109,14 +119,19 @@
         ],
         "explanation": {
           "general explanation": "The `gcloud` CLI stores its state, credentials, and configuration data in a local directory (usually `~/.config/gcloud`). When multiple `gcloud` processes run concurrently on the same machine under the same user, they attempt to read and write to this shared directory simultaneously, leading to SQLite database locks, corrupted credential caches, and race conditions. By setting the `CLOUDSDK_CONFIG` environment variable to a unique, ephemeral directory for each concurrent job, you provide each `gcloud` process with a completely isolated state directory, safely enabling massive local concurrency.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Append the `--async` flag to every `gcloud` command to instruct the CLI to manage background state natively.": "The `--async` flag tells Google Cloud API to process a Long-Running Operation in the background; it does not solve the local file locking and state corruption issues of the `gcloud` CLI process itself.",
             "Set the `GOOGLE_APPLICATION_CREDENTIALS` environment variable instead of using `gcloud auth login`.": "While using ADC is best practice for authentication, `gcloud` still attempts to write telemetry, logs, and configuration state to the default `~/.config/gcloud` directory, causing lock contention.",
             "Use the `gcloud config set core/disable_file_locking true` command at the beginning of the script.": "Disabling file locking will intentionally cause data corruption in the shared SQLite caches, worsening the race conditions rather than fixing the architecture."
           }
         },
         "difficulty": "Hard",
-        "tags": ["gcloud CLI", "Concurrency", "Scripting", "CI/CD"]
+        "tags": [
+          "gcloud CLI",
+          "Concurrency",
+          "Scripting",
+          "CI/CD"
+        ]
       },
       {
         "id": "q-gcppca-s89-005",
@@ -138,14 +153,19 @@
         ],
         "explanation": {
           "general explanation": "The Pub/Sub client libraries use streaming pull over gRPC by default. If the application processes messages slower than it receives them, the SDK buffers the incoming messages in local memory, eventually causing an OOM crash. To prevent this, you must implement client-side flow control. By defining `FlowControl` settings (specifically `max_messages` and `max_bytes`) and passing them to the subscriber client, you instruct the SDK to pause pulling new messages from the Google Cloud API once the internal memory buffer hits those thresholds, creating native backpressure.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Set the `await_callbacks_on_shutdown` parameter to True.": "This setting ensures the client waits for processing messages to finish before shutting down cleanly. It does not enforce flow control or prevent OOM during active running.",
             "Decrease the `ack_deadline_seconds` configuration to force faster re-delivery.": "Decreasing the ack deadline makes the situation worse. The broker will assume the application failed to process the messages and redeliver them, compounding the traffic spike and OOM risk.",
             "Configure the `return_immediately` flag on the pull request to False.": "This flag is used in synchronous (REST) pull requests to dictate long-polling behavior. Modern idiomatic client libraries use gRPC streaming pull, where flow control is the correct backpressure mechanism."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Pub/Sub", "Google Cloud SDK", "Performance Optimization", "Flow Control"]
+        "tags": [
+          "Pub/Sub",
+          "Google Cloud SDK",
+          "Performance Optimization",
+          "Flow Control"
+        ]
       },
       {
         "id": "q-gcppca-s89-006",
@@ -165,14 +185,19 @@
         ],
         "explanation": {
           "general explanation": "The `gcloud` CLI has a powerful built-in projection and formatting engine. When scripting, you often need raw, unadorned string values (no headers, no JSON structure) to pass to other CLI tools (like `grep`, `xargs`, or `ssh`). The `--format=\"value(...)\"` projection evaluates the JSON path of the API response and outputs *only* the raw string value of that field, satisfying the requirement perfectly without relying on external third-party tools like `jq` or `awk`.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "gcloud compute instances list --filter=\"labels.env:prod\" --format=\"json\" | jq '.[].networkInterfaces[0].accessConfigs[0].natIP'": "While `jq` works, the prompt asks which `gcloud` command achieves this native formatting. Relying on `jq` introduces an external binary dependency which may not exist in minimal CI runner images.",
             "gcloud compute instances list --search=\"labels.env=prod\" --format=\"csv[no-heading](networkInterfaces[0].accessConfigs[0].natIP)\"": "The `--search` flag does not perform exact label matching like `--filter`. While `csv[no-heading]` can work, `value()` is the canonical, safest projection for raw strings.",
             "gcloud compute instances list --filter=\"labels.env=prod\" --format=\"text(networkInterfaces[0].accessConfigs[0].natIP)\"": "The `text` format outputs a YAML-like block format with keys and values (e.g., `natIP: 34.1.2.3`), which violates the requirement for 'solely the external NAT IP address' without headers or keys."
           }
         },
         "difficulty": "Hard",
-        "tags": ["gcloud CLI", "Scripting", "Formatting", "Automation"]
+        "tags": [
+          "gcloud CLI",
+          "Scripting",
+          "Formatting",
+          "Automation"
+        ]
       },
       {
         "id": "q-gcppca-s89-007",
@@ -187,10 +212,12 @@
           "gcloud auth login --project <TARGET_PROJECT_ID>",
           "export GOOGLE_APPLICATION_CREDENTIALS=<TARGET_PROJECT_ID>"
         ],
-        "correctAnswers": ["gcloud auth application-default set-quota-project <TARGET_PROJECT_ID>"],
+        "correctAnswers": [
+          "gcloud auth application-default set-quota-project <TARGET_PROJECT_ID>"
+        ],
         "explanation": {
           "general explanation": "When using Application Default Credentials (ADC) via end-user credentials (`gcloud auth application-default login`), the Google Cloud SDK includes a 'quota project' in the credential file. This tells Google Cloud which project should be billed and quota-checked for the API requests made by the client libraries. If this is missing or set to the wrong project, requests will fail with quota errors, even if the target resource's project has capacity. Running `gcloud auth application-default set-quota-project` explicitly updates the local ADC JSON file to route the billing and API quota to the correct target project.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "gcloud config set project <TARGET_PROJECT_ID>": "This sets the default project for the `gcloud` CLI commands. It does *not* update the quota project embedded within the ADC credentials file used by Python/Java/Go Client Libraries.",
             "gcloud auth login --project <TARGET_PROJECT_ID>": "`gcloud auth login` sets the identity for the `gcloud` CLI. It does not generate or update the ADC credentials used by programmatic client libraries.",
             "export GOOGLE_APPLICATION_CREDENTIALS=<TARGET_PROJECT_ID>": "The `GOOGLE_APPLICATION_CREDENTIALS` environment variable must point to a physical JSON file path, not a project ID."
@@ -222,14 +249,19 @@
         ],
         "explanation": {
           "general explanation": "The `gcloud` CLI uses its own bundled Python environment and CA certificate store. It does not automatically use the host operating system's root certificate trust store. When operating behind a corporate proxy that intercepts SSL (DPI), `gcloud` will reject the proxy's certificate. To solve this securely without bypassing SSL checks, you must provide `gcloud` with the proxy's PEM-encoded root certificate by setting the `core/custom_ca_certs_file` configuration property. This instructs the SDK to append that specific certificate to its trusted root store.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Append the `--insecure-skip-tls-verify` flag to every `gcloud` command.": "There is no global `--insecure-skip-tls-verify` flag for `gcloud`, and even if there were, skipping TLS verification is a severe security violation, contradicting the prompt's requirement to 'securely configure' without disabling checks.",
             "Set the environment variable `GOOGLE_API_USE_CLIENT_CERTIFICATE=true`.": "This variable is used for mutual TLS (mTLS) endpoint verification, where the client sends a certificate to the server. It does not configure the client to trust a custom proxy CA certificate.",
             "Execute `gcloud auth configure-docker --ca-cert=<path-to-cert.pem>`.": "This command configures Docker to authenticate against Artifact/Container Registry. It does not alter the underlying `gcloud` CLI's core HTTPS transport layer trust store."
           }
         },
         "difficulty": "Hard",
-        "tags": ["gcloud CLI", "Security", "SSL/TLS", "Networking"]
+        "tags": [
+          "gcloud CLI",
+          "Security",
+          "SSL/TLS",
+          "Networking"
+        ]
       },
       {
         "id": "q-gcppca-s89-009",
@@ -249,14 +281,19 @@
         ],
         "explanation": {
           "general explanation": "Google Cloud maintains two primary tiers of programmatic libraries. The 'Google Cloud Client Libraries' are modern, idiomatic, hand-crafted libraries (often gRPC based) recommended for most services. However, if a service is very new, in alpha, or is an older Google Workspace API, it may not have an idiomatic library. The fallback is the 'Google API Client Library' (e.g., the Discovery-based `google-api-python-client`). These libraries are automatically generated from the REST API discovery documents. They support almost every Google API, providing a programmatic Python interface even when a hand-crafted idiomatic library is unavailable.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "The `gcloud alpha` CLI wrapper invoked via Python `subprocess.run()`": "While technically possible as a hack, shelling out to a CLI is inefficient, error-prone, and not a native 'SDK mechanism' for building programmatic applications.",
             "Firebase Admin SDK": "The Firebase SDK interacts with Firebase services (Auth, Firestore, FCM). It is not a generic REST API wrapper for arbitrary GCP alpha services.",
             "Google Cloud KRM (Kubernetes Resource Model) SDK": "KRM is a declarative configuration model (used by Config Connector and Anthos). It is not a Python REST client SDK."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Google Cloud SDK", "Client Libraries", "API Integration", "Python SDK"]
+        "tags": [
+          "Google Cloud SDK",
+          "Client Libraries",
+          "API Integration",
+          "Python SDK"
+        ]
       },
       {
         "id": "q-gcppca-s89-010",
@@ -278,14 +315,19 @@
         ],
         "explanation": {
           "general explanation": "To enable Workload Identity Federation for external environments (like AWS or GitHub Actions), the Google Cloud SDK relies on a 'Credential Configuration File'. 1) You use the `gcloud iam workload-identity-pools create-cred-config` command on a secure machine to generate this specific JSON file. This file doesn't contain secrets; it contains instructions (like the STS endpoint, Pool ID, and Provider ID) telling the SDK *how* to exchange the local external token (e.g., reading an AWS metadata token or local file) for a GCP token. 2) You place this config file on the external runner and point the `GOOGLE_APPLICATION_CREDENTIALS` environment variable to it. The SDK automatically reads the instructions, performs the token exchange, and authenticates.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Execute `gcloud auth activate-service-account --key-file=<oidc-token.jwt>`.": "This command expects a static GCP JSON service account key, not a third-party OIDC JWT token. Workload Identity handles the exchange dynamically.",
             "Store the AWS IAM Access Key in Google Secret Manager and configure the SDK to read it via `gcloud config set auth/external_key`.": "GCP does not authenticate using AWS Access Keys. WIF relies on OpenID Connect (OIDC) or AWS metadata STS tokens, completely eliminating the need to store AWS secrets in GCP.",
             "Configure the AWS runner's metadata server to map to `metadata.google.internal`.": "You cannot map an AWS metadata server to Google's. The credential config file natively handles reading the AWS metadata server (`169.254.169.254`) directly without DNS mapping hacks."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Workload Identity Federation", "Authentication", "Google Cloud SDK", "CI/CD"]
+        "tags": [
+          "Workload Identity Federation",
+          "Authentication",
+          "Google Cloud SDK",
+          "CI/CD"
+        ]
       },
       {
         "id": "q-gcppca-s89-011",
@@ -305,7 +347,7 @@
         ],
         "explanation": {
           "general explanation": "Cloud Spanner relies on 'Sessions' to execute reads and writes. Creating and destroying sessions is a highly expensive API operation. The Google Cloud Spanner Client Libraries natively implement a robust 'Session Pool' internally. However, this pool is tied to the `Client` and `Database` object instances. If developers instantiate a new `Client` object for every single HTTP request, they bypass the pool, rapidly exhausting the database's session limits and creating massive latency. The architectural best practice is to instantiate the `spanner.Client()` and the `Database` object exactly once globally (e.g., at application startup) and reuse those objects across all concurrent requests so the internal SDK session pool can efficiently manage connections.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "The `SessionLimitExceeded` error indicates the Spanner instance does not have enough compute nodes to handle the RPC channels. You must increase the node count.": "While more nodes give more sessions, throwing hardware at an SDK connection leak is a massive financial anti-pattern. The root cause is the flawed instantiation pattern.",
             "The application is using synchronous gRPC calls. Switching to the asynchronous REST API will eliminate session locks.": "Spanner client libraries use gRPC natively for performance. REST APIs still require sessions under the hood, so changing the transport layer does not fix the session leak.",
             "The developer is not manually calling the `session.delete()` method at the end of each HTTP request handler.": "While manually deleting sessions prevents the leak, manually creating and deleting sessions per request is highly inefficient and destroys latency. Reusing the client's automated session pool is the required best practice."
@@ -337,7 +379,7 @@
         ],
         "explanation": {
           "general explanation": "Google Cloud APIs return large datasets using pagination. The Google Cloud Client Libraries natively abstract this pagination by returning a Page Iterator object (e.g., `HTTPIterator`). If you wrap this iterator in `list()`, Python will aggressively pull every single page from the API and store all 5 million object representations in RAM simultaneously, causing an OOM crash. The correct programmatic approach is to iterate directly over the returned iterator (e.g., `for blob in client.list_blobs(...):`). The SDK will fetch a page of results, yield them one by one to your loop, and automatically fetch the next page when needed, keeping the memory footprint minimal.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Pass the `max_results=1000` parameter to the API call, which automatically enables gRPC streaming to bypass local memory constraints.": "`max_results` limits the maximum number of items returned, stopping the script before processing all 5 million files. It does not magically enable gRPC streaming for GCS metadata.",
             "Use the `gsutil ls` command via `subprocess.run()` instead of the client library, as CLI tools bypass application memory limits.": "Shelling out to `gsutil` is slow, error-prone, and parses text output, which is a poor programmatic practice compared to simply using the iterator correctly in the native SDK.",
             "Enable the Storage Read API integration on the client instantiation to stream the object metadata.": "The Storage Read API is a BigQuery feature for high-throughput data reads. It is not used for Cloud Storage object metadata listing."
@@ -358,18 +400,32 @@
         "unitId": "gcp-pca-unit-5-2-google-cloud-sdks",
         "questionText": "A bash script in your CI/CD pipeline automates the deletion of ephemeral testing environments using the `gcloud compute instances delete` command. However, the pipeline frequently hangs indefinitely because the `gcloud` command issues a standard Y/n confirmation prompt to the console, waiting for human input that never arrives. Which two global flags can be appended to the command to bypass this interactive prompt and ensure the pipeline continues autonomously? (Choose two)",
         "questionType": "multiple",
-        "options": ["--quiet", "--force", "-q", "--no-interactive", "--yes"],
-        "correctAnswers": ["--quiet", "-q"],
+        "options": [
+          "--quiet",
+          "--force",
+          "-q",
+          "--no-interactive",
+          "--yes"
+        ],
+        "correctAnswers": [
+          "--quiet",
+          "-q"
+        ],
         "explanation": {
           "general explanation": "When writing programmatic shell scripts or CI/CD automation using the `gcloud` CLI, you must ensure commands do not stall waiting for interactive user confirmation (e.g., 'Do you want to continue?[Y/n]'). The official `gcloud` global flag to disable all interactive prompts and automatically accept the default/safe action (which in the case of a `delete` command allows it to proceed) is `--quiet`. The shorthand alias for this exact flag is `-q`.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "--force": "`--force` is not a standard global `gcloud` flag for bypassing prompts. Some specific commands might use it for specialized logic, but it is not the global interactive bypass.",
             "--no-interactive": "This is not a valid `gcloud` CLI flag.",
             "--yes": "Unlike `apt-get -y`, `gcloud` does not use `--yes`. It strictly uses `--quiet`."
           }
         },
         "difficulty": "Hard",
-        "tags": ["gcloud CLI", "Scripting", "CI/CD", "Automation"]
+        "tags": [
+          "gcloud CLI",
+          "Scripting",
+          "CI/CD",
+          "Automation"
+        ]
       },
       {
         "id": "q-gcppca-s89-014",
@@ -389,14 +445,19 @@
         ],
         "explanation": {
           "general explanation": "To get structured JSON logs and correct severity levels natively in Cloud Logging from Python applications, you don't need to rewrite all your logging statements. The `google-cloud-logging` client library provides a seamless integration point. By calling `google.cloud.logging.Client().setup_logging()`, the SDK attaches the `CloudLoggingHandler` to the root of Python's standard `logging` module. From that point on, any standard `logging.error()`, `logging.info()`, etc., is automatically intercepted, wrapped in the correct JSON structure, tagged with the appropriate GCP severity level, and streamed to Cloud Logging.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Replace all `print()` statements with `google.cloud.logging.Client().logger('app').log_struct()`.": "While this works, the prompt specifically requires doing this 'without entirely rewriting the application's logging logic'. `setup_logging()` achieves this natively.",
             "Set the `GOOGLE_CLOUD_STRUCTURED_LOGS=true` environment variable on the Compute Engine instance to force the Ops Agent to parse strings.": "There is no such environment variable. The Ops agent parses JSON output to `stdout`, but the Python app must actually generate the structured JSON first, which standard `logging` does not do by default.",
             "Write a custom log parser in Cloud Logging using regular expressions to extract severity and JSON fields post-ingestion.": "This is a reactive, brittle, operational workaround. The architectural best practice is to emit structured logs at the source using the native SDK integration."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Cloud Logging", "Python SDK", "Observability", "Google Cloud Client Libraries"]
+        "tags": [
+          "Cloud Logging",
+          "Python SDK",
+          "Observability",
+          "Google Cloud Client Libraries"
+        ]
       },
       {
         "id": "q-gcppca-s89-015",
@@ -412,17 +473,25 @@
           "--output=json",
           "--headless"
         ],
-        "correctAnswers": ["--quiet", "--format=\"json\""],
+        "correctAnswers": [
+          "--quiet",
+          "--format=\"json\""
+        ],
         "explanation": {
           "general explanation": "When running `gcloud` in programmatic, headless environments (like bash scripts or CI/CD pipelines), two global flags are essential. 1) `--quiet` (or `-q`) disables all interactive prompts (e.g., 'Do you want to continue?', 'Select a zone'). It automatically selects the default/safe option, ensuring the script does not hang indefinitely. 2) `--format=\"json\"` overrides the default human-readable text/table output, forcing the CLI to return the raw API response as a structured JSON object, allowing tools like `jq` to parse the output reliably.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "--no-interactive": "This is not a valid `gcloud` CLI flag. The correct flag is `--quiet`.",
             "--output=json": "This is a flag used by AWS CLI (`--output json`). The equivalent `gcloud` flag uses the format engine: `--format=\"json\"`.",
             "--headless": "This is not a valid `gcloud` CLI flag."
           }
         },
         "difficulty": "Hard",
-        "tags": ["gcloud CLI", "Scripting", "Formatting", "CI/CD"]
+        "tags": [
+          "gcloud CLI",
+          "Scripting",
+          "Formatting",
+          "CI/CD"
+        ]
       },
       {
         "id": "q-gcppca-s89-016",
@@ -437,17 +506,24 @@
           "The `google-cloud-bigquery` library's `load_table_from_dataframe` method",
           "The `bq load` CLI command executed via a subprocess wrapper"
         ],
-        "correctAnswers": ["The BigQuery Storage Write API"],
+        "correctAnswers": [
+          "The BigQuery Storage Write API"
+        ],
         "explanation": {
           "general explanation": "The legacy BigQuery streaming API (`tabledata.insertAll`) only guarantees 'at-least-once' delivery, meaning network retries could result in duplicate rows. To achieve 'exactly-once' delivery semantics for high-throughput streaming inserts programmatically, you must migrate to the newer BigQuery Storage Write API. This gRPC-based API is specifically designed to support stream-level transactions and offset tracking, guaranteeing that even if a network timeout occurs and the client retries the payload, BigQuery deduplicates it natively and commits it exactly once.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "The BigQuery Data Transfer Service API": "DTS is a managed service for scheduling batch transfers from external SaaS/Cloud sources (like AWS S3 or Google Ads). It is not a programmatic SDK interface for streaming real-time events from custom applications.",
             "The `google-cloud-bigquery` library's `load_table_from_dataframe` method": "This executes a standard BigQuery Load Job. While Load Jobs are atomic and free, they are batch operations with quota limits (e.g., max 100,000 per table per day) and are completely inappropriate for continuous, real-time streaming architectures.",
             "The `bq load` CLI command executed via a subprocess wrapper": "Similar to the DataFrame load method, this executes a batch load job, which does not satisfy the continuous streaming requirement."
           }
         },
         "difficulty": "Hard",
-        "tags": ["BigQuery", "Storage Write API", "Streaming", "Google Cloud Client Libraries"]
+        "tags": [
+          "BigQuery",
+          "Storage Write API",
+          "Streaming",
+          "Google Cloud Client Libraries"
+        ]
       },
       {
         "id": "q-gcppca-s89-017",
@@ -467,14 +543,18 @@
         ],
         "explanation": {
           "general explanation": "The `gcloud` CLI natively supports 'Configurations'. A configuration is a named set of properties (like the active account, target project, default compute zone). By executing `gcloud config configurations create dev` (and configuring it with the dev project and dev account) and doing the same for staging and prod, the developer completely isolates the environments. To switch contexts, they simply run `gcloud config configurations activate prod`. All subsequent commands will inherently use the `prod` project and identity, virtually eliminating the risk of cross-environment deployment accidents.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Define project-specific aliases in the bash `~/.profile` file (e.g., `alias gcloud-prod='gcloud --project=prod'`).": "While custom bash aliases work, they are a manual workaround. They do not handle switching the active authentication account natively, which is also required here.",
             "Use the `gcloud init` command repeatedly throughout the day to re-initialize the CLI state for the new target environment.": "Running `gcloud init` invokes an interactive wizard that overrides the default settings. It is incredibly slow and tedious to run multiple times a day compared to simply activating pre-saved configurations.",
             "Set the `GOOGLE_APPLICATION_CREDENTIALS` environment variable to a folder containing all three JSON keys, allowing `gcloud` to auto-resolve the target.": "The `GOOGLE_APPLICATION_CREDENTIALS` variable must point to a specific file, not a folder. Furthermore, it is used for Client Library ADC authentication, not for `gcloud` CLI active configuration state."
           }
         },
         "difficulty": "Hard",
-        "tags": ["gcloud CLI", "Configurations", "Developer Workflow"]
+        "tags": [
+          "gcloud CLI",
+          "Configurations",
+          "Developer Workflow"
+        ]
       },
       {
         "id": "q-gcppca-s89-018",
@@ -494,7 +574,7 @@
         ],
         "explanation": {
           "general explanation": "High-performance Google Cloud Client Libraries (like those for Bigtable, Spanner, and Pub/Sub) are built on top of gRPC, not standard HTTP/1.1 REST. gRPC uses HTTP/2, which supports multiplexing many requests over a single, long-lived TCP connection. When you instantiate the Bigtable client object *once globally* and reuse it across requests, the library manages a connection pool of these long-lived gRPC channels. This entirely eliminates the massive overhead of TLS handshakes and TCP connection establishment for every single query, allowing millions of requests to stream over the open channels efficiently.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "The client library caches the actual data responses in local memory, bypassing the need to hit the Bigtable API on subsequent requests.": "Cloud Client libraries generally do not perform application-level caching of database records. That requires a dedicated cache layer like Memcached/Redis.",
             "The client library utilizes UDP packets instead of TCP, eliminating the three-way handshake overhead.": "gRPC operates strictly over TCP (specifically HTTP/2), not UDP.",
             "The client library sends requests directly to the raw underlying Compute Engine nodes hosting the Bigtable data, bypassing the Google Front End (GFE) proxy.": "All external API traffic to Google Cloud managed services passes through the Google Front End (GFE) proxy layer. You cannot bypass it to hit internal VM IP addresses."
@@ -526,7 +606,7 @@
         ],
         "explanation": {
           "general explanation": "Uploading a single massive file (5 TB) over a fast network is bottlenecked by the TCP throughput of a single connection thread. To fully saturate a 10 Gbps pipe, the file must be split and uploaded concurrently. The legacy `gsutil` required manually editing `.boto` config files to enable this. The modern, Go-based `gcloud storage` CLI automatically determines if a file is large enough and natively utilizes 'Parallel Composite Uploads'. It splits the 5 TB file into chunks locally, uses dozens of concurrent threads to upload them simultaneously (maxing out the bandwidth), and sends an API call instructing Cloud Storage to stitch them back together on the server side.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "It bypasses the HTTP/HTTPS protocol entirely, pushing the bytes over a dedicated UDP stream to Cloud Storage.": "Cloud Storage APIs operate exclusively over TCP (HTTPS or gRPC). There is no native UDP streaming protocol for bulk object storage uploads.",
             "It automatically enables GZIP compression on the file locally before initiating the transfer.": "Compression takes significant local CPU time and isn't applied automatically to binary/database dumps, as they are often already compressed. Parallel streams are the source of the speedup.",
             "It overrides the target bucket's storage class to 'Premium Tier' during the transfer window.": "There is no 'Premium Tier' storage class in GCS that affects upload speed. Network routing tiers exist, but CLI tools cannot dynamically alter routing tiers mid-flight to boost speeds."
@@ -560,7 +640,7 @@
         ],
         "explanation": {
           "general explanation": "The Google Cloud Client Libraries (via `google-api-core`) provide a highly robust, customizable retry mechanism. To implement it: 1) You instantiate a `Retry` object, which mathematically dictates *how* to back off (e.g., `initial=1.0, multiplier=2.0, maximum=60.0`). 2) You must define *when* to retry. This is done by passing a `predicate` function (often built using `if_exception_type`). This function evaluates the exception returned by the API call (e.g., checking if it's a `ServiceUnavailable` 503 error). If the predicate returns true, the `Retry` object executes the exponential backoff sleep and re-issues the API call.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "A `BackoffThread` object to spawn parallel execution queues.": "Retries are handled synchronously on the executing thread via time sleeps; there is no specific `BackoffThread` object required to configure the policy.",
             "An `add_done_callback` method attached to the gRPC channel.": "Callbacks are for asynchronous Long-Running Operations (LROs), not for intercepting and managing low-level HTTP/gRPC transport errors natively.",
             "A `CircuitBreaker` class to halt execution if errors exceed 100 per minute.": "While circuit breaking is a valid microservice pattern, it is not a native component of the `google.api_core.retry` module used to define backoff policies."
@@ -592,14 +672,19 @@
         ],
         "explanation": {
           "general explanation": "When interacting with the Secret Manager API programmatically via the Cloud Client Libraries, the secret material (the payload) is completely agnostic to formatting; it is treated purely as an array of bytes. When `access_secret_version()` returns the response, the actual secret resides in `response.payload.data`. Because it is in byte format (indicated by the `b'...'` prefix in Python), attempting to use it as a standard string in application logic requires explicitly decoding the bytes into a UTF-8 string.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "The payload is encrypted with Cloud KMS. It must be passed to the `kms_client.decrypt()` method before use.": "While Secret Manager encrypts the data at rest natively (using Google-managed or Customer-managed keys), it automatically decrypts the payload *before* sending it over the TLS connection to the authorized client. Manual KMS decryption by the developer is not required.",
             "The payload is base64 encoded by default. It must be passed through a `base64.b64decode()` function.": "The underlying REST API transports the data as base64, but the idiomatic Cloud Client Libraries automatically handle the base64 decoding for you, presenting the raw bytes. Additional manual base64 decoding will fail.",
             "The SDK requires the `access_token` parameter to be appended to the API call to unmask the plaintext.": "Authentication (OAuth access tokens) is handled transparently by the SDK via Application Default Credentials. There is no 'unmasking' flag; if auth fails, the API call simply returns a 403 error."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Secret Manager", "Google Cloud Client Libraries", "Python SDK", "Data Types"]
+        "tags": [
+          "Secret Manager",
+          "Google Cloud Client Libraries",
+          "Python SDK",
+          "Data Types"
+        ]
       },
       {
         "id": "q-gcppca-s89-022",
@@ -619,14 +704,19 @@
         ],
         "explanation": {
           "general explanation": "BigQuery has two distinct mechanisms for data ingestion: Streaming Inserts and Batch Load Jobs. The `insert_rows_json()` method in the client library explicitly invokes the BigQuery Streaming API. Streaming APIs are designed for real-time, record-by-record ingestion and charge you money per GB ingested. For a 'nightly batch' pipeline, streaming is an architectural anti-pattern. Instead, the developer should generate a file (e.g., JSONL, CSV, Parquet) and use `client.load_table_from_file()` or place it in GCS and use `client.load_table_from_uri()`. These execute standard BigQuery Load Jobs, which do not incur any data ingestion charges (they are free).",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "The script is executing in an infinite loop, causing duplicate writes. It should utilize the Storage Write API to enforce exactly-once semantics.": "While the Storage Write API handles exactly-once, the primary issue driving the *expected* billing spike for 10GB daily is the fact that streaming costs money, whereas batch loading is free. There's no evidence of an infinite loop.",
             "The data is being inserted without compression. The script should be updated to compress the JSON payload with GZIP before passing it to the `insert_rows_json()` method.": "You cannot pass gzipped bytes directly into the `insert_rows_json()` method; it expects a Python list of dictionaries. Compression does not bypass the streaming API billing model.",
             "JSON parsing is highly CPU intensive. The script should be updated to convert the data to CSV strings locally before using `insert_rows_csv()`.": "There is no `insert_rows_csv()` method for streaming inserts in the BigQuery python client. Both CSV and JSON batch loads are free."
           }
         },
         "difficulty": "Hard",
-        "tags": ["BigQuery", "Google Cloud Client Libraries", "Cost Optimization", "Data Ingestion"]
+        "tags": [
+          "BigQuery",
+          "Google Cloud Client Libraries",
+          "Cost Optimization",
+          "Data Ingestion"
+        ]
       },
       {
         "id": "q-gcppca-s89-023",
@@ -646,14 +736,19 @@
         ],
         "explanation": {
           "general explanation": "When you run `gcloud container clusters get-credentials`, the SDK does not download static certificates or long-lived tokens. Instead, it modifies your local `kubeconfig` file to use an authentication plugin (specifically, the GCP auth provider logic native to `gcloud` or a specialized auth binary). When you execute a `kubectl` command, `kubectl` delegates authentication to this plugin. The plugin uses your active `gcloud` session (your user identity) to dynamically generate a short-lived OAuth 2.0 access token and passes it to the Kubernetes API server. This ensures that if a developer's GCP access is revoked, their `kubectl` access is instantly broken, securing the cluster.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "It downloads a long-lived cluster admin RSA private key and securely embeds it inside the local `~/.kube/config` file.": "This describes the legacy, insecure way of managing cluster access (Basic Auth or client certs). GKE actively discourages/disables static credentials in favor of dynamic IAM OAuth tokens.",
             "It provisions an Identity-Aware Proxy (IAP) TCP tunnel between the developer's laptop and the Kubernetes master node.": "While you *can* use IAP for private clusters, `get-credentials` simply updates the auth mechanism in the kubeconfig file. It doesn't establish the physical network TCP proxy tunnel itself.",
             "It maps the developer's email address to a Kubernetes ServiceAccount using Workload Identity Federation.": "Workload Identity maps GCP identities to *Kubernetes ServiceAccounts* for pods running *inside* the cluster to reach out to GCP. `get-credentials` maps GCP user identities to *Kubernetes RBAC users/groups* to authenticate *inbound* to the API server."
           }
         },
         "difficulty": "Hard",
-        "tags": ["GKE", "gcloud CLI", "Authentication", "Kubernetes"]
+        "tags": [
+          "GKE",
+          "gcloud CLI",
+          "Authentication",
+          "Kubernetes"
+        ]
       },
       {
         "id": "q-gcppca-s89-024",
@@ -673,14 +768,19 @@
         ],
         "explanation": {
           "general explanation": "Google Cloud provides local 'Emulators' for several foundational services (like Firestore, Datastore, Pub/Sub, Spanner, and Bigtable). These emulators are local, in-memory servers that mimic the actual GCP REST/gRPC API. To use them, you start the emulator via the `gcloud beta emulators <service> start` command. Crucially, to make your existing, unmodified Python/Java/Go application code communicate with this local emulator instead of the real Google Cloud API, you set a specific environment variable (e.g., `FIRESTORE_EMULATOR_HOST=localhost:8080`). The Google Cloud Client Libraries natively check for this variable during instantiation and will route all API calls to the local emulator.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Execute `gcloud firestore local-proxy`. Point the client library to `localhost:8080`.": "There is no `gcloud firestore local-proxy` command. The feature is packaged under the `emulators` component.",
             "Use `gcloud config set api_endpoint http://localhost:8080` to force all GCP SDKs into offline loopback mode.": "While `gcloud` has custom endpoint configurations, this does not spin up a local server to respond to the requests. The client libraries rely on environment variables, not `gcloud` config files, for emulator routing.",
             "Execute `gcloud components install local-datastore` and initiate the Java mock server with the `--firestore` flag.": "While Firestore and Datastore share underlying lineage, the correct, modern invocation uses `gcloud beta emulators firestore start`."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Emulators", "Local Testing", "Firestore", "Google Cloud Client Libraries"]
+        "tags": [
+          "Emulators",
+          "Local Testing",
+          "Firestore",
+          "Google Cloud Client Libraries"
+        ]
       },
       {
         "id": "q-gcppca-s89-025",
@@ -702,14 +802,19 @@
         ],
         "explanation": {
           "general explanation": "To adhere to data sovereignty or compliance mandates requiring API traffic to remain within a specific region, you cannot rely on global API endpoints (which route traffic to the nearest Google Front End, but process globally). You must instruct the Cloud Client Library to communicate explicitly with the regional endpoint (e.g., `europe-west4-cloudkms.googleapis.com`). Programmatically, this is achieved by importing the `ClientOptions` class from `google.api_core.client_options` and passing it to the SDK's client constructor with the `api_endpoint` parameter defined. (Note: In Python, you can either pass the explicitly constructed `ClientOptions` object, or pass a dictionary to the `client_options` kwarg during initialization).",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Set the `GOOGLE_API_USE_CLIENT_CERTIFICATE` environment variable to strictly enforce regional routing.": "This variable is for mTLS (mutual TLS) authentication, ensuring the client provides a certificate. It has nothing to do with selecting a regional API endpoint.",
             "Modify the local `/etc/hosts` file to resolve `cloudkms.googleapis.com` to the specific regional VIP.": "This is a brittle, OS-level hack that will likely break SSL/TLS certificate validation (SNI mismatches) and violates the requirement to handle this 'programmatically' via the SDK.",
             "Use the `--region=europe-west4` flag when invoking the Python script execution.": "Standard Python execution environments do not magically parse a `--region` flag and inject it into the GCP SDK's transport layer. The SDK code itself must be explicitly configured."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Google Cloud Client Libraries", "Regional Endpoints", "Compliance", "Cloud KMS"]
+        "tags": [
+          "Google Cloud Client Libraries",
+          "Regional Endpoints",
+          "Compliance",
+          "Cloud KMS"
+        ]
       },
       {
         "id": "q-gcppca-s89-026",
@@ -729,14 +834,19 @@
         ],
         "explanation": {
           "general explanation": "The scenario describes a classic Read-Modify-Write race condition. In NoSQL databases like Datastore or Firestore, if two processes read a value of 50 simultaneously, both add 100, and both write back 150, the final value is 150, not the correct 250. To prevent this, the SDK provides Transactions. By wrapping the read and write operations inside a `with client.transaction():` context block, the database tracks the entity. If Process B modifies the entity after Process A read it but before Process A writes it, Process A's transaction will abort and automatically retry (with the newly updated value), ensuring strict ACID consistency.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Use the `client.batch()` context manager to bundle the read and write operations into a single asynchronous network call.": "Batches are used to send multiple `put()` or `delete()` requests in one network hop to save latency. They do not enforce transactional locking or isolation for read-modify-write scenarios.",
             "Implement a global Python `threading.Lock()` in the application code before invoking the Datastore SDK methods.": "A local thread lock only protects concurrency on that single specific VM/container. If the application is scaled out horizontally across multiple instances (e.g., Cloud Run), the race condition will still occur at the database layer.",
             "Pass the `eventual_consistency=False` parameter to the `client.get()` method to ensure the most recent value is read.": "While strongly consistent reads are important, simply reading the latest value does not prevent another process from updating the record milliseconds *after* you read it but *before* you write it back. Transactions are the only reliable lock."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Datastore", "Google Cloud Client Libraries", "Transactions", "Concurrency"]
+        "tags": [
+          "Datastore",
+          "Google Cloud Client Libraries",
+          "Transactions",
+          "Concurrency"
+        ]
       },
       {
         "id": "q-gcppca-s89-027",
@@ -751,17 +861,24 @@
           "WebSockets over TCP",
           "UDP (User Datagram Protocol)"
         ],
-        "correctAnswers": ["gRPC (gRPC Remote Procedure Calls)"],
+        "correctAnswers": [
+          "gRPC (gRPC Remote Procedure Calls)"
+        ],
         "explanation": {
           "general explanation": "Many Google Cloud machine learning APIs (like Speech-to-Text) support 'Streaming' recognition. This requires full-duplex, bidirectional communication: the client continuously sends audio chunks up, and the server continuously sends partial transcriptions down over the exact same open connection. REST (HTTP/1.1) is stateless and strictly request-response, meaning it cannot natively support simultaneous bidirectional streaming. The Google Cloud Client Libraries solve this by natively utilizing gRPC (which operates over HTTP/2). gRPC inherently supports bidirectional streaming streams, making it the required transport protocol for these advanced SDK methods.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "HTTP/1.1 with REST polling": "REST requires a discrete request for every response. You cannot stream audio continuously up while asynchronously receiving responses down over a single HTTP/1.1 connection.",
             "WebSockets over TCP": "While WebSockets support bidirectional streaming and are used in web browsers, Google Cloud Client Libraries use gRPC natively for high-performance server-to-server and client-to-server streaming integrations, not WebSockets.",
             "UDP (User Datagram Protocol)": "UDP is connectionless and does not guarantee packet delivery or order. Google APIs rely on TCP-based protocols (like gRPC over HTTP/2) to ensure reliable delivery of data payloads."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Google Cloud Client Libraries", "gRPC", "Speech-to-Text", "Streaming"]
+        "tags": [
+          "Google Cloud Client Libraries",
+          "gRPC",
+          "Speech-to-Text",
+          "Streaming"
+        ]
       },
       {
         "id": "q-gcppca-s89-028",
@@ -776,17 +893,24 @@
           "gcloud components update --force",
           "gcloud auth login --update-adc"
         ],
-        "correctAnswers": ["gcloud auth revoke --all"],
+        "correctAnswers": [
+          "gcloud auth revoke --all"
+        ],
         "explanation": {
           "general explanation": "When a developer authenticates using `gcloud auth login`, the CLI obtains and caches an OAuth 2.0 refresh token locally. If the machine is compromised, the attacker can use this token to access GCP. To invalidate these specific locally cached credentials at the Google OAuth server level (without deleting the entire user account in Workspace), you execute `gcloud auth revoke`. Using the `--all` flag invalidates all active credential sets associated with the `gcloud` installation, forcing a completely fresh authentication flow and severing the attacker's access via those stolen tokens.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "gcloud config unset auth/credential_file_override": "This merely removes a local configuration setting that points the CLI to a specific key file. It does not communicate with Google's servers to invalidate the actual cryptographic OAuth tokens that the attacker possesses.",
             "gcloud components update --force": "This command updates the `gcloud` CLI binaries and SDK components. It does not manage identity, authentication, or token revocation.",
             "gcloud auth login --update-adc": "This initiates a *new* login flow to update local Application Default Credentials. It does not inherently revoke the *old* refresh tokens that might be cached on the stolen laptop."
           }
         },
         "difficulty": "Hard",
-        "tags": ["gcloud CLI", "Security", "Incident Response", "Authentication"]
+        "tags": [
+          "gcloud CLI",
+          "Security",
+          "Incident Response",
+          "Authentication"
+        ]
       },
       {
         "id": "q-gcppca-s89-029",
@@ -806,14 +930,19 @@
         ],
         "explanation": {
           "general explanation": "To keep the footprint small and stable, standard installations of the Google Cloud SDK (including the default `google/cloud-sdk` Docker images) do not ship with the `alpha` or `beta` command groups pre-installed. A developer likely ran the component install on their local machine manually at some point. For the CI/CD pipeline to use these experimental commands, you must either use a specialized Docker image tag (like `google/cloud-sdk:alpine-with-alpha`) or explicitly add a build step that executes `gcloud components install alpha --quiet` before attempting the deployment.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "The CI/CD service account lacks the `roles/iam.serviceAccountTokenCreator` role required to execute experimental APIs.": "A missing IAM role would result in an HTTP 403 Permission Denied API error during the execution. The `Invalid choice: 'alpha'` error is a local CLI parsing error indicating the binary literally doesn't recognize the word 'alpha'.",
             "Alpha commands are strictly rate-limited and cannot be executed from IP addresses associated with external CI/CD runner farms.": "Google Cloud does not block experimental APIs based purely on the source IP being a CI/CD farm. The error is a missing local component.",
             "The `google/cloud-sdk` Docker image uses a stripped-down Alpine Linux base that lacks the Python dependencies required for Alpha API routing.": "The issue is not a missing Python dependency; it is that the specific SDK component library (`alpha`) has not been downloaded and activated in the CLI's component manager."
           }
         },
         "difficulty": "Hard",
-        "tags": ["gcloud CLI", "Alpha Features", "CI/CD", "Troubleshooting"]
+        "tags": [
+          "gcloud CLI",
+          "Alpha Features",
+          "CI/CD",
+          "Troubleshooting"
+        ]
       },
       {
         "id": "q-gcppca-s89-030",
@@ -835,7 +964,7 @@
         ],
         "explanation": {
           "general explanation": "To authenticate programmatic scripts (SDKs) without downloading static JSON keys (which are severe security risks), you rely on Application Default Credentials (ADC). ADC supports two secure pathways in this scenario: 1) Automated VM Identity: By attaching a Service Account to the Compute Engine VM during creation, the SDK natively queries the VM's Metadata Server. The metadata server dynamically vends short-lived OAuth tokens to the script, requiring zero configuration by the developer. 2) Personal Identity: If the script should run under the developer's own permissions rather than the VM's, the developer can run `gcloud auth application-default login` via SSH. This launches an OAuth flow, saves a secure local token for ADC, and the SDK automatically picks it up.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "The developer can embed an Identity-Aware Proxy (IAP) JWT token directly into the Python client initialization block.": "IAP secures inbound access to web apps and VMs. It is not an authentication credential used by Cloud Client Libraries to call core GCP APIs like Cloud Storage.",
             "The SDK reads the `/etc/google/auth/default.json` file injected automatically by the Compute Engine hypervisor upon boot.": "Compute Engine does not inject a physical JSON credential file into the OS filesystem. It provides dynamic tokens via the HTTP-based Metadata Server.",
             "The developer configures the script to use a custom SSH key-pair uploaded to OS Login to negotiate the API handshake.": "OS Login uses SSH keys to manage terminal access to Linux VMs. SSH keys cannot be used to authenticate HTTP/gRPC requests to Google Cloud APIs."

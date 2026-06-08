@@ -21,14 +21,19 @@
         ],
         "explanation": {
           "general explanation": "In a VPC-native GKE cluster, pod IPs are drawn from a secondary IP range of the node's subnet. If this secondary range is exhausted, GKE supports adding additional Pod IP CIDR ranges dynamically. You accomplish this by first adding a new secondary IP range to the underlying Compute Engine subnet, and then running the `gcloud container clusters update` command to append this new secondary range to the cluster's multi-Pod CIDR configuration.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Edit the existing secondary IP range of the VPC subnet to expand its CIDR block (e.g., from /20 to /16), which GKE will automatically detect.": "Google Cloud VPC allows expanding the PRIMARY IP range of a subnet, but you cannot expand an existing SECONDARY IP range. You must add a new one.",
             "Enable the IP Masquerade Agent on the GKE cluster to translate multiple Pod IPs into a single Node IP, freeing up the exhausted pod IP space.": "The IP Masquerade Agent translates pod IPs for traffic leaving the cluster (e.g., to the internet or on-prem). It does not change the fundamental requirement that every pod must be assigned a unique internal IP address from the secondary range.",
             "Convert the GKE cluster from VPC-native to routes-based routing, which bypasses the secondary IP range limitation.": "You cannot convert a VPC-native cluster to a routes-based cluster. Furthermore, routes-based clusters are legacy and not recommended."
           }
         },
         "difficulty": "Hard",
-        "tags": ["gke", "vpc-native", "ip-address-management", "network-configuration"]
+        "tags": [
+          "gke",
+          "vpc-native",
+          "ip-address-management",
+          "network-configuration"
+        ]
       },
       {
         "id": "q-gcppca-s47-002",
@@ -48,14 +53,19 @@
         ],
         "explanation": {
           "general explanation": "Direct VPC Egress allows Cloud Run services to send traffic directly to a VPC network without requiring a Serverless VPC Access connector. This approach offers lower latency, higher throughput, and eliminates the operational overhead of managing connector VMs. It seamlessly routes traffic through the specified VPC subnet to other resources, including on-premises databases via Cloud VPN or Interconnect.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Provision a Serverless VPC Access connector using the `e2-micro` machine type to minimize infrastructure overhead, and attach it to the Cloud Run service.": "While Serverless VPC Access connectors work, they require provisioning, scaling, and managing intermediate VM infrastructure (the connector instances), which violates the requirement to eliminate this overhead. They also generally introduce slightly more latency than Direct VPC Egress.",
             "Deploy an API Gateway to act as a reverse proxy, translating the Cloud Run HTTP requests into TCP streams to traverse the HA VPN.": "API Gateway cannot translate HTTP requests into raw PostgreSQL TCP database connections, nor does it natively bridge serverless environments to VPCs like Direct VPC Egress does.",
             "Enable Private Service Connect on the Cloud Run service and create an endpoint pointing to the on-premises database IP address.": "Private Service Connect endpoints are used by consumers to access published managed services, not to bridge serverless egress traffic to an on-premises network."
           }
         },
         "difficulty": "Hard",
-        "tags": ["cloud-run", "serverless-networking", "direct-vpc-egress", "ha-vpn"]
+        "tags": [
+          "cloud-run",
+          "serverless-networking",
+          "direct-vpc-egress",
+          "ha-vpn"
+        ]
       },
       {
         "id": "q-gcppca-s47-003",
@@ -75,14 +85,19 @@
         ],
         "explanation": {
           "general explanation": "When a Compute Engine VM has multiple network interfaces, it relies on the guest operating system's routing table. By default, the OS usually has a single default gateway configured on the primary interface (`nic0`). If a request arrives on `nic1`, the OS might attempt to send the response via the default gateway on `nic0`. This causes asymmetric routing, and the VPC network will drop the packets to prevent spoofing. You must configure policy routing (e.g., using `iproute2` in Linux) within the guest OS to ensure traffic responds via the same interface it entered.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Enable IP Forwarding on both `nic0` and `nic1` in the Google Cloud Console.": "IP Forwarding allows a VM to send and receive packets with source/destination IPs that do not match the VM's assigned IP (e.g., when acting as a NAT or router). It does not fix the guest OS routing table's asymmetric default gateway issue.",
             "Configure a custom static route in the 'Data' VPC directing all `0.0.0.0/0` traffic to the IP address of `nic1`.": "Modifying the VPC routing table does not fix how the VM's internal guest OS chooses to route outgoing response packets across its NICs.",
             "Create a VPC Network Peering connection between the 'Management' VPC and the 'Data' VPC to unify their routing tables.": "VPC Peering connects the two networks, but it fundamentally violates the security requirement of having two separate NICs specifically to isolate the Management and Data networks."
           }
         },
         "difficulty": "Hard",
-        "tags": ["compute-engine", "multiple-nics", "policy-routing", "asymmetric-routing"]
+        "tags": [
+          "compute-engine",
+          "multiple-nics",
+          "policy-routing",
+          "asymmetric-routing"
+        ]
       },
       {
         "id": "q-gcppca-s47-004",
@@ -97,17 +112,24 @@
           "Global External Application Load Balancer with Identity-Aware Proxy.",
           "Internal Proxy Network Load Balancer."
         ],
-        "correctAnswers": ["Cross-region Internal Application Load Balancer."],
+        "correctAnswers": [
+          "Cross-region Internal Application Load Balancer."
+        ],
         "explanation": {
           "general explanation": "The Cross-region Internal Application Load Balancer operates at Layer 7. It provides internal, private IP load balancing across multiple regions. Because it is an Application Load Balancer (L7), it natively supports gRPC, advanced path-based routing (URL maps), and TLS termination. It seamlessly fulfills the requirement to route traffic to backends in both `us-central1` and `europe-west1` internally.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Internal Passthrough Network Load Balancer with global access enabled.": "This is a Layer 4 load balancer. It cannot perform path-based HTTP/gRPC routing (URL maps), and global access only allows clients from other regions to access it; the backends themselves must still be in a single region.",
             "Global External Application Load Balancer with Identity-Aware Proxy.": "An External ALB exposes the service to the public internet. The requirement explicitly states communication must happen over 'internal IPs'.",
             "Internal Proxy Network Load Balancer.": "This is a Layer 4 proxy. It can balance TCP traffic, but it does not support Layer 7 path-based routing or native gRPC URL mapping."
           }
         },
         "difficulty": "Medium",
-        "tags": ["load-balancing", "internal-application-load-balancer", "grpc", "cross-region"]
+        "tags": [
+          "load-balancing",
+          "internal-application-load-balancer",
+          "grpc",
+          "cross-region"
+        ]
       },
       {
         "id": "q-gcppca-s47-005",
@@ -127,7 +149,7 @@
         ],
         "explanation": {
           "general explanation": "Private Service Connect (PSC) is the native GCP solution for publishing managed services to consumers across different VPCs and organizations without requiring VPC Peering or VPNs. The producer (SaaS application) deploys the compute resources behind an Internal Load Balancer and creates a PSC 'Service Attachment'. Consumers create a 'PSC Endpoint' in their own VPC, which appears as a local private IP address. Traffic flows securely across the Google backbone, completely bypassing IP overlap issues because the networks remain un-peered.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure an External Passthrough Network Load Balancer and whitelist the partner organizations' public IP ranges using Cloud Armor.": "This exposes the service over the public internet. The requirement strictly states partners must connect via 'internal IP addresses'.",
             "Establish an IPsec Cloud VPN between your VPC and each partner's VPC, utilizing Cloud NAT to translate overlapping IPs.": "While VPN + Private NAT can solve IP overlap, it is complex, computationally heavy, and creates bidirectional routing paths. PSC is designed explicitly for unidirectional, scalable service publishing without VPN overhead.",
             "Configure a Serverless VPC Access connector in the partner VPCs mapped to a Network Endpoint Group (NEG) in your VPC.": "Serverless VPC Access connectors route traffic from serverless environments (like Cloud Run) into a VPC. They are not used to expose Compute Engine services across organizational boundaries."
@@ -161,14 +183,19 @@
         ],
         "explanation": {
           "general explanation": "To enforce Network Policies and natively log allowed/denied connections at the pod level, you must use GKE Dataplane V2. Dataplane V2 utilizes eBPF (extended Berkeley Packet Filter) to manage networking and security natively in the kernel. Once Dataplane V2 is enabled, it provides the foundation to explicitly enable 'Network Policy Logging', which sends the pod-level connection verdicts (allow/deny) directly to Cloud Logging for compliance audits.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Install the Calico Container Network Interface (CNI) plugin using a DaemonSet.": "While legacy GKE clusters used Calico for Network Policies, GKE Dataplane V2 natively handles Network Policies without requiring third-party CNI plugins like Calico. Furthermore, native Network Policy Logging is a Dataplane V2 feature.",
             "Enable VPC Flow Logs on the underlying Compute Engine subnet where the nodes reside.": "VPC Flow Logs capture traffic at the VM interface (Node) level. They do not understand intra-node pod-to-pod traffic or Kubernetes Network Policy allow/deny verdicts.",
             "Configure an Identity-Aware Proxy (IAP) policy on the GKE Ingress controller.": "IAP provides zero-trust access control for incoming user requests at Layer 7. It does not enforce or log internal Layer 3/4 pod-to-pod Network Policies."
           }
         },
         "difficulty": "Hard",
-        "tags": ["gke", "dataplane-v2", "network-policies", "logging"]
+        "tags": [
+          "gke",
+          "dataplane-v2",
+          "network-policies",
+          "logging"
+        ]
       },
       {
         "id": "q-gcppca-s47-007",
@@ -190,14 +217,19 @@
         ],
         "explanation": {
           "general explanation": "A Serverless VPC Access connector consists of a pool of Compute Engine VM instances that proxy traffic from the serverless environment into the VPC. If the connector CPU is maxed out, it drops packets and introduces latency. You can scale the compute capacity of the connector in two ways: scaling out by increasing the maximum number of instances (`max-instances`), or scaling up by changing the underlying `machine-type` (e.g., from `e2-micro` to `e2-standard-4`) during connector creation/update.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure the Cloud Function to use Direct VPC Egress instead of the Serverless VPC Access connector.": "While Direct VPC Egress is the modern alternative and solves the problem by bypassing connectors entirely, it might not be supported for all Cloud Function generations or regions depending on the legacy setup. Scaling the existing connector is the direct fix for the described component failure. (Note: In a 'Choose Two' scenario dealing explicitly with connector bottlenecks, scaling out and scaling up are the two native parameters of the connector itself).",
             "Increase the MTU (Maximum Transmission Unit) of the VPC subnet to 8896 bytes.": "Increasing the VPC MTU does not alleviate a CPU bottleneck on the connector instances. It might actually cause fragmentation issues if the Cloud Function environment does not support Jumbo frames.",
             "Deploy an Internal Application Load Balancer in front of the Cloud SQL instance to distribute the connections.": "Cloud SQL does not sit behind an Application Load Balancer natively, and load balancing the destination does not fix the compute bottleneck on the origin proxy (the VPC connector)."
           }
         },
         "difficulty": "Medium",
-        "tags": ["serverless-vpc-access", "cloud-functions", "bottleneck", "scaling"]
+        "tags": [
+          "serverless-vpc-access",
+          "cloud-functions",
+          "bottleneck",
+          "scaling"
+        ]
       },
       {
         "id": "q-gcppca-s47-008",
@@ -217,7 +249,7 @@
         ],
         "explanation": {
           "general explanation": "To expose an application via a single Anycast IP to the internet and route traffic to a mix of Google Cloud and on-premises compute resources, you must use a Global External Application Load Balancer. The load balancer's backend service must be configured with specific endpoint types. You use Zonal NEGs (or Instance Groups) for the local Compute Engine VMs, and you use Hybrid NEGs (Network Endpoint Groups) to specify the private IP addresses of the on-premises VMs reachable over the HA VPN.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Provision a Global External Passthrough Network Load Balancer. Add the GCP VMs to a Managed Instance Group (MIG) and route the on-premises traffic using Cloud NAT.": "External Passthrough LBs (Layer 4) do not support Hybrid NEGs natively for routing traffic to on-premises IP addresses over a VPN.",
             "Deploy Cloud DNS routing policies. Map the primary domain to an Internal Application Load Balancer in GCP and configure a failover record pointing to the on-premises firewall.": "DNS routing does not provide a 'single Anycast IP address'; it provides different IP addresses to different users based on resolution. Furthermore, it does not actively proxy traffic.",
             "Provision a Cross-Region Internal Application Load Balancer and enable global access, adding both GCP VMs and on-premises IPs to standard Unmanaged Instance Groups.": "Internal Load Balancers are not accessible from the public internet (external users). They are strictly for VPC-internal traffic."
@@ -249,14 +281,19 @@
         ],
         "explanation": {
           "general explanation": "Alias IP ranges allow you to assign multiple internal IP addresses (from the primary subnet's range or a secondary range) to a single VM's network interface. This is the exact cloud-native mechanism used to give containers or applications running inside a VM their own routable IP addresses on the VPC network without needing to provision entirely new VMs or complex routing rules.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Attach a second Virtual Network Interface (vNIC) to the VM, placing it in a different VPC, and bridge the interfaces in the guest OS.": "Multiple vNICs must connect to different VPC networks. The requirement states the container needs an IP 'from the same subnet', making a second vNIC impossible and bridging an anti-pattern.",
             "Enable IP Forwarding on the VM and configure a custom VPC static route to point a completely new subnet CIDR to the VM's primary IP.": "While this works for building routers (next-hop VMs), it is vastly more complex than Alias IPs and does not assign an IP from the *same* subnet to the container, as static routes dictate a different destination block.",
             "Create a Private Service Connect endpoint and map it to a port exposed by the container on the VM's localhost address.": "Private Service Connect is for accessing managed services behind load balancers. It is not a mechanism to assign secondary IP addresses to containers running inside raw Compute Engine VMs."
           }
         },
         "difficulty": "Medium",
-        "tags": ["compute-engine", "alias-ips", "containers", "network-configuration"]
+        "tags": [
+          "compute-engine",
+          "alias-ips",
+          "containers",
+          "network-configuration"
+        ]
       },
       {
         "id": "q-gcppca-s47-010",
@@ -271,17 +308,24 @@
           "Anthos Service Mesh (ASM) VirtualServices.",
           "Network Endpoint Groups (NEGs) with standalone backend services."
         ],
-        "correctAnswers": ["GKE Gateway API."],
+        "correctAnswers": [
+          "GKE Gateway API."
+        ],
         "explanation": {
           "general explanation": "The GKE Gateway API (an evolution of the Ingress API) is specifically designed for role-oriented separation of concerns. It splits the monolithic Ingress resource into distinct API objects: `GatewayClass` (defines the infrastructure), `Gateway` (managed by infra/ops to provision load balancers, IPs, and TLS), and `HTTPRoute` (managed by developers to define path-based routing to their specific pods). This allows multiple teams to bind their routing rules to a single shared Gateway without configuration collisions.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Multi-Cluster Ingress (MCI).": "MCI solves load balancing across multiple GKE clusters globally. It still relies on monolithic Ingress definitions (via `MultiClusterIngress` objects) and does not natively solve the role-based separation of concerns within the manifests.",
             "Anthos Service Mesh (ASM) VirtualServices.": "While ASM uses `VirtualService` and `Gateway` objects (Istio APIs) which offer similar separation, the native, built-in Kubernetes solution that directly replaces the standard Ingress object for L7 load balancing in GKE is the Gateway API.",
             "Network Endpoint Groups (NEGs) with standalone backend services.": "Standalone NEGs require manual creation and management of the Google Cloud Load Balancer outside of Kubernetes (e.g., using Terraform). The Gateway API keeps the entire lifecycle managed declaratively within Kubernetes."
           }
         },
         "difficulty": "Medium",
-        "tags": ["gke", "gateway-api", "ingress", "load-balancing"]
+        "tags": [
+          "gke",
+          "gateway-api",
+          "ingress",
+          "load-balancing"
+        ]
       },
       {
         "id": "q-gcppca-s47-011",
@@ -301,14 +345,19 @@
         ],
         "explanation": {
           "general explanation": "Cloud Service Mesh (formerly Traffic Director) is Google Cloud's fully managed control plane for service mesh. It supports both GKE pods and Compute Engine VMs. By deploying Envoy sidecar proxies alongside the applications, the control plane intercepts all outbound traffic. It automatically handles service discovery, advanced traffic routing, and transparently encrypts all communication with mTLS, satisfying the strict security requirements with zero changes to the application code.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Deploy an Internal Application Load Balancer and configure SSL certificates on the backend service, adding both MIGs and NEGs as backends.": "While an ILB can route to both VMs and Pods, configuring mTLS natively requires modifying the application code to present and validate client certificates, or managing complex proxy setups manually.",
             "Configure Identity-Aware Proxy (IAP) with Service Accounts on the target resources to enforce mTLS natively at the VPC level.": "IAP enforces Zero Trust access via HTTP headers and identity context, primarily for human-to-application access. It does not provide transparent service-to-service mTLS or service discovery at the network layer.",
             "Enable Private Service Connect (PSC) and require all VMs and Pods to connect to each other exclusively via published PSC endpoints.": "PSC allows accessing published services, but it does not natively provide transparent mTLS encryption or sidecar-based service discovery for a mesh of thousands of microservices."
           }
         },
         "difficulty": "Hard",
-        "tags": ["cloud-service-mesh", "traffic-director", "mtls", "hybrid-compute"]
+        "tags": [
+          "cloud-service-mesh",
+          "traffic-director",
+          "mtls",
+          "hybrid-compute"
+        ]
       },
       {
         "id": "q-gcppca-s47-012",
@@ -328,14 +377,19 @@
         ],
         "explanation": {
           "general explanation": "Direct VPC Egress allows a Cloud Run service to send traffic directly into a VPC. When configuring Direct VPC Egress, you associate it with a specific subnet (in this case, `ehr-serverless-subnet`). Cloud Run instances will dynamically acquire internal IP addresses from this specific subnet's CIDR range. By advertising this subnet via BGP over the Dedicated Interconnect, the on-premises firewalls can easily allowlist that specific internal CIDR block, ensuring secure, compliant hybrid connectivity.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure Cloud NAT on the `ehr-serverless-subnet` and assign it a static public IP address. Configure Cloud Run to route all traffic through the NAT.": "Cloud NAT translates private IPs to public external IPs for internet access. The requirement is to access the on-premises database securely over the private Interconnect using an internal IP, not a public one.",
             "Create a Private Service Connect endpoint in the `ehr-serverless-subnet`. Configure Cloud Run to send traffic to the endpoint, which proxies to on-premises.": "PSC endpoints connect to published managed services in GCP. You cannot use a PSC endpoint to proxy raw egress traffic to an arbitrary on-premises database IP.",
             "Deploy a proxy VM in the `ehr-serverless-subnet`. Assign the Cloud Run service a Serverless VPC Access connector in a different subnet, and route it to the proxy VM.": "This introduces an unnecessary proxy VM and a legacy Serverless VPC Access connector, drastically increasing latency and operational overhead when Direct VPC Egress solves the problem natively."
           }
         },
         "difficulty": "Medium",
-        "tags": ["cloud-run", "direct-vpc-egress", "hybrid-cloud", "ehr-healthcare"]
+        "tags": [
+          "cloud-run",
+          "direct-vpc-egress",
+          "hybrid-cloud",
+          "ehr-healthcare"
+        ]
       },
       {
         "id": "q-gcppca-s47-013",
@@ -355,14 +409,19 @@
         ],
         "explanation": {
           "general explanation": "Instance Groups (Managed or Unmanaged) balance traffic to the VM level, typically relying on a single named port or the primary IP. To load balance traffic directly to specific, dynamically assigned ports of containers running *inside* a VM, you must use Zonal Network Endpoint Groups (NEGs). Specifically, you define endpoints of type `GCE_VM_IP_PORT`, which explicitly define both the VM's IP address and the exact port the container is listening on, enabling fine-grained, container-native load balancing on raw Compute Engine VMs.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure the Load Balancer backend service to use an Unmanaged Instance Group, and utilize Cloud NAT to perform port forwarding.": "Instance Groups route to the VM level, and Cloud NAT is for outbound internet access, not inbound load balancing or port forwarding to local containers.",
             "Configure the Load Balancer backend service to use a Managed Instance Group (MIG) with named ports defined in the instance template.": "Named ports on a MIG apply globally to all VMs in the group (e.g., port 80). If multiple containers on the same VM listen on different dynamic ports, MIG named ports cannot dynamically route to them simultaneously.",
             "Configure the Load Balancer backend service to use Internet NEGs (`INTERNET_IP_PORT`) specifying the internal IP and dynamic port of each container.": "Internet NEGs are strictly used to route traffic from a Google Cloud load balancer to external IP addresses outside of GCP. You cannot use them for internal VPC IPs."
           }
         },
         "difficulty": "Hard",
-        "tags": ["network-endpoint-groups", "load-balancing", "compute-engine", "containers"]
+        "tags": [
+          "network-endpoint-groups",
+          "load-balancing",
+          "compute-engine",
+          "containers"
+        ]
       },
       {
         "id": "q-gcppca-s47-014",
@@ -384,14 +443,19 @@
         ],
         "explanation": {
           "general explanation": "To create an Active/Passive HA pair of network appliances (like firewalls or IDS) acting as a gateway, the standard GCP architectural pattern is to use an Internal Passthrough Network Load Balancer (ILB) as the 'next hop'. You place both VMs behind the ILB with health checks. You then create a custom static route for outbound traffic (`0.0.0.0/0`) and set the next hop to the ILB (`next-hop-ilb`). The VPC automatically routes traffic to the ILB, which forwards it to the active, healthy IDS VM. If the active VM fails the health check, the ILB instantly fails over to the passive VM.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure a Cloud DNS health check to monitor the VMs and dynamically update an internal A record to point to the active VM's IP.": "DNS caching and TTLs cause significant delays in failover. Furthermore, instances route outbound internet traffic based on IP routing tables (next-hop IPs), not by performing DNS lookups for a gateway.",
             "Create a custom static route in the VPC for `0.0.0.0/0` and set the `next-hop-instance` to the specific instance name of the primary IDS VM.": "If you hardcode the next-hop to a specific instance, there is no automatic failover if that instance dies. Traffic will be blackholed until an administrator manually updates the route.",
             "Deploy an External Application Load Balancer and configure Cloud Armor to mirror traffic to both IDS VMs simultaneously.": "An External ALB is for inbound internet traffic, not routing outbound VPC traffic. Cloud Armor does not perform active/passive HA appliance routing."
           }
         },
         "difficulty": "Hard",
-        "tags": ["internal-load-balancer", "next-hop", "high-availability", "custom-routes"]
+        "tags": [
+          "internal-load-balancer",
+          "next-hop",
+          "high-availability",
+          "custom-routes"
+        ]
       },
       {
         "id": "q-gcppca-s47-015",
@@ -411,14 +475,19 @@
         ],
         "explanation": {
           "general explanation": "By default, GKE clusters use the IP Masquerade Agent to perform Source NAT (SNAT) on traffic leaving the cluster destined for external networks (including the internet or peered/on-prem networks). SNAT translates the Pod IP to the Node IP. To prevent this and preserve the Pod IP for traffic destined to the on-premises database, you must configure the `ip-masq-agent` ConfigMap and add the on-premises IP ranges to the `nonMasqueradeCIDRs` list. This tells the agent to bypass SNAT for those specific destinations.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Change the GKE cluster configuration to use routes-based routing instead of VPC-native routing.": "Routes-based routing relies entirely on custom static routes to find pods, but it does not change the default behavior of the IP Masq Agent SNAT'ing traffic destined outside the VPC.",
             "Enable the 'Intranode visibility' flag on the GKE cluster to expose pod IP headers to the VPC fabric.": "Intranode visibility ensures that traffic between pods on the *same* node is processed by the VPC network (for flow logs and firewall rules). It does not affect SNAT behavior for traffic leaving the node/cluster.",
             "Configure the Compute Engine VMs (GKE nodes) to enable IP Forwarding so they stop terminating the pod traffic.": "IP Forwarding is already enabled on GKE nodes by default to allow them to route pod traffic. It does not control the iptables SNAT rules managed by the IP Masq Agent."
           }
         },
         "difficulty": "Hard",
-        "tags": ["gke", "ip-masq-agent", "snat", "network-configuration"]
+        "tags": [
+          "gke",
+          "ip-masq-agent",
+          "snat",
+          "network-configuration"
+        ]
       },
       {
         "id": "q-gcppca-s47-016",
@@ -438,14 +507,19 @@
         ],
         "explanation": {
           "general explanation": "To connect a compute resource (like a VM or a Cloud Run service using Direct VPC Egress) deployed in a Service Project to a Shared VPC in a Host Project, the identity deploying or executing the resource must have the `Compute Network User` role. Applying this role at the specific subnet level (rather than the entire Host project) adheres to the principle of least privilege, satisfying the security team's mandate that developers/services can only attach to specific approved subnets.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Grant the Service Project default Compute Engine service account the `Compute Shared VPC Admin` role on the Host Project.": "The `Compute Shared VPC Admin` role allows attaching new service projects to the host project. It is highly privileged and should never be granted to application service accounts or standard developers.",
             "Grant the developer the `Cloud Run Admin` role in the Host Project, allowing them to bridge the environments.": "The developer is deploying the Cloud Run service in the Service Project, not the Host Project. They do not need Cloud Run Admin in the Host Project.",
             "Grant the Cloud Run service identity the `VPC Access User` role on the Host Project organization level.": "The `VPC Access User` role is used for managing legacy Serverless VPC Access Connectors, not for configuring Direct VPC Egress, which relies on standard Compute Network User subnet permissions."
           }
         },
         "difficulty": "Medium",
-        "tags": ["shared-vpc", "cloud-run", "iam", "direct-vpc-egress"]
+        "tags": [
+          "shared-vpc",
+          "cloud-run",
+          "iam",
+          "direct-vpc-egress"
+        ]
       },
       {
         "id": "q-gcppca-s47-017",
@@ -460,17 +534,24 @@
           "Increase the CPU and Memory limits of the `kube-dns` deployment manually.",
           "Change the `dnsPolicy` in the application pod spec to `Default` to use the Compute Engine metadata server instead."
         ],
-        "correctAnswers": ["Enable NodeLocal DNSCache on the GKE cluster."],
+        "correctAnswers": [
+          "Enable NodeLocal DNSCache on the GKE cluster."
+        ],
         "explanation": {
           "general explanation": "In GKE, all DNS queries from pods are typically sent to the central `kube-dns` deployment. For high-throughput workloads, this creates a massive bottleneck and increases latency due to network hops. Enabling NodeLocal DNSCache deploys a lightweight DNS caching agent (DaemonSet) on every single node in the cluster. Pods query the cache on their local node first. This drastically reduces the load on `kube-dns`, reduces DNS lookup latency, and improves overall application performance.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure a Cloud DNS Forwarding Zone for `api.vendor.com`.": "A forwarding zone dictates where queries are sent; it does not alleviate the fundamental bottleneck of every pod in the cluster hammering the central `kube-dns` service to perform the initial resolution.",
             "Increase the CPU and Memory limits of the `kube-dns` deployment manually.": "While throwing more resources at `kube-dns` might temporarily mask the issue, `kube-dns` is a managed add-on. Manually editing its deployment limits is an anti-pattern because GKE will overwrite your changes during upgrades.",
             "Change the `dnsPolicy` in the application pod spec to `Default` to use the Compute Engine metadata server instead.": "Setting `dnsPolicy: Default` makes the pod use the node's DNS resolver. While this bypasses `kube-dns` for external queries, it breaks internal Kubernetes service discovery (e.g., `service.namespace.svc.cluster.local`), severely impacting microservice communication."
           }
         },
         "difficulty": "Medium",
-        "tags": ["gke", "dns", "nodelocal-dnscache", "performance"]
+        "tags": [
+          "gke",
+          "dns",
+          "nodelocal-dnscache",
+          "performance"
+        ]
       },
       {
         "id": "q-gcppca-s47-018",
@@ -490,14 +571,19 @@
         ],
         "explanation": {
           "general explanation": "To share private DNS records between two peered VPCs, you must use Cloud DNS Peering. First, the authoritative records are created in a Managed Private Zone in the producer network (`vpc-data`). Second, in the consumer network (`vpc-apps`), you create a DNS Peering Zone for the same domain (`internal.data.corp`) and set its target to the producer network. When a VM in `vpc-apps` queries that domain, Cloud DNS seamlessly forwards the resolution request to the target VPC.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Create a Cloud DNS managed private zone for `internal.data.corp` in `vpc-data`. In `vpc-apps`, create a Cloud DNS Forwarding zone pointing to the IP address of the metadata server (169.254.169.254).": "The metadata server (169.254.169.254) is a local, link-local IP that only resolves names for its own VPC. Forwarding queries to it from a different VPC will not work.",
             "Configure the Cloud Router in `vpc-data` to advertise the internal DNS namespace over the VPC Network Peering connection.": "Cloud Router is used for dynamic BGP IP route propagation (Layer 3), not for advertising or replicating DNS namespaces (Layer 7).",
             "Use the default `.internal` Compute Engine DNS names, as VPC Peering automatically synchronizes default internal DNS zones across networks.": "This is factually incorrect. VPC Peering explicitly does NOT share default internal Compute Engine DNS names (`*.c.[PROJECT_ID].internal`) between peered VPCs. You must use custom managed private zones."
           }
         },
         "difficulty": "Medium",
-        "tags": ["cloud-dns", "dns-peering", "vpc-peering", "compute-engine"]
+        "tags": [
+          "cloud-dns",
+          "dns-peering",
+          "vpc-peering",
+          "compute-engine"
+        ]
       },
       {
         "id": "q-gcppca-s47-019",
@@ -519,7 +605,7 @@
         ],
         "explanation": {
           "general explanation": "To allow VMs without public IPs to securely access Google APIs (like Artifact Registry), you must enable 'Private Google Access' on the VM's subnet. Furthermore, because Artifact Registry is protected by VPC Service Controls, you must direct that API traffic to the `restricted.googleapis.com` VIP (199.36.153.4/30). This requires configuring Cloud DNS so the VM resolves the API endpoints to this specific IP block. The VPC will automatically route this traffic over Google's internal backbone, maintaining perimeter compliance.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Deploy Cloud NAT in the VPC and configure it to route traffic to Artifact Registry.": "Cloud NAT translates private IPs to public IPs to traverse the internet. Accessing GCP APIs via the public internet violates the fundamental security goal of VPC Service Controls and Private Google Access.",
             "Configure a custom VPC static route to send all traffic destined for 199.36.153.4/30 to the default internet gateway.": "While you must route traffic to the default internet gateway, GCP automatically provides a hidden system-generated route to the default internet gateway for Private Google Access traffic. You do not need to manually configure this route unless you've deleted the default routes.",
             "Enable Identity-Aware Proxy (IAP) on the Artifact Registry API endpoint.": "IAP is for human-to-application access control (like SSH/RDP or internal web apps), not for machine-to-machine API authentication for container image pulls."
@@ -551,14 +637,19 @@
         ],
         "explanation": {
           "general explanation": "To natively support both inbound and outbound IPv6 traffic for containerized workloads, you must use GKE dual-stack networking. This requires creating the underlying VPC subnet as dual-stack (IPv4 and IPv6). You then provision a GKE cluster configured for dual-stack routing. Pods will receive both IPv4 and IPv6 addresses, allowing them to communicate natively outbound to IPv6 APIs. You expose the application using an External Application Load Balancer configured with an IPv6 frontend address.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Provision a standard IPv4 GKE cluster. Deploy an External Application Load Balancer with an IPv6 frontend, which performs IPv6-to-IPv4 translation for all inbound and outbound traffic.": "While an IPv6 load balancer frontend can terminate IPv6 client traffic and proxy it to IPv4 backends (solving the inbound problem), an IPv4-only cluster cannot natively initiate outbound connections to external IPv6 APIs. Dual-stack is required.",
             "Enable Cloud NAT64 on the VPC. This automatically assigns IPv6 addresses to all GKE worker nodes and translates IPv4 pod traffic into IPv6.": "Cloud NAT64 translates IPv6 traffic to IPv4 destinations (allowing IPv6 clients to reach IPv4 services). It does not magically upgrade an IPv4 cluster to support native outbound IPv6 to external APIs.",
             "Configure the GKE nodes with multiple NICs, connecting one NIC to an IPv4 VPC and the other NIC to a dedicated IPv6-only VPC.": "GKE nodes do not support being split across multiple VPCs with different IP stacks to handle pod networking. Dual-stack on a single primary interface is the supported architecture."
           }
         },
         "difficulty": "Medium",
-        "tags": ["gke", "ipv6", "dual-stack", "load-balancing"]
+        "tags": [
+          "gke",
+          "ipv6",
+          "dual-stack",
+          "load-balancing"
+        ]
       },
       {
         "id": "q-gcppca-s47-021",
@@ -578,14 +669,19 @@
         ],
         "explanation": {
           "general explanation": "In Google Cloud Load Balancing, 'Backend Priority' is used specifically to establish active/standby or primary/failover relationships. By assigning a higher priority (lower number, e.g., 0) to `us-central1` and a lower priority (higher number, e.g., 1) to `us-east4`, the load balancer will route 100% of traffic to `us-central1` regardless of client proximity. It will only route traffic to `us-east4` if all backends in priority 0 fail their health checks or reach absolute capacity.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Add both MIGs to the backend service. Set the Capacity Scaler of the `us-east4` MIG to 0% so it receives no traffic until `us-central1` fails.": "Setting the Capacity Scaler to 0% literally removes the backend from receiving any traffic whatsoever, even during a failover. It does not act as a standby toggle.",
             "Configure a Cloud DNS geolocation routing policy to direct all traffic to `us-central1`, and use an external health check to update the DNS record to `us-east4` on failure.": "DNS-based failover is slow due to TTL caching and is an anti-pattern when a Global Application Load Balancer can perform instant failover natively using backend priorities.",
             "Create two separate backend services. Configure a Cloud Armor rule to redirect traffic to the secondary backend service if HTTP 503 errors are detected.": "Cloud Armor is a WAF and DDoS protection service. It cannot evaluate HTTP 503 responses from backends or dynamically redirect traffic between backend services."
           }
         },
         "difficulty": "Hard",
-        "tags": ["load-balancing", "backend-priority", "high-availability", "compute-engine"]
+        "tags": [
+          "load-balancing",
+          "backend-priority",
+          "high-availability",
+          "compute-engine"
+        ]
       },
       {
         "id": "q-gcppca-s47-022",
@@ -605,14 +701,19 @@
         ],
         "explanation": {
           "general explanation": "Multi-cluster Services (MCS) is the native Google Cloud solution for cross-cluster, east-west service discovery and communication. By registering both GKE clusters to an Anthos/GKE Fleet and enabling MCS, you can 'export' a Kubernetes Service in one cluster (`us-central1`) and 'import' it into another (`europe-west1`). The Frontend pods can then resolve and communicate with the Cart pods seamlessly using standard Kubernetes DNS semantics (e.g., `cart.namespace.svc.clusterset.local`) across regions.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Deploy Multi-Cluster Ingress (MCI) and create a MultiClusterService object to expose an internal Anycast IP.": "Multi-Cluster Ingress (MCI) is used for north-south traffic (routing external internet traffic into clusters). MCS is for east-west traffic (routing internal traffic between clusters).",
             "Configure VPC Network Peering between the two clusters' subnets and use static IPs for the Cart pods.": "While VPC Peering ensures routing is possible, pods are ephemeral. Relying on static pod IPs is an anti-pattern. MCS handles dynamic service discovery natively.",
             "Deploy Cloud DNS Forwarding Zones to manually map the Cart service's ClusterIP to the Frontend cluster's CoreDNS.": "A ClusterIP is strictly local to its own cluster's SDN. Even if you resolve the DNS, a pod in `europe-west1` cannot route traffic to a ClusterIP that exists only inside the `us-central1` cluster. MCS solves this by configuring cross-cluster routing and headless endpoints."
           }
         },
         "difficulty": "Medium",
-        "tags": ["gke", "multi-cluster-services", "east-west-traffic", "service-discovery"]
+        "tags": [
+          "gke",
+          "multi-cluster-services",
+          "east-west-traffic",
+          "service-discovery"
+        ]
       },
       {
         "id": "q-gcppca-s47-023",
@@ -632,14 +733,19 @@
         ],
         "explanation": {
           "general explanation": "To enforce strict, identity-based network security that cannot be bypassed by developers, you must use Target Service Accounts in your VPC Firewall rules. Network Tags are simply metadata strings; any user with `compute.instances.setTags` permissions can alter a VM's tags and circumvent a firewall rule. Service Accounts provide a cryptographic, immutable identity for the VM. Changing a VM's Service Account requires high privileges (`iam.serviceAccountUser`), ensuring a strict security posture.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Define the VPC Firewall rules using Target Network Tags, ensuring the autoscaler template applies the exact same string tag to every new VM.": "Network Tags are insecure for strict compliance. A developer with basic VM edit permissions can change the tag, immediately altering the firewall rules applied to the VM.",
             "Define the VPC Firewall rules using Source and Destination IP ranges, statically assigning a dedicated /24 subnet to the autoscaler.": "Subnet-based rules provide network segmentation, but they do not enforce 'verified identity' per the scenario's strict requirement, as any rogue VM placed in that subnet would inherit the access.",
             "Configure Identity-Aware Proxy (IAP) to wrap all inbound and outbound network traffic originating from the Compute Engine VMs.": "IAP provides access control for incoming user requests (like SSH or HTTP). It does not wrap or filter raw outbound/east-west network traffic between VMs in a VPC."
           }
         },
         "difficulty": "Medium",
-        "tags": ["firewall-rules", "service-accounts", "security", "compute-engine"]
+        "tags": [
+          "firewall-rules",
+          "service-accounts",
+          "security",
+          "compute-engine"
+        ]
       },
       {
         "id": "q-gcppca-s47-024",
@@ -654,17 +760,24 @@
           "Set Ingress to `all` and use Cloud Armor to block internet traffic.",
           "Set Ingress to `internal` and configure a Serverless VPC Access connector."
         ],
-        "correctAnswers": ["Set Ingress to `internal-and-cloud-load-balancing`."],
+        "correctAnswers": [
+          "Set Ingress to `internal-and-cloud-load-balancing`."
+        ],
         "explanation": {
           "general explanation": "The `internal-and-cloud-load-balancing` ingress setting allows the Cloud Run service to be invoked by internal sources (like Compute Engine VMs in the VPC via Private Google Access) AND by specific Google Cloud services that act as frontends (such as Global External Application Load Balancers, or API Gateway). It strictly blocks direct requests from the public internet to the default `run.app` URL, perfectly fulfilling the architectural requirement.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Set Ingress to `internal`.": "The `internal` setting restricts access strictly to the VPC. This would block the Google Cloud API Gateway from accessing the Cloud Run service, breaking external partner access.",
             "Set Ingress to `all` and use Cloud Armor to block internet traffic.": "Setting ingress to `all` leaves the default `run.app` URL open to the internet. While Cloud Armor can protect a load balancer, it cannot protect the direct `run.app` URL. The service would remain exposed.",
             "Set Ingress to `internal` and configure a Serverless VPC Access connector.": "A Serverless VPC Access connector controls *egress* traffic from Cloud Run to the VPC, not *ingress* traffic into Cloud Run. Setting ingress to `internal` still blocks the API Gateway."
           }
         },
         "difficulty": "Medium",
-        "tags": ["cloud-run", "ingress", "api-gateway", "security"]
+        "tags": [
+          "cloud-run",
+          "ingress",
+          "api-gateway",
+          "security"
+        ]
       },
       {
         "id": "q-gcppca-s47-025",
@@ -686,14 +799,19 @@
         ],
         "explanation": {
           "general explanation": "To expose a GKE service internally on a VPC via a Google Cloud Internal Passthrough Network Load Balancer, you must define the service as `type: LoadBalancer` and apply the GCP-specific annotation `networking.gke.io/load-balancer-type: \"Internal\"`. To ensure the application receives the true client IP, you must set `externalTrafficPolicy: Local`. By default (Cluster), kube-proxy forwards traffic to any node, requiring SNAT (losing the client IP). `Local` forces traffic only to nodes actually running the pod, eliminating the need for SNAT and preserving the source IP.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Set `type: ClusterIP` and add the annotation `cloud.google.com/l4-rbs: \"enabled\"`.": "A `ClusterIP` service is strictly for internal cluster communication. It does not provision an Internal Load Balancer on the VPC. The L4 RBS annotation is used to migrate from target pools to regional backend services, but requires `type: LoadBalancer`.",
             "Set `externalTrafficPolicy: Cluster` to ensure traffic is evenly distributed and client IPs are mapped natively.": "Setting `externalTrafficPolicy: Cluster` (the default) requires SNAT when traffic routes to a node not running the pod, which explicitly obscures the true client IP.",
             "Add the annotation `networking.gke.io/proxy-protocol: \"true\"` to force the load balancer to inject the X-Forwarded-For header.": "X-Forwarded-For is an HTTP (Layer 7) header. The scenario specifies 'raw TCP' traffic. The proxy protocol annotation exists for L4 proxy LBs, but standard Internal Passthrough LBs preserve client IPs natively at Layer 3 if `Local` policy is used."
           }
         },
         "difficulty": "Hard",
-        "tags": ["gke", "internal-load-balancer", "client-ip", "external-traffic-policy"]
+        "tags": [
+          "gke",
+          "internal-load-balancer",
+          "client-ip",
+          "external-traffic-policy"
+        ]
       },
       {
         "id": "q-gcppca-s47-026",
@@ -713,14 +831,19 @@
         ],
         "explanation": {
           "general explanation": "To ingest raw UDP traffic from external sources (the internet), you must use an External Passthrough Network Load Balancer. To ensure that continuous streams of UDP packets from a specific source consistently route to the same backend VM—even during autoscaling events—you must configure Maglev consistent hashing (e.g., using a 5-tuple hash of source IP, source port, destination IP, destination port, protocol). Maglev minimizes connection disruption when backend VMs are added or removed.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Provision a Global External Application Load Balancer and configure session affinity using HTTP cookies.": "Application Load Balancers operate at Layer 7 (HTTP/S). They cannot ingest or balance raw UDP traffic.",
             "Provision an External Proxy Network Load Balancer and configure client IP affinity.": "External Proxy Network Load Balancers (Layer 4) support TCP, but they do NOT support UDP.",
             "Provision an Internal Passthrough Network Load Balancer and configure the backend service to use Weighted Round Robin.": "An Internal Load Balancer is not accessible from the internet. Furthermore, Round Robin distributes packets evenly, breaking the requirement that a specific stream consistently hits the same VM."
           }
         },
         "difficulty": "Hard",
-        "tags": ["load-balancing", "udp", "maglev", "compute-engine"]
+        "tags": [
+          "load-balancing",
+          "udp",
+          "maglev",
+          "compute-engine"
+        ]
       },
       {
         "id": "q-gcppca-s47-027",
@@ -740,14 +863,19 @@
         ],
         "explanation": {
           "general explanation": "To achieve maximum network bandwidth (e.g., 50 Gbps to 100 Gbps) on supported Compute Engine machine families (like C2, N2, A2), you MUST configure the instance to use the Google Virtual NIC (gVNIC) instead of the default VirtIO-Net interface. gVNIC is a custom virtual network interface purpose-built by Google to offload network processing and dramatically increase throughput and reduce latency for high-performance computing (HPC) and gaming workloads.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure the Compute Engine instances with Jumbo Frames (MTU 8896).": "While Jumbo Frames increase payload efficiency and reduce CPU overhead slightly, they do not inherently unlock the hardware-level 100 Gbps bandwidth limits. gVNIC is the strict hardware requirement.",
             "Configure the Compute Engine instances to use SR-IOV (Single Root I/O Virtualization) network interfaces.": "SR-IOV is an industry-standard technology, but Google Cloud utilizes its proprietary gVNIC architecture to achieve these speeds in Compute Engine, not generic SR-IOV drivers.",
             "Deploy a Network Connectivity Center (NCC) hub and attach the game server VMs as high-throughput spokes.": "NCC is a global routing hub for managing VPNs and Interconnects (hybrid connectivity). It does not increase the physical network throughput limits of individual Compute Engine VMs."
           }
         },
         "difficulty": "Medium",
-        "tags": ["compute-engine", "gvnic", "network-performance", "mountkirk-games"]
+        "tags": [
+          "compute-engine",
+          "gvnic",
+          "network-performance",
+          "mountkirk-games"
+        ]
       },
       {
         "id": "q-gcppca-s47-028",
@@ -767,14 +895,19 @@
         ],
         "explanation": {
           "general explanation": "By default, when two pods on the same GKE node communicate, the traffic routes entirely through the node's internal Linux bridge (cbr0) and never touches the underlying Compute Engine VPC network. Consequently, standard VPC Flow Logs will not see this traffic. By enabling the 'Intranode Visibility' feature on the GKE cluster, you force intra-node pod-to-pod traffic to be processed by the VPC network fabric. Once processed by the VPC, VPC Flow Logs can successfully capture and log the connection metadata for the audit.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Deploy a DaemonSet running Wireshark on all GKE nodes and export the PCAP files to Cloud Storage.": "Running packet capture agents on every node creates massive operational overhead, performance degradation, and security risks. Native Intranode Visibility + VPC Flow Logs is the cloud-native solution.",
             "Configure Packet Mirroring in the VPC, setting the mirror source to the GKE cluster's subnet.": "Packet Mirroring duplicates traffic at the VPC level. Without Intranode Visibility enabled first, the VPC never sees the intra-node traffic, so there is nothing for it to mirror.",
             "Enable Cloud Trace in the microservice code to log the byte count of every RPC payload.": "Cloud Trace is a distributed tracing system for analyzing application latency, not a network traffic analyzer. Furthermore, modifying the application violates the 'without altering the application code' constraint."
           }
         },
         "difficulty": "Hard",
-        "tags": ["gke", "intranode-visibility", "vpc-flow-logs", "network-observability"]
+        "tags": [
+          "gke",
+          "intranode-visibility",
+          "vpc-flow-logs",
+          "network-observability"
+        ]
       },
       {
         "id": "q-gcppca-s47-029",
@@ -796,14 +929,19 @@
         ],
         "explanation": {
           "general explanation": "Cloud Run instances are highly dynamic and share dynamic outbound IP pools by default. To force Cloud Run egress traffic to use a single, static public IP (for whitelisting), you must combine two technologies. First, you force all outbound traffic from the Cloud Run service into your private VPC using Direct VPC Egress (or a Serverless VPC Access connector). Second, you deploy Cloud NAT on that VPC and explicitly configure it to use a manually reserved static external IP address. All Cloud Run traffic routing to the internet through the VPC will be SNAT'd to that static IP.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure the Cloud Run service with a custom domain mapping, and assign a static external IP address to the custom domain.": "Custom domain mappings define the INGRESS (inbound) IP address that clients use to reach Cloud Run. They have absolutely no effect on the EGRESS (outbound) IP address Cloud Run uses to reach external APIs.",
             "Deploy a Global External Application Load Balancer with a static frontend IP, and configure it to proxy traffic outward to the vendor.": "Load balancers handle inbound traffic routing into Google Cloud. They cannot be used as an outbound forward proxy to send traffic from Cloud Run to external internet vendors.",
             "Enable Private Service Connect on the Cloud Run service and associate it with a statically reserved external IP address.": "Private Service Connect is used for internal, private networking to managed services. It cannot assign static public IP addresses for outbound internet communication."
           }
         },
         "difficulty": "Medium",
-        "tags": ["cloud-run", "static-ip", "cloud-nat", "direct-vpc-egress"]
+        "tags": [
+          "cloud-run",
+          "static-ip",
+          "cloud-nat",
+          "direct-vpc-egress"
+        ]
       },
       {
         "id": "q-gcppca-s47-030",
@@ -823,14 +961,19 @@
         ],
         "explanation": {
           "general explanation": "By default, Google Cloud's Software-Defined Network (SDN) implements strict anti-spoofing. If a Compute Engine VM attempts to send or receive a packet where the source or destination IP address does not explicitly match the IP address assigned to that VM's network interface, the hypervisor drops the packet. When building a custom router or NAT VM, it receives packets destined for the internet, not for itself. To allow the VM to accept and forward these packets, you must explicitly enable 'IP Forwarding' on the VM instance configuration.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "You must enable 'Promiscuous Mode' in the guest OS of the custom router VM.": "Promiscuous mode allows a network card to read all frames on a shared physical wire (like a hub). In Google Cloud's virtualized SDN, promiscuous mode is not supported and does not bypass the hypervisor's anti-spoofing filters.",
             "You must attach a Public IP address to the client VMs, as private IPs cannot be routed through a custom gateway.": "This is false. The entire purpose of a custom NAT/router VM is to route private internal IP traffic to external networks without requiring public IPs on the clients.",
             "You must configure a Cloud NAT gateway in the VPC to translate the packets before they hit the custom router.": "Cloud NAT operates at the VPC edge to provide outbound connectivity. If you place it *before* the custom router, the custom router becomes useless as traffic is already NAT'd and routed to the internet."
           }
         },
         "difficulty": "Easy",
-        "tags": ["compute-engine", "ip-forwarding", "custom-router", "network-security"]
+        "tags": [
+          "compute-engine",
+          "ip-forwarding",
+          "custom-router",
+          "network-security"
+        ]
       }
     ]
   }

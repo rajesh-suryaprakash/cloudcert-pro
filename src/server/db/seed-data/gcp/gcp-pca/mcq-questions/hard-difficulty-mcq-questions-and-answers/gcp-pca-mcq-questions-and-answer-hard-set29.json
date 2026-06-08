@@ -21,14 +21,19 @@
         ],
         "explanation": {
           "general explanation": "To achieve bi-directional hybrid DNS resolution during a migration, you must configure two specific Cloud DNS components. An Inbound Server Policy creates an endpoint within the VPC that on-premises DNS servers can forward queries to (allowing on-prem to resolve GCP names). An Outbound Forwarding Zone instructs Cloud DNS to forward queries for specific legacy domains (e.g., `corp.local`) across the VPN/Interconnect to the on-premises DNS servers (allowing GCP to resolve on-prem names).",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Create a Cloud DNS managed private zone for the VPC. Configure on-premises DNS to forward requests to the Google Cloud public DNS servers (8.8.8.8).": "Public DNS servers cannot resolve private Cloud DNS zones or internal VPC hostnames. This would result in resolution failure and leak internal DNS requests to the public internet.",
             "Implement Cloud NAT to translate DNS queries from the VPC to the on-premises network, and configure Cloud Router to broadcast the DNS IP addresses via BGP.": "Cloud NAT is for outbound internet access, not for internal hybrid DNS resolution. Cloud Router manages IP routing, but DNS resolution requires specific application-layer DNS forwarding mechanisms.",
             "Create a Cloud DNS Peering zone targeting the on-premises network, and install the Cloud DNS Connector agent on the legacy active directory servers.": "Cloud DNS Peering is used to share DNS records between two Google Cloud VPCs, not for forwarding queries to an on-premises data center. Furthermore, there is no 'Cloud DNS Connector agent'."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Network Planning", "Cloud DNS", "Hybrid Cloud", "Migration Methodology"]
+        "tags": [
+          "Network Planning",
+          "Cloud DNS",
+          "Hybrid Cloud",
+          "Migration Methodology"
+        ]
       },
       {
         "id": "q-gcppca-s29-002",
@@ -50,14 +55,19 @@
         ],
         "explanation": {
           "general explanation": "Dependency planning is critical in migration methodologies to avoid 'split-stack' or 'split-tier' latency. If tightly coupled application tiers (like a web server making hundreds of thousands of queries to a DB) are separated across a hybrid WAN link (even a fast Interconnect), the added physics of network latency (e.g., 10ms per query) multiplies, destroying application performance. The architectural methodology to solve this is defining 'Move Groups' based on network dependencies, ensuring highly dependent components are migrated in the exact same wave.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Risk: Google Cloud Migration Center cannot map dependencies for Oracle databases, meaning the 10 TB data transfer size is likely hallucinated.": "Migration Center maps network connections at the IP/Port level; it absolutely can detect and quantify traffic to an Oracle database server.",
             "Adjustment: Retain the wave plan, but deploy an in-memory Memorystore (Redis) cache in Google Cloud during Wave 1 to absorb the latency of the on-premises database.": "While caching helps, deploying a cache requires massive application refactoring to utilize it, which violates the premise of a structured lift-and-shift/rehost migration plan. It does not solve the underlying transactional latency problem.",
             "Risk: VPC Network Peering limits the bandwidth between Google Cloud and the on-premises database to 2 Gbps, causing an immediate network bottleneck.": "VPC Network Peering connects Google Cloud VPCs together. It does not connect Google Cloud to on-premises networks (which is done via Cloud VPN or Interconnect)."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Dependency Planning", "Migration Waves", "Split-Stack", "Migration Center"]
+        "tags": [
+          "Dependency Planning",
+          "Migration Waves",
+          "Split-Stack",
+          "Migration Center"
+        ]
       },
       {
         "id": "q-gcppca-s29-003",
@@ -77,14 +87,19 @@
         ],
         "explanation": {
           "general explanation": "Traffic Mirroring (or Shadowing) is the specific workload testing methodology used to test a new architecture with real, live production traffic with zero risk to the end-user. Anthos Service Mesh (Istio) can asynchronously duplicate (mirror) incoming HTTP requests and send them to the new service. The responses from the shadowed service are ignored. This allows engineers to monitor the new GKE microservices under actual production load and validate their logic without the user ever receiving a potentially broken response.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure an External Application Load Balancer to perform an A/B test, routing 50% of traffic to the legacy monolith and 50% to the new GKE microservices.": "An A/B test (or traffic splitting) returns the response of the new service to the end-user. If the new service fails, 50% of users experience an outage, violating the constraint 'without impacting the responses sent back to the actual users'.",
             "Implement a Canary Deployment in GKE, gradually shifting traffic (10%, 25%, 50%) to the new microservices using Kubernetes native deployments.": "Similar to A/B testing, Canary deployments expose a percentage of live users to the new system, carrying the risk of user impact if the deployment fails.",
             "Use Cloud Pub/Sub to intercept all HTTP requests at the API Gateway, buffering them for 24 hours, and then replaying them against the new GKE cluster.": "While replay testing is a valid concept, intercepting all live synchronous HTTP requests via Pub/Sub fundamentally alters the application architecture, adds massive latency to the monolith, and doesn't test the new system 'real-time'."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Workload Testing", "Traffic Mirroring", "Anthos Service Mesh", "Refactoring"]
+        "tags": [
+          "Workload Testing",
+          "Traffic Mirroring",
+          "Anthos Service Mesh",
+          "Refactoring"
+        ]
       },
       {
         "id": "q-gcppca-s29-004",
@@ -104,14 +119,19 @@
         ],
         "explanation": {
           "general explanation": "When migrating or integrating networks with overlapping RFC 1918 IP addresses (a very common scenario in M&A), renumbering is often impossible in the short term due to dependencies. Private NAT is a specific feature of Cloud NAT designed to solve this. It allows you to perform Network Address Translation (NAT) for traffic routed across hybrid networks (Interconnect/VPN) or VPC Network Peering, translating the overlapping source or destination IPs to a non-overlapping NAT subnet, establishing connectivity without IP collisions.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure VPC Network Peering between the Google Cloud VPC and the acquired company's network, enabling the 'export custom routes' flag to resolve the conflict.": "VPC Network Peering strictly prohibits connecting networks with overlapping subnets. Google Cloud will reject the peering connection entirely.",
             "Deploy an Internal Application Load Balancer in the `10.5.0.0/16` subnet and configure it with a unique external IP address to act as a proxy.": "An internal load balancer requires an internal IP. Giving it an external IP makes it an External LB, which routes traffic over the public internet, violating the private Dedicated Interconnect architecture.",
             "Create a new Shared VPC exclusively for the acquired company and use Cloud VPN to route traffic over the public internet, bypassing the internal overlapping routes.": "Creating a new VPC doesn't solve how the two systems communicate with each other if they need to interact. Routing private overlapping IPs over the public internet via VPN still results in routing unresolvable conflicts at the OS/networking stack level."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Network Planning", "Private NAT", "IP Overlap", "Hybrid Cloud"]
+        "tags": [
+          "Network Planning",
+          "Private NAT",
+          "IP Overlap",
+          "Hybrid Cloud"
+        ]
       },
       {
         "id": "q-gcppca-s29-005",
@@ -131,14 +151,18 @@
         ],
         "explanation": {
           "general explanation": "The constraints dictate eliminating OS patching/infrastructure management (meaning serverless or fully managed compute) but prohibit rewriting code. 'Replatforming' (Lift and Optimize) is the only valid methodology here. By containerizing the legacy application 'as-is' (without changing the code) and deploying it to a managed container platform like GKE Autopilot or Cloud Run, you instantly remove the burden of OS patching and node provisioning, satisfying both business requirements.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Rehost the application using Migrate to Virtual Machines, lifting and shifting the servers to Compute Engine Managed Instance Groups.": "Rehosting to Compute Engine VMs still requires the operations team to manage the guest operating system, apply security patches, and manage the VM lifecycle, violating the business mandate.",
             "Refactor the application by breaking it into microservices using Cloud Functions and Cloud Pub/Sub.": "Refactoring requires massive, fundamental rewrites of the application code, completely violating the constraint that developers have zero capacity to alter code.",
             "Repurchase the application functionality by migrating data to a managed SaaS platform in the Google Cloud Marketplace.": "While repurchasing eliminates infrastructure, it typically requires a massive business process change and data migration. The prompt explicitly targets migrating the *existing* application, not abandoning it for a SaaS."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Migration Methodology", "Replatforming", "Containerization"]
+        "tags": [
+          "Migration Methodology",
+          "Replatforming",
+          "Containerization"
+        ]
       },
       {
         "id": "q-gcppca-s29-006",
@@ -158,14 +182,20 @@
         ],
         "explanation": {
           "general explanation": "In workload testing scenarios involving highly regulated data (like EHR Healthcare), using production data in non-production environments is a severe compliance violation. Cloud Data Loss Prevention (Cloud DLP) - now part of Sensitive Data Protection - is the standard architectural tool to solve this. You use DLP to scan the export, detect PII/PHI, and dynamically de-identify the data using format-preserving encryption or tokenization. This produces a dataset that looks real and preserves database schema integrity for accurate testing, but contains no actual patient data.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Use the Database Migration Service (DMS) continuous replication feature to sync the data to the test VPC, utilizing the built-in 'Omit Columns' feature to drop PII fields.": "Dropping columns entirely alters the database schema. The application load testing will immediately fail because the SQL queries will error out looking for missing columns.",
             "Export the data to Cloud Storage. Apply a locked Bucket Retention Policy and VPC Service Controls to the test environment to ensure the PII is legally protected during testing.": "VPC Service Controls protect against exfiltration, but placing real PII into a lower environment where developers or QA engineers can see it during testing still violates strict compliance rules (least privilege and data obfuscation).",
             "Configure the lower-environment database to use Customer-Managed Encryption Keys (CMEK). Grant the developers access to the database, but deny them access to the KMS decrypt role.": "If developers cannot decrypt the database, the application they are trying to test also cannot decrypt the database (unless it runs as a different service account). Even then, the application would output encrypted garbage, making realistic functional testing impossible."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Case Study", "EHR Healthcare", "Workload Testing", "Cloud DLP", "Compliance"]
+        "tags": [
+          "Case Study",
+          "EHR Healthcare",
+          "Workload Testing",
+          "Cloud DLP",
+          "Compliance"
+        ]
       },
       {
         "id": "q-gcppca-s29-007",
@@ -185,14 +215,19 @@
         ],
         "explanation": {
           "general explanation": "Migrate to Virtual Machines natively provides a 'Test Clone' feature. This feature creates a working Compute Engine VM from the current replicated storage state *without* halting or disrupting the ongoing background replication from on-premises. However, because the test clone has the exact same IP configuration and hostname as the live on-premises VM, it is an architectural imperative that the test clone is launched into a fully isolated VPC network. If it is launched into a connected network, it will cause IP collisions and corrupt the production environment.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Execute a 'Cutover' operation in Migrate to Virtual Machines during a maintenance window, perform the test, and then execute the 'Rollback' operation to resume on-premises operations.": "A 'Cutover' operation halts the on-premises VM and finalize the cloud VM. Reversing this via 'Rollback' after transactions have occurred causes data loss and significant disruption, violating the requirement not to disrupt the live workloads.",
             "Take an on-premises VMware snapshot, export the VMDK files to Cloud Storage, and use the Google Cloud Console to manually import the images as Compute Engine custom images for testing.": "While technically possible, this is a massive manual effort that bypasses the native, automated 'Test Clone' capabilities of the migration tool you are already utilizing.",
             "Pause the replication agent in Migrate to Virtual Machines, clone the Compute Engine replica disk, attach it to a new VM for testing, and then resume the replication agent.": "Pausing replication explicitly violates the business constraint: 'this test must not disrupt the continuous block-level replication'. The native Test Clone feature does this safely in the background."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Workload Testing", "Migrate to VMs", "Network Isolation", "Migration Methodology"]
+        "tags": [
+          "Workload Testing",
+          "Migrate to VMs",
+          "Network Isolation",
+          "Migration Methodology"
+        ]
       },
       {
         "id": "q-gcppca-s29-008",
@@ -214,14 +249,19 @@
         ],
         "explanation": {
           "general explanation": "In BGP network planning for a migration cutover, you must control route preference. When traffic originates *from* on-premises and you want to force it to Google Cloud, the decision is made by the on-premises routers. 1) Setting a higher `LOCAL_PREF` on the routes received from GCP makes those routes the absolute most preferred path exiting the on-prem Autonomous System. 2) Once received, those preferred BGP routes must be distributed into the internal network routing protocol (IGP, like OSPF) with a favorable metric so internal clients actually route toward the Interconnect rather than local servers.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure the Google Cloud Router to advertise its routes with a shorter AS-Path than the local on-premises routes.": "AS-Path is evaluated *after* Local Preference in the BGP selection algorithm. The on-prem admins have ultimate control via Local Preference.",
             "Configure the Google Cloud Router to advertise its routes with a higher Multi-Exit Discriminator (MED) value.": "MED is used to influence which *link* traffic should enter if there are multiple links to the *same* AS. Furthermore, a higher MED is *less* preferred, not more.",
             "Configure the on-premises BGP routers to assign a lower Multi-Exit Discriminator (MED) value to the routes received from Google Cloud.": "MED is set by the advertising router (GCP) to influence the receiving router (on-prem), not assigned locally to incoming routes in the way Local Preference is."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Network Planning", "BGP Routing", "Migration Cutover", "Hybrid Cloud"]
+        "tags": [
+          "Network Planning",
+          "BGP Routing",
+          "Migration Cutover",
+          "Hybrid Cloud"
+        ]
       },
       {
         "id": "q-gcppca-s29-009",
@@ -241,14 +281,19 @@
         ],
         "explanation": {
           "general explanation": "A critical dependency planning constraint for database migrations is the 'point of no return'. When using DMS, once you 'promote' the destination database, the replication link is permanently broken. DMS does not natively support 'reverse replication' back to on-premises. If a fallback is required *after* transactions have hit the new database, the most robust architectural pattern is to implement 'dual-writes' at the application layer prior to cutover. This ensures both databases remain perfectly in sync independently, allowing an instant, safe rollback by simply pointing reads back to the on-premises instance.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure DMS to perform reverse continuous replication from Cloud SQL back to the on-premises database immediately after the promotion.": "Google Cloud Database Migration Service (DMS) does not currently support reverse replication from Cloud SQL back to an on-premises source.",
             "If the cutover fails, revert the application connection strings to the on-premises database and manually execute a data diff script to reconcile lost transactions.": "Relying on manual data diff scripts during a live, highly stressful rollback scenario is extremely risky, prone to data corruption, and violates enterprise high-availability standards.",
             "Take an on-demand automated backup of the Cloud SQL instance just before cutover. If the cutover fails, restore the backup to the on-premises database via SQL dump.": "Restoring a massive SQL dump back to on-premises during a failed cutover takes hours, resulting in massive downtime. Furthermore, any transactions written to Cloud SQL between the backup and the rollback decision are permanently lost."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Migration Methodology", "Database Migration", "Cutover Strategy", "Fallback Plan"]
+        "tags": [
+          "Migration Methodology",
+          "Database Migration",
+          "Cutover Strategy",
+          "Fallback Plan"
+        ]
       },
       {
         "id": "q-gcppca-s29-010",
@@ -268,14 +313,19 @@
         ],
         "explanation": {
           "general explanation": "A crucial network planning constraint in Google Cloud is that VPC Network Peering is strictly non-transitive. If Network A (On-prem) is connected to Network B (Hub) via VPN, and Network B is peered to Network C (Spoke), Network A cannot communicate with Network C. While you can technically hack routing with proxy appliances, the standard, highly scalable architectural resolution for this enterprise pattern is to abandon VPC Peering and implement a Shared VPC. In a Shared VPC, the Host project holds the VPN connection, and all Service projects (Dev, Prod) natively share the routing table, solving transitivity entirely.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Flaw: The HA VPN gateway in the Hub VPC requires static IP routes to propagate down to the peered VPCs.\nResolution: Add a static route in `vpc-prod` with a next-hop of the HA VPN gateway IP address.": "You cannot set a next-hop route to a resource that exists in a completely different peered VPC. The routing plane will reject it.",
             "Flaw: Cloud NAT has not been configured in the Spoke VPCs.\nResolution: Deploy Cloud NAT in `vpc-prod` to translate the internal IP addresses before they traverse the peering connection.": "Cloud NAT is for outbound internet access. It is never used for internal private routing over VPC Peering or VPN connections.",
             "Flaw: The BGP sessions on the Cloud Router are not advertising the peered subnets.\nResolution: Enable the 'Export Custom Routes' flag on the VPC Network Peering connection in the Spoke VPCs.": "While importing/exporting custom routes over peering allows the Hub to share on-prem routes with the Spoke, the Spoke's routes must *also* be advertised back to on-prem by the Cloud Router. The true enterprise solution to avoid these complex, brittle custom route setups is Shared VPC."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Network Planning", "VPC Peering", "Shared VPC", "Transitive Routing"]
+        "tags": [
+          "Network Planning",
+          "VPC Peering",
+          "Shared VPC",
+          "Transitive Routing"
+        ]
       },
       {
         "id": "q-gcppca-s29-011",
@@ -295,14 +345,19 @@
         ],
         "explanation": {
           "general explanation": "Dependency planning requires understanding the constraints of the target platform. Cloud Run is a serverless environment; instances scale up and down dynamically based on traffic and are entirely ephemeral. If an application stores user session data in local container memory, that data will be instantly lost when the container scales down, or users will experience bizarre behavior if requests are routed to a different container instance. The mandatory architectural resolution is to externalize the session state dependency to a centralized, fast datastore like Memorystore for Redis.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "A Serverless VPC Access connector must be deployed to ensure the Cloud Run instances can establish stateful, persistent TCP connections with the client browsers.": "VPC Access Connectors allow Cloud Run to access internal VPC resources (like a Redis instance). They do not create persistent TCP connections to external client browsers.",
             "The Dockerfile must be configured to mount a Cloud Storage FUSE volume to the `/tmp` directory to persist the session data across container spin-downs.": "Cloud Storage FUSE is terrible for high-speed, low-latency, highly concurrent session state reads/writes. Redis is the standard architecture. Also, `/tmp` in Cloud Run is natively an in-memory ramdisk, not a persistent mount point.",
             "Cloud Run must be configured with a maximum concurrency setting of 1, ensuring only one user connects to each instance, thereby preserving session isolation.": "While setting concurrency to 1 isolates requests, it doesn't solve the state problem. If the user makes a second request and is routed to a different new container, their session is still lost."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Dependency Planning", "Replatforming", "Cloud Run", "State Management"]
+        "tags": [
+          "Dependency Planning",
+          "Replatforming",
+          "Cloud Run",
+          "State Management"
+        ]
       },
       {
         "id": "q-gcppca-s29-012",
@@ -317,17 +372,24 @@
           "Global External Proxy Network Load Balancer",
           "Anthos Service Mesh with Multi-Cluster Ingress"
         ],
-        "correctAnswers": ["Global External Proxy Network Load Balancer"],
+        "correctAnswers": [
+          "Global External Proxy Network Load Balancer"
+        ],
         "explanation": {
           "general explanation": "Mountkirk Games requires global load balancing for high-speed gaming traffic. Game traffic typically relies on raw TCP/UDP streams rather than HTTP/HTTPS. A Global External Proxy Network Load Balancer provides a single global Anycast IP address, acts as a Layer 4 proxy, and intelligently routes non-HTTP TCP traffic (like custom game protocols) to the closest regional backend cluster. This natively solves the global routing and failover requirement for their specific gaming workload.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Global External Application Load Balancer": "Application Load Balancers are strictly Layer 7 (HTTP/HTTPS/HTTP2). Multiplayer gaming backends usually require raw TCP/UDP socket connections, making HTTP load balancers inappropriate.",
             "Cloud DNS with Geolocation Routing Policies": "While DNS can perform geo-routing, it does not provide a 'single Anycast IP address', nor does it dynamically react to real-time load/capacity to shift traffic instantly, as it relies on client-side TTL caching.",
             "Anthos Service Mesh with Multi-Cluster Ingress": "While ASM/MCI is powerful for Kubernetes multi-cluster routing, it utilizes the Global External Application Load Balancer under the hood for external ingress, which again is strictly Layer 7 (HTTP) and inappropriate for custom TCP game traffic."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Case Study", "Mountkirk Games", "Network Planning", "Load Balancing"]
+        "tags": [
+          "Case Study",
+          "Mountkirk Games",
+          "Network Planning",
+          "Load Balancing"
+        ]
       },
       {
         "id": "q-gcppca-s29-013",
@@ -347,14 +409,19 @@
         ],
         "explanation": {
           "general explanation": "When dependency planning for Active Directory migrations involving managed services, you cannot simply 'copy' or 'replicate' an existing domain into Managed Microsoft AD. Managed Microsoft AD is its own distinct domain forest. To allow seamless coexistence and authentication across both the legacy on-premises domain and the new cloud domain, the Microsoft architectural standard is to establish a cross-forest trust relationship. A two-way trust allows users in either domain to authenticate and access resources in the other, perfectly fulfilling the 6-month coexistence requirement.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure Managed Microsoft AD to act as a Read-Only Domain Controller (RODC) replicating directly from the on-premises Primary Domain Controller.": "Managed Microsoft AD is a standalone domain service; it cannot be configured as a secondary or Read-Only Domain Controller (RODC) joining an existing on-premises domain.",
             "Use Google Cloud Directory Sync (GCDS) to continuously synchronize users, groups, and passwords from the on-premises AD to the Managed Microsoft AD instance.": "GCDS synchronizes AD identities to Google Cloud Identity (Workspace/Cloud Console access). It does not synchronize identities into a Managed Microsoft AD infrastructure service.",
             "Migrate the on-premises domain controllers directly into Managed Microsoft AD using the Database Migration Service (DMS) to preserve all SIDs.": "DMS is for relational databases (MySQL, PostgreSQL), not Active Directory schema migrations."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Dependency Planning", "Active Directory", "Managed Microsoft AD", "Hybrid Cloud"]
+        "tags": [
+          "Dependency Planning",
+          "Active Directory",
+          "Managed Microsoft AD",
+          "Hybrid Cloud"
+        ]
       },
       {
         "id": "q-gcppca-s29-014",
@@ -376,14 +443,18 @@
         ],
         "explanation": {
           "general explanation": "Migration methodologies dictate that 'Wave 1' is primarily about building confidence, validating the landing zone architecture, testing operational procedures, and minimizing business risk. Therefore, you select applications that are low-risk. 1) Standalone applications (few dependencies) are ideal because they don't cause split-stack latency if migrated alone. 2) Lower environments (dev/test) are perfect because migrating them tests the automation and connectivity with zero impact on live production users. Once these succeed, complex and mission-critical apps follow in later waves.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Applications with the highest number of complex, tightly-coupled downstream dependencies to validate dependency mapping accuracy.": "Migrating highly complex, tightly-coupled apps first is a recipe for disaster. If the dependency mapping is flawed, the entire interconnected system crashes, eroding business confidence immediately.",
             "Mission-critical applications generating the highest revenue, to prove the business value of Google Cloud immediately.": "Mission-critical apps carry the highest business risk. Any outage during the unproven Wave 1 process could cause massive financial damage.",
             "Applications utilizing obsolete, unsupported operating systems (e.g., Windows Server 2003) that require urgent Rehosting.": "Unsupported, legacy OS migrations are exceptionally difficult, error-prone, and often require specialized rehosting (like GCVE) or massive refactoring. They are terrible candidates for a smooth, initial confidence-building wave."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Migration Methodology", "Wave Planning", "Risk Mitigation"]
+        "tags": [
+          "Migration Methodology",
+          "Wave Planning",
+          "Risk Mitigation"
+        ]
       },
       {
         "id": "q-gcppca-s29-015",
@@ -398,17 +469,24 @@
           "API Gateway deployed within a dedicated Serverless VPC Access connector.",
           "VPC Network Peering configured with custom route imports."
         ],
-        "correctAnswers": ["External Application Load Balancer configured with advanced URL Maps."],
+        "correctAnswers": [
+          "External Application Load Balancer configured with advanced URL Maps."
+        ],
         "explanation": {
           "general explanation": "The Strangler Fig pattern relies entirely on an intelligent Layer 7 proxy at the network edge to intercept incoming traffic and route it to different backends based on specific rules (like URL paths). An External Application Load Balancer is the perfect component. You configure URL Maps: requests to `/api/legacy/*` route to an Instance Group backend (the monolith VMs), while requests to `/api/inventory/*` route to a Serverless NEG backend (the new Cloud Run microservice). This 'strangles' the monolith transparently over time.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Cloud DNS configured with Weighted Round Robin routing policies.": "Cloud DNS resolves hostnames to IP addresses. It cannot inspect HTTP URL paths (like `/api/inventory`), making it impossible to route traffic to specific microservices based on the application URI.",
             "API Gateway deployed within a dedicated Serverless VPC Access connector.": "While API Gateway *can* route traffic, an External Application Load Balancer is the standard, globally scalable ingress point for enterprise web applications mixing IaaS (VMs) and serverless backends in a Strangler pattern. Furthermore, API Gateway does not 'deploy within a VPC connector' for ingress.",
             "VPC Network Peering configured with custom route imports.": "VPC Peering is for connecting internal network IP spaces. It has no capability to perform Layer 7 HTTP request inspection or routing."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Migration Methodology", "Strangler Fig", "Load Balancing", "URL Maps"]
+        "tags": [
+          "Migration Methodology",
+          "Strangler Fig",
+          "Load Balancing",
+          "URL Maps"
+        ]
       },
       {
         "id": "q-gcppca-s29-016",
@@ -428,14 +506,19 @@
         ],
         "explanation": {
           "general explanation": "When migrating internal workloads (like a private GKE cluster) that need to reach the public internet, traffic exits via Cloud NAT. By default, Cloud NAT automatically assigns and rotates external IPs. However, to satisfy a strict third-party IP whitelisting dependency, you must configure Cloud NAT using 'Manual' IP allocation. You reserve specific static external IP addresses in Google Cloud, assign them to the NAT gateway, and provide those exact IPs to the financial institution for whitelisting. All outbound traffic from the GKE nodes will now appear to originate from those specific, unchanging IPs.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Assign external static IP addresses to the specific GKE worker nodes so that traffic exiting the nodes bears the correct recognizable IP address.": "GKE private clusters do not have external IPs on their nodes. Adding public IPs to cluster nodes is a massive security risk and an architectural anti-pattern.",
             "Configure the GKE Pods with an external IP address using a Kubernetes LoadBalancer Service and assign static IPs to the ingress controller.": "A LoadBalancer Service handles *inbound* traffic (ingress). It does not dictate the source IP address of *outbound* traffic (egress) initiated by the pods.",
             "Establish a Cloud VPN tunnel to the third-party institution, allowing the GKE private IPs to communicate without requiring public whitelisting.": "While VPNs are secure, you rarely have the authority to demand a third-party SaaS provider or financial institution establish a custom IPSec VPN tunnel directly into your VPC. Static IP whitelisting is the industry standard for this pattern."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Network Planning", "Cloud NAT", "Static IP", "Egress Traffic"]
+        "tags": [
+          "Network Planning",
+          "Cloud NAT",
+          "Static IP",
+          "Egress Traffic"
+        ]
       },
       {
         "id": "q-gcppca-s29-017",
@@ -455,14 +538,19 @@
         ],
         "explanation": {
           "general explanation": "While Google Cloud allows penetration and load testing, launching a massive, unannounced volumetric attack (load test) against your own public-facing infrastructure triggers Google's automated global anti-DDoS defense mechanisms. This can result in your test IPs being blackholed or your project being flagged for violating the Acceptable Use Policy (AUP). As a critical workload testing constraint, massive load tests or penetration tests must be formally communicated and coordinated with Google Cloud Support in advance.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "You must ensure Cloud Armor is deployed in 'Dry Run' mode to accurately log the load testing traffic without blocking it.": "While dry run is useful for testing WAF rules, it does not stop Google's underlying infrastructure DDoS defenses from throttling a massive, unannounced volumetric attack.",
             "You must increase the maximum concurrency setting on the Cloud Run instances to 1000 to accurately absorb the artificial load testing spikes.": "Cloud Run has a hard limit of 1000 for max concurrency, but blindly maximizing it is not a requirement for load testing, nor does it address the primary policy/defense trigger constraint.",
             "Google Cloud Acceptable Use Policy strictly prohibits any form of load testing or penetration testing on serverless products; you must conduct the test in a local emulator.": "This is false. Google Cloud permits load and penetration testing, provided it complies with their terms and is properly coordinated if expected to generate significant external volumetric traffic."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Workload Testing", "Load Testing", "Compliance", "Network Planning"]
+        "tags": [
+          "Workload Testing",
+          "Load Testing",
+          "Compliance",
+          "Network Planning"
+        ]
       },
       {
         "id": "q-gcppca-s29-018",
@@ -482,14 +570,19 @@
         ],
         "explanation": {
           "general explanation": "A common dependency planning nightmare is 'firewall rule bloat'. Over decades, organizations accumulate thousands of firewall rules, many of which are obsolete. Manually translating them is high risk. Google Cloud Migration Center (formerly StratoZone) agents passively monitor actual, live network traffic flows (dependencies) between servers. By analyzing this empirical data, the tool identifies exactly which ports and protocols are *actually* required for the applications to function, allowing you to generate a clean, optimized, and secure set of target firewall rules for GCP, ignoring the obsolete legacy rules.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Use Google Cloud Firewall Insights (part of Network Intelligence Center) in the on-premises environment to automatically translate the legacy rules into Google Cloud Hierarchical Firewall Policies.": "Firewall Insights is a Google Cloud-native tool that analyzes traffic *within* a Google Cloud VPC to optimize existing GCP firewall rules. It cannot be deployed on-premises to translate legacy hardware firewall configs.",
             "Use VPC Flow Logs in 'Dry Run' mode on the destination subnets to capture the translated rules before enforcing them on the newly migrated VMs.": "VPC Flow Logs record network telemetry; they do not have a 'Dry Run' mode for firewall enforcement. (Firewall logging exists, but it doesn't automatically translate or generate rules).",
             "Migrate all VMs into a single massive subnet to bypass the internal firewall rules, utilizing Identity-Aware Proxy (IAP) exclusively for lateral movement security.": "Putting 300 enterprise VMs into a flat network with no internal firewalling is a massive security violation (zero micro-segmentation). IAP is for user-to-app access, not internal VM-to-VM lateral security."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Network Planning", "Firewall Migration", "Migration Center", "Dependency Mapping"]
+        "tags": [
+          "Network Planning",
+          "Firewall Migration",
+          "Migration Center",
+          "Dependency Mapping"
+        ]
       },
       {
         "id": "q-gcppca-s29-019",
@@ -509,14 +602,19 @@
         ],
         "explanation": {
           "general explanation": "VPC Service Controls natively supports a 'Dry Run' mode specifically designed for workload testing and migration planning. When in Dry Run mode, the perimeter evaluates all traffic against its security rules but does *not* actually block any requests. Instead, it logs what *would* have been blocked. This allows you to safely run your application, analyze the logs to find missing ingress/egress rules, fix the perimeter configuration, and confidently switch to 'Enforced' mode with zero risk of breaking the workload.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Create a temporary 'Test Perimeter', place the project inside it, execute the test, and review the Cloud Audit Logs. If successful, move the project to the production perimeter.": "Moving a live project between perimeters is disruptive and error-prone. Dry Run mode is the explicitly designed feature for testing within the target perimeter.",
             "Temporarily disable the VPC SC perimeter, run the workload test to gather a baseline, re-enable the perimeter, and compare the application performance metrics.": "Disabling the perimeter exposes the sensitive data to exfiltration, violating the core security requirement. Furthermore, it doesn't tell you *what* rules will fail when it's turned back on.",
             "Deploy a dedicated Cloud NAT gateway within the VPC Service Controls perimeter to capture all denied API requests and forward them to a Pub/Sub debugging topic.": "Cloud NAT provides outbound internet access. It has absolutely no functionality related to VPC Service Controls enforcement, logging, or API request capturing."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Workload Testing", "VPC Service Controls", "Dry Run", "Network Planning"]
+        "tags": [
+          "Workload Testing",
+          "VPC Service Controls",
+          "Dry Run",
+          "Network Planning"
+        ]
       },
       {
         "id": "q-gcppca-s29-020",
@@ -536,14 +634,19 @@
         ],
         "explanation": {
           "general explanation": "To provide high availability for legacy applications with hardcoded IP dependencies, the standard architectural pattern is to use a Load Balancer as a 'floating IP'. You create an Internal Passthrough Network Load Balancer, explicitly assign it the required legacy IP (`10.100.5.50`), and back it with a highly available Managed Instance Group. The legacy web servers will send traffic to the hardcoded IP, and the load balancer will seamlessly distribute it to the healthy backend VMs without altering the legacy code.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Deploy an Internal Application Load Balancer and assign it the static internal IP `10.100.5.50`. Configure the URL map to point to a Managed Instance Group of backend VMs.": "An Application Load Balancer is a Layer 7 proxy. If the legacy backend application uses custom TCP/UDP protocols (highly likely for an app with hardcoded IPs), the HTTP(S) proxy will drop the traffic. A Layer 4 Passthrough Network LB is universally safer for unknown legacy protocols.",
             "Assign the Alias IP `10.100.5.50` to a primary Compute Engine VM. If the VM crashes, use a Cloud Function to dynamically reassign the Alias IP to a healthy secondary VM.": "Building custom Cloud Functions to script failovers is an operational anti-pattern. Load Balancers handle health checking and traffic routing natively and instantly.",
             "Configure VPC Network Peering to translate the hardcoded `10.100.5.50` requests into a dynamic broadcast across the newly deployed backend VMs.": "VPC Network Peering connects networks. It does not perform IP address translation, load balancing, or 'dynamic broadcasting' of traffic."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Dependency Planning", "Network Planning", "Load Balancing", "Legacy Migration"]
+        "tags": [
+          "Dependency Planning",
+          "Network Planning",
+          "Load Balancing",
+          "Legacy Migration"
+        ]
       },
       {
         "id": "q-gcppca-s29-021",
@@ -563,14 +666,19 @@
         ],
         "explanation": {
           "general explanation": "A critical workload testing methodology for distributed databases like Cloud Spanner is 'warming up' the database. Spanner dynamically monitors load on its data splits. If a massive, instant spike of traffic hits a newly created instance (or new data), a single node might be overwhelmed (a hotspot). It takes several minutes for Spanner's internal heuristics to identify the load, split the data, and transparently rebalance those splits across the available compute nodes. A proper load test must slowly ramp up traffic (warm up) over 10-30 minutes to give Spanner time to distribute the load evenly.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "You failed to configure the Cloud Spanner instance with multi-cluster routing prior to the load test.": "Cloud Spanner uses Regional or Multi-region configurations. 'Multi-cluster routing' is a concept for Cloud Bigtable, not Cloud Spanner.",
             "You failed to switch the Spanner Processing Units (PUs) to a dedicated capacity model, causing the load test to run on shared, throttled infrastructure.": "Spanner instances always provide dedicated, guaranteed compute capacity. There is no 'shared, throttled' burstable tier that causes this latency behavior.",
             "You failed to disable the automated backups during the load test, which caused storage layer locking contention.": "Spanner backups are executed at the storage layer without locking the database or impacting read/write performance. They do not cause latency spikes."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Workload Testing", "Cloud Spanner", "Performance Optimization", "Load Testing"]
+        "tags": [
+          "Workload Testing",
+          "Cloud Spanner",
+          "Performance Optimization",
+          "Load Testing"
+        ]
       },
       {
         "id": "q-gcppca-s29-022",
@@ -590,14 +698,19 @@
         ],
         "explanation": {
           "general explanation": "A critical network planning constraint in Google Cloud is that VPC Network Peering is strictly non-transitive. If Network A (On-prem) is connected to Network B (Hub) via Interconnect, and Network B is peered to Network C (Spoke), Network A cannot communicate with Network C. While exporting/importing custom routes across peering can resolve some GCP-to-GCP scenarios, on-prem to spoke transitivity over peering is unsupported natively without proxy appliances. The architectural solution is to use a Shared VPC instead of peering, or connect HA VPNs directly to the Spoke.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "The Dedicated Interconnect VLAN attachment must be configured with a Private NAT gateway to translate the Spoke VPC IP addresses.": "Private NAT is used for IP overlap scenarios, not for solving basic routing transitivity over VPC peering.",
             "Cloud Router in the Hub VPC requires a secondary BGP session specifically configured for the Spoke VPC ASN.": "VPCs do not have individual ASNs for BGP peering to each other. BGP is used for hybrid connectivity to on-premises, not intra-cloud VPC peering.",
             "The Spoke VPC (`vpc-spoke-1`) must configure a Cloud VPN tunnel directly to the Hub VPC to encrypt the peered traffic.": "VPC peered traffic remains entirely within Google's backbone and is encrypted by default. Setting up a VPN inside a peering connection is unnecessary and doesn't solve the underlying transitivity issue for on-prem routes."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Network Planning", "VPC Peering", "Transitive Routing", "Hybrid Cloud"]
+        "tags": [
+          "Network Planning",
+          "VPC Peering",
+          "Transitive Routing",
+          "Hybrid Cloud"
+        ]
       },
       {
         "id": "q-gcppca-s29-023",
@@ -617,14 +730,19 @@
         ],
         "explanation": {
           "general explanation": "Dependency planning must account for software licensing physics. Microsoft licensing often requires dedicated physical hardware for Bring Your Own License (BYOL) scenarios if the software lacks License Mobility rights. Compute Engine Sole-Tenant Nodes provide dedicated physical servers. By Rehosting the database onto Sole-Tenant Nodes, you retain full access to advanced OS-level features (like CLR integration) that managed services might restrict, while remaining perfectly compliant with strict BYOL licensing terms.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Replatform to Cloud SQL for SQL Server to offload database maintenance, utilizing the Database Migration Service (DMS) to handle the cross-database transactions.": "Cloud SQL does not support certain advanced OS-level dependencies like CLR integration, nor does it support cross-database distributed transactions (MSDTC) in standard configurations. Furthermore, it operates in a multi-tenant environment, violating the licensing constraint.",
             "Refactor the database schemas to Cloud Spanner to achieve global consistency and eliminate the need for Microsoft licensing.": "Refactoring a core enterprise database to a completely different distributed architecture (Spanner) within 3 months is exceptionally high-risk and rarely feasible.",
             "Rehost the database to standard Compute Engine VMs utilizing Premium Images, and contact Google Support to apply your Enterprise Agreement discount retroactively.": "Standard VMs run on multi-tenant hardware, immediately violating the licensing constraint. Furthermore, Google does not apply external EA discounts retroactively to their PAYG Premium Images."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Dependency Planning", "Licensing", "Sole-Tenant Nodes", "SQL Server"]
+        "tags": [
+          "Dependency Planning",
+          "Licensing",
+          "Sole-Tenant Nodes",
+          "SQL Server"
+        ]
       },
       {
         "id": "q-gcppca-s29-024",
@@ -644,14 +762,19 @@
         ],
         "explanation": {
           "general explanation": "This is a network planning math problem common in massive migrations. You have 20 Petabytes (20,000 Terabytes) to move. You only have 2 Gbps of available bandwidth. 2 Gbps is 0.25 Gigabytes per second. Moving 20,000,000 Gigabytes at 0.25 GB/s will take approximately 925 days. The strict deadline is 30 days. Therefore, migrating over the network is physically impossible. The only methodology that works is physical transfer using Google Transfer Appliances shipped to the data center.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure Storage Transfer Service (STS) with a bandwidth limit of 2 Gbps to continuously stream the data to Cloud Storage.": "As calculated, a 2 Gbps link will take nearly 3 years to transfer 20 PB. This catastrophically fails the 30-day deadline constraint.",
             "Use the BigQuery Data Transfer Service to compress the raw data by 50% on-premises before streaming it over the 2 Gbps link.": "Even with an unrealistic 50% compression, the transfer would still take over 450 days, violating the deadline. Furthermore, BigQuery DTS is not designed for raw file system transfers.",
             "Deploy Cloud Interconnect compression algorithms on the Cloud Router to achieve a 10x deduplication ratio, allowing the 20 PB to fit through the 2 Gbps pipe.": "Cloud Routers do not feature magical 10x deduplication/compression algorithms that alter the fundamental physics of the physical fiber link."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Case Study", "TerramEarth", "Network Planning", "Transfer Appliance"]
+        "tags": [
+          "Case Study",
+          "TerramEarth",
+          "Network Planning",
+          "Transfer Appliance"
+        ]
       },
       {
         "id": "q-gcppca-s29-025",
@@ -673,14 +796,19 @@
         ],
         "explanation": {
           "general explanation": "The 'Retain' strategy (keeping it on-premises) is chosen when physics, compliance, or architecture strictly prohibit a cloud migration in the near term. A factory floor application requiring < 2ms latency must be kept physically close to the robots (physics/Retain). A mainframe requiring physical air-gapped security cannot be moved to a public cloud tenant (security/Retain). These workloads remain on-premises (or use hybrid edge solutions like GDC Edge).",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "An ancient employee portal application whose functionality has been entirely superseded by a new Google Workspace rollout.": "If it is superseded and no longer needed, it should be 'Retired' (decommissioned), not retained and paid for.",
             "A monolithic e-commerce application that the business wants to rewrite into microservices to improve scalability and deployment speed.": "This describes a 'Refactor' (or Rearchitect) strategy, moving to the cloud by rewriting the code.",
             "A standard off-the-shelf HR application running on Windows Server 2012 that consumes massive operational maintenance resources.": "This describes a prime candidate for 'Repurchase' (moving to a SaaS HR platform) or 'Replatforming', not retaining a heavy maintenance burden on-premises."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Migration Methodology", "Retain", "6 Rs", "Dependency Planning"]
+        "tags": [
+          "Migration Methodology",
+          "Retain",
+          "6 Rs",
+          "Dependency Planning"
+        ]
       },
       {
         "id": "q-gcppca-s29-026",
@@ -700,14 +828,19 @@
         ],
         "explanation": {
           "general explanation": "Validating data continuously during an active replication scenario requires analyzing streams without locking the databases. The architectural best practice is to use Datastream (Google's CDC service) to read the transaction logs of both the source and the target databases. By sinking these streams into BigQuery, you can write automated, complex SQL queries to compare row counts, checksums, and specific column values in near real-time, providing high-confidence workload validation before authorizing the cutover.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure the Database Migration Service (DMS) 'Validation' tab to automatically block the promotion if it detects a row-count mismatch.": "DMS does not have a native 'Validation' tab that automatically performs deep data validation or blocks promotions based on row counts.",
             "Execute a `pg_dump` on the source and destination databases every 5 minutes and use a Cloud Function to compare the file sizes in Cloud Storage.": "Running full `pg_dump` operations every 5 minutes will crush the database CPU and network, causing an immediate production outage. Comparing file sizes is also an incredibly inaccurate way to validate data integrity.",
             "Pause the replication in DMS, run a manual `SELECT COUNT(*)` on both databases, and if they match, resume the replication.": "Pausing replication means the target database falls behind. Because the source is actively taking writes, a `SELECT COUNT` will never perfectly match unless you lock the source database, which causes unacceptable downtime."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Workload Testing", "Data Validation", "Database Migration", "Datastream"]
+        "tags": [
+          "Workload Testing",
+          "Data Validation",
+          "Database Migration",
+          "Datastream"
+        ]
       },
       {
         "id": "q-gcppca-s29-027",
@@ -727,14 +860,19 @@
         ],
         "explanation": {
           "general explanation": "A critical dependency planning issue when migrating from traditional application servers (which handle connection pooling natively for a few dozen instances) to highly scalable serverless platforms (Cloud Run) is 'connection exhaustion'. When Cloud Run scales from 0 to 1,000 instances instantly, each instance attempts to open a database connection. This massive spike overwhelms the relational database. The architectural resolution is implementing strict connection pooling within the app, or deploying a dedicated proxy pooler to multiplex the connections, protecting the database from the scaling limits of serverless compute.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Deploy Cloud SQL Auth Proxy as a sidecar container alongside the Cloud Run instances to handle the connection lifecycle.": "The Auth Proxy provides secure, authenticated connections to Cloud SQL. It does *not* perform connection pooling. If 1,000 Cloud Run instances spin up, the Auth Proxy will still open 1,000 backend connections, crashing the DB.",
             "Implement Memorystore for Redis and update the application code to cache all database queries.": "While caching helps read performance, it doesn't solve the fundamental issue of connection exhaustion when the application instances initialize and establish their baseline database connection pools.",
             "Enable the 'Serverless VPC Access' connector on Cloud Run to bypass the public internet and establish dedicated, persistent TCP connections.": "A VPC connector is required for private IP access, but it does not perform connection pooling. It will simply pass the 1,000 connection requests straight through to the database."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Dependency Planning", "Cloud Run", "Cloud SQL", "Connection Pooling"]
+        "tags": [
+          "Dependency Planning",
+          "Cloud Run",
+          "Cloud SQL",
+          "Connection Pooling"
+        ]
       },
       {
         "id": "q-gcppca-s29-028",
@@ -754,7 +892,7 @@
         ],
         "explanation": {
           "general explanation": "Private Service Connect (PSC) is the exact architectural solution for consuming third-party or managed services privately across VPCs without using VPC Peering. The vendor publishes a 'Service Attachment'. You create a PSC 'Endpoint' in your VPC, which provides a local, private IP address. Traffic sent to this private IP is transparently routed across Google's backbone to the vendor. Because it does not rely on peering, no IP spaces or routing tables are shared, ensuring absolute network isolation and zero IP overlap conflicts.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Establish an HA VPN tunnel directly between your VPC and the vendor's VPC to encrypt the traffic while maintaining routing isolation.": "VPN tunnels require managing routing tables and ensuring IP ranges do not overlap. It adds massive operational overhead and latency compared to the native, invisible routing of PSC.",
             "Deploy an External Application Load Balancer in the vendor project and access it over the internet using Cloud NAT.": "The prompt explicitly requires 'private IP access'. Routing traffic out via Cloud NAT to an external IP exposes the traffic to the public internet, violating the security constraint.",
             "Configure an Internal Passthrough Network Load Balancer in your VPC and set the vendor's IP address as the backend service.": "An internal load balancer cannot route traffic to an arbitrary IP address located in a completely disconnected, un-peered VPC."
@@ -786,14 +924,19 @@
         ],
         "explanation": {
           "general explanation": "Dependency planning for tightly coupled, high-throughput systems requires understanding Google Cloud physical topology. Cross-zone traffic introduces roughly 1-2 milliseconds of latency and incurs inter-zone egress data transfer charges. To maximize throughput and absolutely minimize latency for a tightly coupled 'Lift and Shift' NFS architecture (like video streaming from Filestore to VMs), both the compute instances and the storage instance must physically reside in the exact same availability zone.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "The VMs and the Cloud Filestore instance must be deployed into a single Shared VPC.": "While a Shared VPC is good for organization, it does not guarantee physical proximity. You can deploy VMs in different zones within a Shared VPC, resulting in latency.",
             "The network tier must be upgraded to 'Premium Tier' to ensure the internal VPC traffic is prioritized over external internet traffic.": "Network Tiers (Premium vs. Standard) dictate routing for *external* internet traffic entering/leaving GCP. They have absolutely no effect on internal VM-to-Filestore traffic within a VPC.",
             "Jumbo Frames (MTU 9000) must be enabled on the VPC to allow the NFS protocol to efficiently transport large video chunks.": "While Jumbo Frames can slightly improve throughput, physical zonal proximity is the paramount architectural requirement for eliminating the core latency bottleneck."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Network Planning", "Dependency Planning", "Latency", "Zonal Architecture"]
+        "tags": [
+          "Network Planning",
+          "Dependency Planning",
+          "Latency",
+          "Zonal Architecture"
+        ]
       },
       {
         "id": "q-gcppca-s29-030",
@@ -813,14 +956,19 @@
         ],
         "explanation": {
           "general explanation": "To perform an A/B test that is deterministic (meaning a user stays in the 'A' group or 'B' group for the duration of their session), you must use an intelligent Layer 7 proxy. An External Application Load Balancer supports advanced traffic splitting (e.g., 90/10 weight). Crucially, by enabling session affinity (like generated HTTP cookies), the load balancer ensures that once a user is bucketed into the 10% Cloud Run group, all their subsequent requests are routed to Cloud Run, providing a consistent test experience.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Use Cloud DNS with a Weighted Round Robin policy, assigning a weight of 90 to the on-premises IP and 10 to the Cloud Run IP.": "Cloud DNS Weighted Round Robin distributes traffic probabilistically, but it cannot guarantee session affinity. A user might hit the on-prem API on their first click, and the Cloud Run API on their second click, resulting in a broken experience.",
             "Deploy Anthos Service Mesh and configure a virtual service with a `weight: 10` routing rule pointing to the new Cloud Run instances.": "While ASM can split traffic, using a global External Load Balancer is the standard entry point for external user traffic. More importantly, ASM relies on the Load Balancer for the external entry point.",
             "Configure an Internal Passthrough Network Load Balancer and use BGP MED values to bias the traffic 90/10 over the Interconnect.": "BGP MED dictates link preference for entire routes; it does not perform percentage-based traffic splitting or HTTP session affinity for individual user requests."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Workload Testing", "Traffic Splitting", "Load Balancing", "A/B Testing"]
+        "tags": [
+          "Workload Testing",
+          "Traffic Splitting",
+          "Load Balancing",
+          "A/B Testing"
+        ]
       }
     ]
   }

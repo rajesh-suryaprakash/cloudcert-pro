@@ -21,14 +21,19 @@
         ],
         "explanation": {
           "general explanation": "A 'Warm Standby' or 'Pilot Light' architecture is best here. A cross-region read replica in Cloud SQL synchronizes data asynchronously but typically maintains an RPO well under 5 minutes. Promoting the replica and scaling up a pre-configured MIG (scaled to 0 to minimize baseline costs) allows you to easily meet the 30-minute RTO without paying for idle compute resources.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Enable automated daily backups and point-in-time recovery (PITR) on the Cloud SQL instance. Replicate the backup to a Cloud Storage dual-region bucket. In a disaster, restore the database from the backup in `us-east4` and deploy the application on a new cluster.": "Relying on backups and PITR for a cross-region restore process will likely violate the 30-minute RTO due to the time required to provision a new instance and restore a large dataset.",
             "Deploy an active-active architecture using Cloud Spanner instead of Cloud SQL. Keep a hot standby MIG running in `us-east4` configured to handle 50% of peak load. Route traffic globally using Cloud Global HTTP(S) Load Balancing.": "While Spanner provides excellent BCP guarantees, migrating off PostgreSQL to Spanner is a massive architectural change, and running a hot standby MIG (active-active) violates the requirement to 'minimize ongoing compute costs' in the secondary region.",
             "Use the Database Migration Service (DMS) to continuously replicate data to a standby Cloud SQL instance in `us-east4`. Use an active-active Compute Engine setup behind a Global Load Balancer, routing traffic to `us-east4` only if `us-central1` fails.": "DMS is designed for migrations, not as a continuous ongoing DR synchronization tool for Cloud SQL to Cloud SQL (which natively supports cross-region replicas). An active-active compute setup also fails to minimize ongoing costs."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Business Continuity", "Cloud SQL", "RTO/RPO", "Pilot Light"]
+        "tags": [
+          "Business Continuity",
+          "Cloud SQL",
+          "RTO/RPO",
+          "Pilot Light"
+        ]
       },
       {
         "id": "q-gcppca-s3-002",
@@ -48,14 +53,19 @@
         ],
         "explanation": {
           "general explanation": "The Global External HTTP(S) Load Balancer natively routes traffic to the closest healthy backend. By using Network Endpoint Groups (NEGs) from both clusters attached to the same backend service, the load balancer handles regional failover automatically. To make it active-passive, you can manipulate capacity scalars or rely on the fact that if you force traffic to one region primarily (e.g., via proximity or capacity), the other acts as passive. However, the most native way for GCP Global Load Balancer to do failover is to just have both NEGs in the backend service; if the primary region fails health checks, traffic spills over globally. HPA will scale the pods up when traffic arrives.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Use Cloud DNS routing policies with geographic routing to distribute traffic. Set up a health check in Cloud DNS to detect the `europe-west1` failure and automatically route all traffic to `europe-west4`. Rely on Cluster Autoscaler to add nodes.": "Cloud DNS failover can suffer from TTL caching issues at the client side, delaying RTO. Global Load Balancing provides immediate failover without TTL dependencies.",
             "Deploy Multi-Cluster Ingress (MCI). Set `europe-west1` as the primary cluster and `europe-west4` as the secondary. Configure MCI to only route to `europe-west4` if health checks on the `europe-west1` backend fail.": "MCI is typically used for active-active multi-region deployments or active-passive where the MCI config manages the GLB. While MCI could work, it fundamentally provisions a Global Load Balancer behind the scenes. The question specifically mentions MCI routing rules based on health checks prioritizing one, which is not natively how MCI is configured (it uses standard GLB proximity/spillover rules).",
             "Use a Global External HTTP(S) Load Balancer. Add the GKE Ingress from `europe-west1` to the primary backend service, and the Ingress from `europe-west4` to a failover backend service. Rely on HPA to scale up `europe-west4` upon receiving traffic.": "You do not chain an External GLB to a GKE Ingress (which provisions its own load balancer). You attach the GLB directly to NEGs (Network Endpoint Groups) exposing the GKE services."
           }
         },
         "difficulty": "Hard",
-        "tags": ["GKE", "Global Load Balancer", "Failover", "Active-Passive"]
+        "tags": [
+          "GKE",
+          "Global Load Balancer",
+          "Failover",
+          "Active-Passive"
+        ]
       },
       {
         "id": "q-gcppca-s3-003",
@@ -77,14 +87,19 @@
         ],
         "explanation": {
           "general explanation": "To achieve a 99.99% availability SLA for Dedicated Interconnect, Google strictly requires four connections. These must be deployed across two different metropolitan areas (metros), with two connections per metro. Furthermore, these connections must terminate on Cloud Routers located in at least two different Google Cloud regions within a global VPC, ensuring regional redundancy.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Provision exactly two Dedicated Interconnect connections in a single metropolitan area (metro), terminating on two different Cloud Routers in the same VPC network.": "This topology provides a 99.9% SLA, not 99.99%.",
             "Configure BGP over Cloud VPN as a backup to the Dedicated Interconnect to achieve the 99.99% SLA.": "While VPN can act as a backup, the official 99.99% SLA for Dedicated Interconnect itself strictly requires the four-connection, dual-metro, dual-region architecture.",
             "Ensure all four connections terminate on a single high-availability on-premises edge router to simplify BGP route management.": "Terminating on a single on-premises router creates a single point of failure, which violates the requirement to survive a single on-premises router failure and voids the 99.99% SLA."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Cloud Interconnect", "SLA", "Network BCP", "Hybrid Cloud"]
+        "tags": [
+          "Cloud Interconnect",
+          "SLA",
+          "Network BCP",
+          "Hybrid Cloud"
+        ]
       },
       {
         "id": "q-gcppca-s3-004",
@@ -104,14 +119,19 @@
         ],
         "explanation": {
           "general explanation": "Dual-region buckets replicate data asynchronously. To meet an RPO of less than 15 minutes, Turbo Replication must be enabled, which provides a 15-minute RPO SLA for cross-region replication. To protect against malicious deletion (immutability), Object Retention Lock (or Bucket Lock) is required. Object Retention Lock ensures objects cannot be deleted or overwritten for the specified period, satisfying the ransomware protection requirement.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Create a dual-region Cloud Storage bucket. Enable Turbo Replication. Configure an Object Lifecycle Policy to transition objects to Archive storage after 30 days.": "An Object Lifecycle Policy only moves data; it does not make the data immutable or protect it from deliberate deletion.",
             "Create a multi-region Cloud Storage bucket. Enable uniform bucket-level access. Apply a Bucket Lock with a retention period of 30 days.": "Multi-region buckets do not support Turbo Replication, meaning they cannot guarantee the strict 15-minute RPO SLA. Default replication has no RPO SLA.",
             "Create a standard regional bucket in the primary region. Use a Cloud Function triggered by `google.storage.object.finalize` to synchronously copy the object to a separate locked regional bucket in the secondary region.": "This is a custom, complex, and error-prone workaround. Cloud Functions are invoked asynchronously by default for Cloud Storage triggers, so it does not guarantee a strict, SLA-backed 15-minute RPO without extensive error handling and monitoring. Dual-region with Turbo Replication is the native, fully managed solution."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Cloud Storage", "Turbo Replication", "Object Lock", "Ransomware"]
+        "tags": [
+          "Cloud Storage",
+          "Turbo Replication",
+          "Object Lock",
+          "Ransomware"
+        ]
       },
       {
         "id": "q-gcppca-s3-005",
@@ -131,14 +151,19 @@
         ],
         "explanation": {
           "general explanation": "Cloud Spanner uses Paxos for synchronous replication. In a multi-region setup, writes must be acknowledged by a quorum. If the regions in the quorum are spread globally (e.g., NAM, EUR, ASIA), every write incurs significant cross-oceanic latency. Since 80% of writes originate in North America, choosing a multi-region setup within North America (like `nam3`, which spans multiple US regions) ensures RPO=0 for regional failures while keeping the Paxos quorum geographic distance small, thereby minimizing write latency. Read-only transactions globally can use stale reads against local replicas if added.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Select a multi-region configuration with regions spread globally (e.g., `nam-eur-asia1`). Set the default leader region to the one closest to the majority of users in North America.": "Even with the leader in NAM, the write still needs to be committed by a quorum. If the other voting replicas are in Europe and Asia, the write latency will be extremely high due to the speed of light.",
             "Select a multi-region configuration spanning three continents. Set the default leader region to a central European region to evenly balance write latency across the globe.": "This severely penalizes the 80% of write traffic originating in North America by forcing them to communicate with a European leader and wait for a global quorum.",
             "Deploy separate regional Spanner instances in North America, Europe, and Asia. Use Datastream to synchronize data continuously between the three instances.": "This creates an asynchronous replication topology (active-active with custom sync), which violates the RPO=0 requirement (asynchronous sync implies potential data loss during failover) and negates Spanner's native synchronous multi-region capabilities."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Cloud Spanner", "Multi-region", "Latency", "RPO"]
+        "tags": [
+          "Cloud Spanner",
+          "Multi-region",
+          "Latency",
+          "RPO"
+        ]
       },
       {
         "id": "q-gcppca-s3-006",
@@ -158,7 +183,7 @@
         ],
         "explanation": {
           "general explanation": "Persistent Disk Asynchronous Replication provides block-level replication of a PD from one region to another. It typically provides an RPO of a few minutes (sub-5 minutes is common, though not an SLA) and allows you to attach the replicated disk in the secondary region quickly (low RTO). This avoids complex application-level syncs and is native to GCP storage.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Take hourly snapshots of the Persistent Disk in `us-west1-a` and store them in a multi-region Cloud Storage bucket. In a disaster, create a new PD in `us-east4` from the latest snapshot and boot a new instance.": "Hourly snapshots result in an RPO of up to 1 hour (or potentially up to 24 hours depending on snapshot frequency limits and completion times), violating the RPO < 5 minutes requirement.",
             "Use Regional Persistent Disk to replicate data synchronously across `us-west1` and `us-east4`. Use a Managed Instance Group to failover the VM to `us-east4` automatically.": "Regional Persistent Disk only replicates data synchronously between two *zones* within the *same* region. It cannot span across regions (`us-west1` to `us-east4`).",
             "Attach a Local SSD to the instance for high-speed writes. Run a cron job every minute to rsync the Local SSD contents to a Cloud Storage bucket in `us-east4`. Restore from the bucket upon failure.": "Local SSD data is lost if the host fails. A 1-minute rsync of high-volume data to GCS is inefficient, error-prone, and unlikely to complete successfully or consistently, risking data corruption and missing the RPO."
@@ -190,14 +215,19 @@
         ],
         "explanation": {
           "general explanation": "BigQuery cross-region dataset replication is a native, fully managed feature that automatically replicates data between regions or multi-regions. It provides a seamless way to maintain a standby replica in another region (e.g., EU). In a disaster, you can promote the replica, allowing analysts to query it immediately, easily satisfying the 4-hour RTO and 24-hour RPO requirements with virtually zero operational overhead.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Export the BigQuery dataset to a Cloud Storage multi-region bucket daily. Use Cloud Dataflow to write the data from the bucket to a standby BigQuery dataset in the `EU` region.": "This is a complex, custom pipeline. It requires significant operational overhead to maintain, monitor, and execute the export, GCS storage, and Dataflow load jobs.",
             "Create a scheduled query in BigQuery that runs daily to execute a `SELECT *` from the `US` dataset and writes the results to a new table in an `EU` dataset.": "Scheduled queries writing across regions are generally not supported or highly inefficient for massive datasets. Data must be transferred using specific cross-region tools or native replication.",
             "Configure the BigQuery Data Transfer Service to copy the dataset from the `US` multi-region to the `EU` multi-region on a 12-hour schedule.": "Cross-region dataset copy (via BQ DTS or API) takes point-in-time copies. While it works, native dataset replication is the modern, recommended approach for continuous BCP/DR synchronization in BigQuery as it manages the underlying sync asynchronously without custom transfer jobs."
           }
         },
         "difficulty": "Medium",
-        "tags": ["BigQuery", "Dataset Replication", "Cross-region", "DR"]
+        "tags": [
+          "BigQuery",
+          "Dataset Replication",
+          "Cross-region",
+          "DR"
+        ]
       },
       {
         "id": "q-gcppca-s3-008",
@@ -217,14 +247,19 @@
         ],
         "explanation": {
           "general explanation": "A Global External Application Load Balancer can route traffic to multiple regions. By adding Serverless NEGs from both `europe-west1` and `europe-west4` to the same backend service, the load balancer automatically routes user requests to the closest healthy region. If `europe-west1` experiences an outage, the load balancer instantly spills over all traffic to `europe-west4`, achieving an active-active architecture with zero downtime.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Deploy the Cloud Run service in both `europe-west1` and `europe-west4`. Use Cloud DNS geographic routing policies to direct 50% of the traffic to the custom domain mapped in each region.": "DNS routing relies on TTL. If a region fails, clients with cached DNS responses will experience downtime until the TTL expires, violating the 'immediate failover/zero downtime' requirement.",
             "Deploy the Cloud Run service in `europe-west1`. Create a standby Cloud Run service in `europe-west4`. Use Eventarc to trigger the activation of the standby service if Cloud Monitoring detects HTTP 500 errors from `europe-west1`.": "This is an active-passive setup with a reactive trigger. The detection, trigger, and cold-start of the secondary region will cause downtime.",
             "Create a regional External Application Load Balancer in `europe-west1`. If the region fails, use a Terraform pipeline to destroy the load balancer and recreate it in `europe-west4` pointing to the standby Cloud Run service.": "Recreating infrastructure via Terraform during an incident guarantees significant downtime (high RTO) and is an anti-pattern for an active-active BCP requirement."
           }
         },
         "difficulty": "Medium",
-        "tags": ["Cloud Run", "Global Load Balancer", "Serverless NEG", "Active-Active"]
+        "tags": [
+          "Cloud Run",
+          "Global Load Balancer",
+          "Serverless NEG",
+          "Active-Active"
+        ]
       },
       {
         "id": "q-gcppca-s3-009",
@@ -244,14 +279,19 @@
         ],
         "explanation": {
           "general explanation": "VMware Site Recovery Manager (SRM) combined with vSphere Replication is the native, industry-standard VMware tool for DR. GCVE fully supports SRM. It allows you to set specific RPOs (down to 5 minutes) and orchestrate automated failover and failback, easily meeting the 4-hour RTO and 15-minute RPO while utilizing the existing VMware skillsets of the team.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Use Google Cloud Backup and DR Service to take hourly agent-based backups of all VMs in `us-east4` and store them in a Cloud Storage multi-region bucket. Restore them to `us-west1` upon failure.": "Hourly backups result in an RPO of 1 hour, which violates the strict 15-minute RPO requirement.",
             "Deploy an active-active GCVE stretched cluster across `us-east4` and `us-west1`. Rely on vSphere HA to automatically restart VMs in the surviving region.": "GCVE stretched clusters (vSAN stretched clusters) are only supported across *zones* within the *same* region (to ensure low latency for synchronous write requirements), not across completely different geographical regions like `us-east4` and `us-west1`.",
             "Use Google Cloud Migrate to Virtual Machines to continuously replicate the GCVE VMs to native Google Compute Engine instances in `us-west1`.": "While technically possible for a one-way migration, relying on a migration tool for continuous DR alters the target environment (VMware to native GCE), disrupting IP addresses, operational tooling, and failback complexity. SRM is the correct BCP tool for VMware-to-VMware DR."
           }
         },
         "difficulty": "Hard",
-        "tags": ["GCVE", "VMware", "Site Recovery Manager", "Disaster Recovery"]
+        "tags": [
+          "GCVE",
+          "VMware",
+          "Site Recovery Manager",
+          "Disaster Recovery"
+        ]
       },
       {
         "id": "q-gcppca-s3-010",
@@ -273,14 +313,19 @@
         ],
         "explanation": {
           "general explanation": "Pub/Sub topics are global resources by default. Messages published to a topic are stored in the region closest to the publisher but are accessible globally. By using a single global topic, the publisher doesn't need to implement failover logic. To process the messages continuously, you deploy the subscriber applications (Cloud Functions) in multiple regions and attach them to subscriptions on that global topic. If the `asia-southeast1` function fails, the `asia-east1` function continues pulling and processing messages from the global topic, ensuring zero data loss and automated failover.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Create a regional Pub/Sub topic in `asia-southeast1` and a separate regional topic in `asia-east1`. Configure the on-premises application to write to both.": "Pub/Sub topics are global by default, and maintaining two separate topics forces complex deduplication and dual-write logic onto the client application.",
             "Attach subscriptions only in `asia-east1`. Ensure cross-region routing is enabled on the subscription.": "If you only attach subscriptions in the secondary region, you introduce unnecessary cross-region data transfer costs and latency during normal operations.",
             "Ensure both Cloud Functions in `asia-southeast1` and `asia-east1` are attached to subscriptions on the same global Pub/Sub topic.": "While factually true as part of the architecture, the option 'Deploy the Cloud Functions to both...' is the primary architectural step. Wait, let's look at the exact wording. Deploying the functions is a prerequisite. The core answer is the global topic and deploying functions in both regions. (Note: Pub/Sub is inherently global)."
           }
         },
         "difficulty": "Medium",
-        "tags": ["Pub/Sub", "Cloud Functions", "Global Topics", "Asynchronous Processing"]
+        "tags": [
+          "Pub/Sub",
+          "Cloud Functions",
+          "Global Topics",
+          "Asynchronous Processing"
+        ]
       },
       {
         "id": "q-gcppca-s3-011",
@@ -300,14 +345,19 @@
         ],
         "explanation": {
           "general explanation": "Object Versioning protects against accidental overwrites and deletions of individual objects by retaining older versions. However, it does not protect against someone deleting the entire bucket (which deletes all versions). Google Cloud Storage recently introduced 'Soft Delete', which retains deleted objects (and buckets) for a specified duration (default 7 days, configurable up to 90 days), allowing administrators to restore accidentally deleted buckets and objects easily. Combining both provides comprehensive BCP against accidental data loss.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Create a Cloud Function triggered by object deletion to instantly copy the deleted object to a hidden backup bucket.": "This is a complex, custom, and flaky workaround. If the bucket is deleted, the trigger might fail, or it won't capture the entire bucket state simultaneously.",
             "Use a Bucket Lock to prevent any changes to the bucket configuration and objects for 5 years.": "While Bucket Lock (Retention Policy) prevents deletion, it also prevents any valid updates or modifications if they are required. The prompt specifically targets *accidental* deletion, which is best handled by soft delete and versioning rather than strict immutability (unless specifically required by compliance, which isn't the sole focus here).",
             "Export the Cloud Logging sinks directly to BigQuery and use BigQuery Time Travel to recover deleted records.": "BigQuery Time Travel is only available for 7 days. Also, the question specifically states the logs are stored in Cloud Storage, so migrating the strategy to BigQuery alters the existing architecture unnecessarily."
           }
         },
         "difficulty": "Medium",
-        "tags": ["Cloud Storage", "Soft Delete", "Object Versioning", "Data Recovery"]
+        "tags": [
+          "Cloud Storage",
+          "Soft Delete",
+          "Object Versioning",
+          "Data Recovery"
+        ]
       },
       {
         "id": "q-gcppca-s3-012",
@@ -327,14 +377,19 @@
         ],
         "explanation": {
           "general explanation": "Storage Transfer Service for on-premises data allows you to automate the replication of file systems to Cloud Storage. An hourly schedule satisfies the 1-hour RPO. Because this is a DR site and the data will only be accessed during a rare disaster, using a Coldline bucket minimizes ongoing storage costs while allowing immediate access (unlike Archive, which has higher retrieval costs and longer minimum storage durations, though Archive is also an option, Coldline is typically better for DR where RTO might be sensitive to retrieval penalties or if testing occurs). The 1-hour schedule with Coldline is optimal.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Deploy Storage Transfer Service on-premises. Configure a daily scheduled transfer to copy new and modified DICOM files to a Cloud Storage Standard bucket.": "A daily transfer results in a 24-hour RPO, violating the 1-hour requirement. Standard storage also fails the 'minimize storage costs' requirement for rarely accessed DR data.",
             "Use a third-party enterprise backup tool to take block-level snapshots hourly and write them to a Cloud Storage Archive bucket.": "While possible, native GCP tools (Storage Transfer Service) are preferred. Also, block-level snapshots might not be easily readable by new compute instances without the specific third-party restore software, complicating the RTO.",
             "Mount a Cloud Storage fuse (gcsfuse) file system on the on-premises servers. Write all new imaging data directly to GCP as well as local disk.": "gcsfuse does not provide strong consistency, high performance for primary writes, or robust error handling for network drops. It is not suitable for synchronous primary writing in a critical healthcare application."
           }
         },
         "difficulty": "Medium",
-        "tags": ["Storage Transfer Service", "Cloud Storage", "Coldline", "RPO"]
+        "tags": [
+          "Storage Transfer Service",
+          "Cloud Storage",
+          "Coldline",
+          "RPO"
+        ]
       },
       {
         "id": "q-gcppca-s3-013",
@@ -354,14 +409,19 @@
         ],
         "explanation": {
           "general explanation": "The safest way to simulate a regional outage of compute resources behind a load balancer without destroying configurations is to scale the Managed Instance Group to zero. This causes health checks to fail cleanly, and the Global Load Balancer will automatically spill over all traffic to the secondary region. Manually triggering a Cloud SQL failover accurately simulates the database tier's behavior during an outage.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Update the Global Load Balancer's URL map to remove the backend service for `us-central1`. Shut down the primary Cloud SQL instance.": "Modifying the URL map fundamentally changes the architecture rather than simulating a failure. If the URL map is changed, you aren't testing the load balancer's automatic failover capability.",
             "Use VPC Service Controls to block all external ingress traffic to the `us-central1` region. Trigger a manual failover of the Cloud SQL instance.": "VPC Service Controls protect Google APIs, not VM-to-VM traffic or Load Balancer to VM traffic on standard ports. It wouldn't simulate a compute outage correctly.",
             "Delete the network routes in the VPC that allow traffic to the `us-central1` subnets. Promote the Cloud SQL read replica in `us-east4`.": "Deleting VPC routes is destructive and risks breaking other internal communications. Promoting a read replica creates a split-brain scenario if the primary is still online; a native 'failover' should be initiated for HA instances."
           }
         },
         "difficulty": "Medium",
-        "tags": ["BCP Testing", "Simulated Outage", "Global Load Balancer", "MIG"]
+        "tags": [
+          "BCP Testing",
+          "Simulated Outage",
+          "Global Load Balancer",
+          "MIG"
+        ]
       },
       {
         "id": "q-gcppca-s3-014",
@@ -381,14 +441,19 @@
         ],
         "explanation": {
           "general explanation": "In-memory session state needs ultra-low latency but also cross-region resilience for seamless failover. Storing state locally on instances leads to data loss upon instance/region failure. While Spanner is global, it is a relational DB and overkill (with higher latency) for simple session state. Firestore (multi-region) or a highly available cache layer (like cross-region replicated Redis/Memcached architectures, though native Memorystore cross-region is a newer feature, Firestore is universally correct) is the standard architectural pattern for decoupling and distributing session state globally for DR.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Store session state exclusively in the local memory of the Compute Engine instances. Rely on the Global Load Balancer to re-route users, allowing the client app to recreate session state on the new backend.": "This violates the requirement for minimal data loss of session state, as all current sessions are lost and players experience disruption.",
             "Offload session state to a regional Memorystore for Redis instance. Upon regional failure, restore the Redis instance from a Cloud Storage backup in the secondary region.": "Restoring from a backup introduces significant RTO delays and high RPO (data loss since the last backup).",
             "Offload session state to a global Cloud Spanner database. Have instances in all regions read and write session state to Spanner to ensure active-active availability.": "Spanner is optimized for strongly consistent relational data. Using it purely for key-value session state introduces unnecessary cost and potential latency overhead compared to a NoSQL or distributed caching solution."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Mountkirk Games", "Session State", "Multi-region", "Disaster Recovery"]
+        "tags": [
+          "Mountkirk Games",
+          "Session State",
+          "Multi-region",
+          "Disaster Recovery"
+        ]
       },
       {
         "id": "q-gcppca-s3-015",
@@ -408,14 +473,19 @@
         ],
         "explanation": {
           "general explanation": "Dataproc clusters should be treated as ephemeral (transient). Because the data is stored durably in Cloud Storage, the compute layer is stateless. Using an orchestrator like Cloud Composer (Airflow) allows you to define a retry logic. If the `us-east1` cluster fails or the region goes down, the DAG can catch the exception and dynamically provision a new cluster in `us-central1` and restart the job. This costs nothing for the secondary region until a disaster actually occurs, optimizing costs.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Run identical Dataproc clusters in `us-east1` and `us-central1` concurrently every night. If one fails, the other will still complete the processing.": "This doubles the compute cost unnecessarily, violating the 'optimizing costs' requirement.",
             "Deploy a high-availability (HA) Dataproc cluster in `us-east1` using Compute Engine regional MIGs to span across multiple zones and regions.": "Dataproc HA clusters span multiple *zones* within a single region (to protect against master node failure), but they do not span across multiple *regions*.",
             "Store the intermediate shuffle data of the Dataproc jobs in a dual-region Cloud Storage bucket. Upon failure, resume the job from the exact failure point in the secondary region.": "Hadoop/Spark shuffle data requires high I/O and low latency, usually written to local HDFS/SSDs. Writing shuffle data to dual-region GCS would drastically slow down the pipeline and is generally an anti-pattern for performance."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Dataproc", "Cloud Composer", "Ephemeral Clusters", "Batch Processing"]
+        "tags": [
+          "Dataproc",
+          "Cloud Composer",
+          "Ephemeral Clusters",
+          "Batch Processing"
+        ]
       },
       {
         "id": "q-gcppca-s3-016",
@@ -437,14 +507,19 @@
         ],
         "explanation": {
           "general explanation": "For Bare Metal Solution (BMS) disaster recovery spanning two regions, you need a secondary BMS environment in the DR region. To replicate a highly transactional 50 TB Oracle database across regions (which involves significant latency due to geographic distance), synchronous replication will severely impact the performance of the primary database. Asynchronous replication via Oracle Data Guard provides continuous sync that easily maintains an RPO of under 1 minute without impacting primary performance. A standby on another BMS ensures the exact same hardware performance profile upon failover.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Deploy the primary database on BMS in `us-east4`.": "While true, the combination needs to describe the *DR architecture*. (The options selected are the DR counterpart and replication method).",
             "Deploy a standby database on Compute Engine VMs in `us-central1`.": "While technically possible, running a 50 TB highly transactional Oracle DB on VMs might require complex licensing and might not match the performance characteristics of the primary BMS, risking a failure to meet performance SLAs post-failover.",
             "Use Oracle Data Guard to synchronously replicate data between the two regions.": "Synchronous replication across regions (e.g., East Coast to Central US) introduces round-trip latency (often 20-40ms) to every single commit, which would cripple a highly transactional primary database."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Bare Metal Solution", "Oracle", "Data Guard", "Asynchronous Replication"]
+        "tags": [
+          "Bare Metal Solution",
+          "Oracle",
+          "Data Guard",
+          "Asynchronous Replication"
+        ]
       },
       {
         "id": "q-gcppca-s3-017",
@@ -464,14 +539,19 @@
         ],
         "explanation": {
           "general explanation": "To ensure uploads are never dropped, the ingestion layer must be highly available and decoupled from the processing layer. By having users upload directly to a multi-region Cloud Storage bucket, the ingestion survives regional outages. Triggering a Pub/Sub notification (which is global) decouples the storage from compute. Deploying the Cloud Function in multiple regions as subscribers ensures that if one region's compute is down, the other region will process the message from the global Pub/Sub queue, guaranteeing no dropped uploads.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Deploy the Cloud Function behind a Global Load Balancer in two regions. Configure the client app to retry uploads if a 500 error is received.": "While this provides compute failover, the client is still directly tied to synchronous compute processing. If the payload is large or both regions experience a blip, the upload fails. Decoupling via storage/queues is more resilient.",
             "Use Eventarc to directly route the Cloud Storage `object.finalize` event to a multi-region Cloud Run service instead of a Cloud Function.": "Eventarc is regional. If the region where Eventarc is configured goes down, the events are not routed.",
             "Store the PDFs in a regional bucket. Use Cloud Scheduler to trigger a batch processing job every 5 minutes in a secondary region to process any unprocessed PDFs.": "A regional bucket represents a single point of failure. If the region goes down, the bucket is inaccessible, and the secondary compute cannot read the PDFs."
           }
         },
         "difficulty": "Medium",
-        "tags": ["Cloud Storage", "Pub/Sub", "Cloud Functions", "Decoupling"]
+        "tags": [
+          "Cloud Storage",
+          "Pub/Sub",
+          "Cloud Functions",
+          "Decoupling"
+        ]
       },
       {
         "id": "q-gcppca-s3-018",
@@ -491,14 +571,19 @@
         ],
         "explanation": {
           "general explanation": "Cloud KMS supports multi-region key rings (e.g., `eur4`, `nam4`). Keys in a multi-region key ring are automatically replicated across multiple regions geographically. If one region fails, the KMS service automatically serves requests from another region in the multi-region group, seamlessly meeting the BCP requirements without manual intervention.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Create a regional KMS key ring in the primary region. Use a scheduled script to export the key material and import it into a regional KMS key ring in the secondary region.": "Google Cloud KMS does not allow the export of raw key material for software keys (only import is supported). This makes the script approach impossible.",
             "Create a global KMS key ring and store all cryptographic keys within it. Use these global keys to encrypt resources in all regions.": "While global keys exist, using them for regional resources like a specific Cloud Storage bucket or BigQuery dataset often introduces latency and cross-region dependencies. Multi-region keys (aligned with multi-region resources) are the recommended best practice for DR.",
             "Use External Key Manager (EKM) to host keys on-premises, ensuring GCP regional failures do not impact key availability.": "If the on-premises site goes down, you lose access to all cloud data globally. It introduces a new, external single point of failure rather than leveraging GCP's native multi-region resilience."
           }
         },
         "difficulty": "Medium",
-        "tags": ["Cloud KMS", "CMEK", "Multi-region", "Cryptography"]
+        "tags": [
+          "Cloud KMS",
+          "CMEK",
+          "Multi-region",
+          "Cryptography"
+        ]
       },
       {
         "id": "q-gcppca-s3-019",
@@ -518,14 +603,19 @@
         ],
         "explanation": {
           "general explanation": "AlloyDB natively supports cross-region replication by creating a secondary cluster in a different region that acts as a continuous read replica. In the event of a disaster in the primary region, you can promote the secondary cluster to become a primary, allowing the 'Hot Standby' compute tier in the secondary region to perform read/write operations with minimal RTO.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Deploy two separate primary AlloyDB clusters in both regions. Configure bi-directional logical replication between them using pglogical.": "Bi-directional replication (multi-master) in PostgreSQL is notoriously complex, prone to split-brain scenarios, and conflict resolution issues. Native cross-region replicas are the standard, supported DR path.",
             "Create a global AlloyDB cluster. Assign `asia-northeast1` as the primary region and `asia-northeast2` as the synchronous failover target.": "AlloyDB 'global clusters' with synchronous failover targets don't exist in the same way Spanner does. AlloyDB uses asynchronous cross-region replicas.",
             "Create an AlloyDB cluster in `asia-northeast1`. Use Datastream to continuously replicate data to a Cloud SQL instance in `asia-northeast2`.": "This mixes database engines (AlloyDB to Cloud SQL) unnecessarily, losing the analytical performance benefits of AlloyDB columnar engine in the secondary region and increasing management complexity compared to native cross-region replication."
           }
         },
         "difficulty": "Hard",
-        "tags": ["AlloyDB", "Cross-region Replica", "Disaster Recovery", "PostgreSQL"]
+        "tags": [
+          "AlloyDB",
+          "Cross-region Replica",
+          "Disaster Recovery",
+          "PostgreSQL"
+        ]
       },
       {
         "id": "q-gcppca-s3-020",
@@ -545,14 +635,19 @@
         ],
         "explanation": {
           "general explanation": "To meet the strict 2-second response requirement and zero data loss (RPO=0) during regional outages, the ingestion layer must be globally available, decoupled from processing, and extremely fast. API Gateway can be configured to directly route incoming requests to a global Pub/Sub topic without invoking compute. This reliably captures the data (zero data loss) and returns a 200 OK almost instantaneously. Background workers (Cloud Functions) can then process the messages at their own pace.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Expose an API Gateway endpoint globally. Route traffic to a multi-region Cloud Run service that synchronously processes the payload and returns 200.": "The processing takes 5-10 seconds. Synchronous processing will cause the webhook provider to timeout (2-second limit) and drop payloads.",
             "Use a Global External Load Balancer with Cloud CDN enabled. Cache the 200 OK response to instantly reply to the webhook, while the backend processes the data asynchronously.": "Cloud CDN caches responses for GET/HEAD requests based on URLs. Webhooks are POST requests with payloads. You cannot cache a generic 200 response for a POST request and still magically capture the payload to the backend.",
             "Deploy an active-active setup of Compute Engine instances across two regions. Ensure the instances are over-provisioned to process payloads in under 2 seconds.": "Over-provisioning compute does not change the fact that the underlying processing logic takes 5-10 seconds. The timeout will still occur."
           }
         },
         "difficulty": "Hard",
-        "tags": ["API Gateway", "Pub/Sub", "Decoupling", "Asynchronous Integration"]
+        "tags": [
+          "API Gateway",
+          "Pub/Sub",
+          "Decoupling",
+          "Asynchronous Integration"
+        ]
       },
       {
         "id": "q-gcppca-s3-021",
@@ -574,14 +669,19 @@
         ],
         "explanation": {
           "general explanation": "A standard Cloud SQL DR process involves promoting a cross-region read replica in the secondary region to become the new primary standalone instance to accept writes (Failover). Once the original region is healthy, you cannot simply 'demote' the new primary. To failback, you must create a *new* cross-region read replica in the original region (syncing the changes made during the outage), promote that new replica, and update the application to point to it (Failback).",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Failover: Update the Global Load Balancer backend service to drain traffic from `europe-west4` and direct it entirely to `europe-west1`.": "This is backwards. During a failover (when `europe-west1` is down), you want to direct traffic *to* `europe-west4`, not drain it.",
             "Failback: Demote the active `europe-west4` Cloud SQL instance back to a read replica.": "Cloud SQL does not support demoting a standalone primary instance back to a replica of another instance. The failback process requires building a new replica architecture in reverse.",
             "Failback: Use Cloud Storage to export a SQL dump from `europe-west4` and import it into the original halted instance in `europe-west1` to resume operations.": "Exporting and importing SQL dumps is extremely slow (high downtime during failback) and error-prone compared to native replication. You use replication to failback."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Cloud SQL", "Failover", "Failback", "Read Replica"]
+        "tags": [
+          "Cloud SQL",
+          "Failover",
+          "Failback",
+          "Read Replica"
+        ]
       },
       {
         "id": "q-gcppca-s3-022",
@@ -596,17 +696,24 @@
           "Rate Limiting rules based on IP addresses.",
           "VPC Service Controls ingress rules."
         ],
-        "correctAnswers": ["Adaptive Protection."],
+        "correctAnswers": [
+          "Adaptive Protection."
+        ],
         "explanation": {
           "general explanation": "Cloud Armor Adaptive Protection uses machine learning models to analyze traffic patterns. When it detects a Layer 7 volumetric attack (like an HTTP flood or malformed request spike targeting an endpoint), it automatically generates an alert and provides a custom, precise WAF rule signature to block the attack traffic while allowing legitimate traffic to pass. This dynamically mitigates the DDoS risk, ensuring BCP compliance for availability.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Preconfigured WAF rules for SQL injection (SQLi) and Cross-site scripting (XSS).": "These rules protect against specific payload exploits, not volumetric Layer 7 DDoS attacks.",
             "Rate Limiting rules based on IP addresses.": "While rate limiting helps, it is static. A sophisticated distributed attack from thousands of IPs might bypass standard per-IP rate limits. Adaptive protection detects the *pattern* of the attack dynamically.",
             "VPC Service Controls ingress rules.": "VPC Service Controls are used to mitigate data exfiltration from Google-managed APIs, not to protect applications behind a Load Balancer from DDoS attacks."
           }
         },
         "difficulty": "Medium",
-        "tags": ["Cloud Armor", "Adaptive Protection", "DDoS", "Availability"]
+        "tags": [
+          "Cloud Armor",
+          "Adaptive Protection",
+          "DDoS",
+          "Availability"
+        ]
       },
       {
         "id": "q-gcppca-s3-023",
@@ -626,14 +733,19 @@
         ],
         "explanation": {
           "general explanation": "Bucket Lock allows you to configure a data retention policy for a Cloud Storage bucket that governs how long objects in the bucket must be retained. Once the policy is locked, it cannot be reduced or removed, and objects cannot be deleted or modified until their specific retention period is reached. This provides strict WORM (Write Once, Read Many) compliance, even preventing project owners from deleting the data.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Store the files in a Cloud Storage bucket. Apply an Object Lifecycle policy to change the storage class to Archive after 1 day.": "Archive class reduces storage cost; it does not make the data immutable or prevent deletion.",
             "Store the files in a Cloud Storage bucket. Enable Object Versioning and remove the `storage.objects.delete` permission from all IAM roles.": "IAM policies can be changed by a project owner. Therefore, a compromised or malicious owner could simply add the permission back and delete the files. Bucket Lock is enforced at the platform level.",
             "Upload the files to a secure Compute Engine instance. Use chattr +i on the files to make them immutable on the Linux file system.": "A project owner could simply delete the entire Compute Engine VM, instantly destroying the files."
           }
         },
         "difficulty": "Easy",
-        "tags": ["Cloud Storage", "Bucket Lock", "Immutability", "Compliance"]
+        "tags": [
+          "Cloud Storage",
+          "Bucket Lock",
+          "Immutability",
+          "Compliance"
+        ]
       },
       {
         "id": "q-gcppca-s3-024",
@@ -653,14 +765,19 @@
         ],
         "explanation": {
           "general explanation": "To allow on-premises systems to resolve GCP internal names, you use an inbound DNS forwarding policy. Cloud DNS creates specific inbound IP addresses. Because these IP addresses are part of the VPC, they are automatically reachable over any valid hybrid connectivity (Interconnect or VPN) via standard VPC routing. As long as the on-premises DNS is configured to forward to these IPs, and network connectivity exists (via the backup VPN), name resolution will survive the Interconnect failure.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure an outbound DNS forwarding policy in Cloud DNS to route queries to the on-premises DNS servers.": "Outbound forwarding is used when GCP resources need to resolve *on-premises* names. The question asks for on-premises systems resolving *GCP* names.",
             "Create a Cloud DNS private zone. Advertise the Cloud DNS IP addresses to on-premises exclusively via BGP over the Dedicated Interconnect.": "Advertising *exclusively* over the Interconnect guarantees failure when the Interconnect goes down. VPC subnets (including the inbound forwarding IPs) should be advertised over both Interconnect and VPN.",
             "Deploy a compute instance running BIND9 in Google Cloud. Configure it as a secondary DNS server and replicate zones manually from on-premises.": "This is a complex, unmanaged anti-pattern. Cloud DNS native inbound forwarding is a fully managed, highly available service designed exactly for this use case."
           }
         },
         "difficulty": "Medium",
-        "tags": ["Cloud DNS", "Inbound Forwarding", "Hybrid Network", "BCP"]
+        "tags": [
+          "Cloud DNS",
+          "Inbound Forwarding",
+          "Hybrid Network",
+          "BCP"
+        ]
       },
       {
         "id": "q-gcppca-s3-025",
@@ -680,14 +797,19 @@
         ],
         "explanation": {
           "general explanation": "A core tenet of resilience and BCP is protecting downstream systems from being overwhelmed by highly scalable cloud components. By introducing Pub/Sub, you buffer the sudden spike in requests. By setting a `max_instances` limit on the Cloud Functions, you explicitly throttle the processing rate to a level the legacy database can safely handle. If traffic spikes, the messages safely queue in Pub/Sub until the restricted number of functions can process them.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure Cloud Armor in front of the Cloud Functions to limit the requests per second (rate limiting) to match the database's capacity.": "While rate limiting protects the database, it does so by dropping the excess legitimate user traffic (returning 429s). Decoupling via Pub/Sub captures the data without dropping it.",
             "Upgrade the legacy on-premises database to handle the 100x spike using a Dedicated Interconnect.": "Upgrading a legacy DB for extreme spikes is highly costly and often technically unfeasible. It doesn't solve the architectural flaw of synchronous tight coupling.",
             "Use Eventarc to buffer the HTTP requests before sending them to Cloud Functions. Set a delay timeout on Eventarc.": "Eventarc routes events; it is not designed as a durable, rate-limited message queue buffer in the same way Pub/Sub is. Also, 'delay timeout' doesn't control the concurrent flow like `max_instances`."
           }
         },
         "difficulty": "Medium",
-        "tags": ["Cloud Functions", "Pub/Sub", "Throttling", "Resilience"]
+        "tags": [
+          "Cloud Functions",
+          "Pub/Sub",
+          "Throttling",
+          "Resilience"
+        ]
       },
       {
         "id": "q-gcppca-s3-026",
@@ -709,14 +831,19 @@
         ],
         "explanation": {
           "general explanation": "BigQuery Time Travel is a native feature that allows you to access historical data from any point within the last 7 days. This allows instant recovery of accidentally deleted tables without needing manual backups. For DR (cross-region copies), BigQuery cross-region dataset replication natively and automatically synchronizes the dataset to a secondary region, fulfilling both BCP requirements natively.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Export the BigQuery tables daily to Cloud Storage and use Cloud Storage Object Versioning.": "This introduces massive operational overhead, high compute costs for the export, and slower RTO compared to native Time Travel.",
             "Take a BigQuery Table Snapshot every hour and store it in a different region.": "Table snapshots are useful, but Time Travel natively handles the 7-day accidental deletion requirement without scheduling overhead. Cross-region replication is better for continuous DR than scheduled snapshots.",
             "Use the `bq mk --transfer_config` command to schedule cross-region transfers every hour.": "While valid for point-in-time copies, native dataset replication is the fully managed, continuous approach for cross-region DR in BigQuery."
           }
         },
         "difficulty": "Easy",
-        "tags": ["BigQuery", "Time Travel", "Cross-region Replication", "Disaster Recovery"]
+        "tags": [
+          "BigQuery",
+          "Time Travel",
+          "Cross-region Replication",
+          "Disaster Recovery"
+        ]
       },
       {
         "id": "q-gcppca-s3-027",
@@ -736,14 +863,19 @@
         ],
         "explanation": {
           "general explanation": "Multi-Cluster Ingress (MCI) is a cloud-hosted controller for Google Kubernetes Engine (GKE) clusters. It natively manages a Global External Application Load Balancer across multiple clusters spanning multiple regions. It ensures high availability by routing traffic to the closest cluster, and if a cluster (or region) fails health checks, it automatically spills traffic over to the surviving cluster globally.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Deploy an independent GKE Ingress object in each cluster. Create a Cloud DNS policy with a weighted round-robin configuration pointing to both Ingress IPs.": "DNS round-robin does not natively check backend pod health or region health without complex custom health checks, and DNS caching delays failover (violating fast RTO).",
             "Use Anthos Service Mesh (ASM). Configure an Istio IngressGateway in each cluster and use BGP to broadcast the same IP address from both clusters.": "Anycast BGP routing from two different regions to the same IP is how Google's Global Load Balancer works under the hood. You cannot manually configure custom BGP Anycast IPs directly for Istio gateways across regions in standard GCP VPCs easily without utilizing the Global Load Balancer.",
             "Configure an Internal TCP/UDP Load Balancer in front of both GKE clusters. Map the external domain name directly to the internal load balancer's frontend IP.": "An internal load balancer cannot serve external (internet) traffic directly. Furthermore, internal load balancers are regional, not global."
           }
         },
         "difficulty": "Medium",
-        "tags": ["GKE", "Multi-Cluster Ingress", "Global Load Balancer", "High Availability"]
+        "tags": [
+          "GKE",
+          "Multi-Cluster Ingress",
+          "Global Load Balancer",
+          "High Availability"
+        ]
       },
       {
         "id": "q-gcppca-s3-028",
@@ -758,17 +890,24 @@
           "Enable autohealing on the MIG with a health check that aggressively polls the instances.",
           "Set the MIG to use preemptible (Spot) instances to ensure rapid respawning."
         ],
-        "correctAnswers": ["Set the MIG's target distribution shape to 'BALANCED'."],
+        "correctAnswers": [
+          "Set the MIG's target distribution shape to 'BALANCED'."
+        ],
         "explanation": {
           "general explanation": "In a Regional Managed Instance Group, you can configure the target distribution shape. Setting it to 'EVEN' (the default) attempts to maintain an equal number of instances in each zone; if a zone fails, it won't add instances to the other zones to compensate. Setting it to 'BALANCED' or 'ANY_SINGLE_ZONE' allows the MIG to automatically create instances in the remaining healthy zones if one zone experiences an outage, thereby maintaining the target size of the group and ensuring BCP capacity.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure an external HTTP(S) load balancer with backend services pointing to the MIG.": "While a load balancer distributes traffic, it does not dictate how the MIG replaces instances across zones during an outage.",
             "Enable autohealing on the MIG with a health check that aggressively polls the instances.": "Autohealing replaces failed instances, but without the correct distribution shape, the MIG might continually try (and fail) to recreate them in the down zone.",
             "Set the MIG to use preemptible (Spot) instances to ensure rapid respawning.": "Spot instances are for fault-tolerant batch workloads. They do not ensure rapid respawning; in fact, they can be preempted at any time, decreasing availability."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Compute Engine", "MIG", "Target Distribution Shape", "Zone Failure"]
+        "tags": [
+          "Compute Engine",
+          "MIG",
+          "Target Distribution Shape",
+          "Zone Failure"
+        ]
       },
       {
         "id": "q-gcppca-s3-029",
@@ -788,14 +927,19 @@
         ],
         "explanation": {
           "general explanation": "RPO (Recovery Point Objective) measures the maximum acceptable amount of data loss measured in time. Because the backup job runs daily at 2:00 AM, any data uploaded after that time has not been backed up. If the failure occurs at 11:00 AM, 9 hours have passed since the last successful backup. Therefore, the data loss (RPO) experienced in this scenario is 9 hours, consisting of all data uploaded between 2:00 AM and 11:00 AM.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "RPO is 24 hours. All files uploaded on that calendar day are lost.": "While the maximum *theoretical* RPO of a daily backup is 24 hours (if the failure happened at 1:59 AM the next day), the specific scenario asks for the data loss given the failure occurred at 11:00 AM. The time difference is 9 hours.",
             "RPO is 15 minutes. Turbo replication ensures data is synced shortly after the 2:00 AM job.": "Turbo replication is a feature of dual-region buckets, not Storage Transfer Service batch jobs.",
             "RPO is 0 hours. Storage Transfer Service utilizes synchronous replication.": "Storage Transfer Service performs asynchronous, scheduled batch copies. It does not provide synchronous, RPO=0 replication."
           }
         },
         "difficulty": "Easy",
-        "tags": ["RPO", "Storage Transfer Service", "Cloud Storage", "Backup"]
+        "tags": [
+          "RPO",
+          "Storage Transfer Service",
+          "Cloud Storage",
+          "Backup"
+        ]
       },
       {
         "id": "q-gcppca-s3-030",
@@ -817,14 +961,19 @@
         ],
         "explanation": {
           "general explanation": "To meet the BCP requirements, Cloud CDN has a specific resilience feature called 'Serve while stale' (or stale-while-revalidate/stale-if-error). If the origin returns an error (like a 5xx due to an outage), Cloud CDN will continue to serve stale cached content to users, masking the outage. To handle new, uncached requests gracefully, configuring a secondary backend (like `europe-west1`) on the same Global Load Balancer ensures that if the primary backend fails health checks, the load balancer automatically routes cache-miss requests to the standby origin.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure a Cloud Function to dynamically update the CDN origin URL to point to `europe-west1` upon a health check failure.": "This is a complex, custom, and slow workaround. The Global Load Balancer natively handles multi-region backends.",
             "Use a separate Global Load Balancer for the `europe-west1` origin and use Cloud DNS to failover.": "DNS failover ignores the inherent global Anycast and multi-region backend capabilities of the Global Load Balancer. It also introduces DNS TTL delays.",
             "Set the Cache-Control max-age header to 0 so the CDN instantly queries the new origin in `europe-west1`.": "Setting max-age to 0 disables caching entirely (every request is a miss), which defeats the purpose of using Cloud CDN and would severely impact performance."
           }
         },
         "difficulty": "Medium",
-        "tags": ["Cloud CDN", "Serve while stale", "Global Load Balancer", "High Availability"]
+        "tags": [
+          "Cloud CDN",
+          "Serve while stale",
+          "Global Load Balancer",
+          "High Availability"
+        ]
       }
     ]
   }

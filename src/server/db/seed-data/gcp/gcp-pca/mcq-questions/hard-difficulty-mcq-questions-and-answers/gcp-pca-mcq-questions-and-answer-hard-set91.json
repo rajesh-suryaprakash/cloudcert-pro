@@ -21,14 +21,19 @@
         ],
         "explanation": {
           "general explanation": "To guarantee absolute blast-radius isolation between environments (0% chance of Dev impacting Prod), the Terraform state files must be physically separated. The enterprise standard is to maintain the Infrastructure as Code (IaC) in a single repository using directory separation. Each environment uses a completely independent backend configuration, pointing to a different Cloud Storage (GCS) bucket, usually residing in different administrative GCP projects. This ensures that if the Dev state file is corrupted, Prod is entirely physically insulated.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Use Terraform Workspaces to logically separate the environments. Create a workspace for `dev`, `staging`, and `prod`, allowing them to share the same underlying state file structure securely.": "HashiCorp explicitly advises against using Workspaces for strong isolation between Production and lower environments. Workspaces separate state logically but use the same underlying backend storage directory, risking human error crossing boundaries.",
             "Use a single monolithic state file in a central Cloud Storage bucket. Implement Terraform conditional expressions (`count` and `for_each`) to segregate deployment logic internally based on a `var.environment` variable.": "Using a single state file for all environments violates the core security mandate. A syntax error or accidental state manipulation during a Dev deployment could corrupt the entire monolithic state file, breaking Production.",
             "Deploy a Cloud SQL for PostgreSQL instance to act as the Terraform backend, utilizing database schemas to logically separate the environment states with strict ACID transactional locking.": "While Postgres can be used as a backend, standing up and paying for a relational database solely for Terraform state is massive operational overkill. GCS provides state locking natively and securely."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Terraform", "State Management", "Isolation", "Infrastructure as Code"]
+        "tags": [
+          "Terraform",
+          "State Management",
+          "Isolation",
+          "Infrastructure as Code"
+        ]
       },
       {
         "id": "q-gcppca-s91-002",
@@ -48,14 +53,19 @@
         ],
         "explanation": {
           "general explanation": "Workload Identity Federation is the modern, secure standard for programmatic authentication from external systems (like GitHub Actions, GitLab, or AWS) into Google Cloud. It completely eliminates the need for long-lived Service Account JSON keys. You configure a Workload Identity Pool and an OIDC Provider in Google Cloud, establishing a trust relationship with GitHub. The GitHub Actions runner trades its short-lived OIDC GitHub token for a short-lived Google Cloud access token, assuming the permissions of the mapped Service Account.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Store the Google Cloud Service Account JSON key in Google Cloud Secret Manager. Configure GitHub Actions to fetch the secret dynamically using an initial bootstrap key.": "This introduces a chicken-and-egg problem. You still need a long-lived 'bootstrap key' stored in GitHub to access Secret Manager, violating the strict security policy.",
             "Establish a Cloud VPN tunnel between GitHub Actions runners and the Google Cloud VPC. Allow Terraform to execute over the private network using default Compute Engine credentials.": "GitHub Actions hosted runners operate on ephemeral infrastructure on the public internet. Building an IPSec VPN tunnel to them is architecturally unfeasible and doesn't natively solve identity federation.",
             "Use Identity-Aware Proxy (IAP) to enforce interactive OAuth 2.0 multi-factor authentication (MFA) pauses during the GitHub Actions pipeline execution.": "CI/CD pipelines must be fully automated. Enforcing interactive MFA prompts that require a human to click a button during a pipeline execution breaks automation."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Workload Identity Federation", "GitHub Actions", "CI/CD", "Authentication"]
+        "tags": [
+          "Workload Identity Federation",
+          "GitHub Actions",
+          "CI/CD",
+          "Authentication"
+        ]
       },
       {
         "id": "q-gcppca-s91-003",
@@ -75,14 +85,19 @@
         ],
         "explanation": {
           "general explanation": "When Infrastructure as Code is split across multiple repositories/state files, you must share data between them without hardcoding. The `terraform_remote_state` data source allows one Terraform configuration to reach out and read the state file of another configuration (e.g., reading from the Network Team's GCS bucket). The Network Team must define the subnet `self_link` as an `output` variable in their code. The App Team can then fetch that output programmatically and inject it into their VM deployment.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure the Network Team's pipeline to write the subnet `self_link` to a JSON file in a shared Git repository, which the App Team imports using the `local_file` data source.": "Writing operational metadata to a shared Git repo creates messy dependencies, risks merge conflicts, and is an anti-pattern compared to native remote state fetching.",
             "Use the `google_compute_subnetwork` resource block in the App Team's code, but set `create = false` to perform a read-only lookup.": "There is no `create = false` parameter for resource blocks. To perform a read-only API lookup, you would use a `data \"google_compute_subnetwork\"` block, but remote state is generally more robust for cross-team state sharing.",
             "Use VPC Peering between the Network Team's state file project and the App Team's state file project to synchronize the resource IDs.": "VPC Peering handles TCP/IP network traffic. It has absolutely no mechanism to synchronize or share Terraform state files or deployment IDs."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Terraform", "Remote State", "Cross-Project", "Infrastructure as Code"]
+        "tags": [
+          "Terraform",
+          "Remote State",
+          "Cross-Project",
+          "Infrastructure as Code"
+        ]
       },
       {
         "id": "q-gcppca-s91-004",
@@ -102,14 +117,19 @@
         ],
         "explanation": {
           "general explanation": "Terraform state files natively store all resource attributes, including passwords, in plaintext. To guarantee a secret never enters the state file, Terraform must never know the actual secret payload. The best practice is to decouple secret generation from IaC. You generate and store the secret in Google Cloud Secret Manager independently. Terraform then only provisions the Cloud Run service, referencing the Secret Manager's URI/ID. Cloud Run natively mounts this secret at runtime, completely shielding the plaintext value from the IaC pipeline.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Use the Terraform `random_password` provider to generate the password. Store it in Secret Manager via Terraform, and mark the variable as `sensitive = true` so it is encrypted in the state file.": "The `sensitive = true` flag only redacts the value from the CLI terminal output. It does NOT encrypt the value inside the `terraform.tfstate` file. The password will still sit in plaintext in Cloud Storage.",
             "Use the `google_kms_secret` data source in Terraform to decrypt the password dynamically during `terraform apply`, passing the plaintext value directly to the Cloud Run service.": "If Terraform decrypts the value during `apply` and passes it as an environment variable, that plaintext environment variable is stored in the state file, violating the requirement.",
             "Configure the Cloud SQL instance to use Identity-Aware Proxy (IAP) instead of a password, allowing Terraform to bypass secret generation entirely.": "IAP is for human user web access (HTTPS). It is not used for programmatic backend connections to a Cloud SQL database (Cloud SQL Auth Proxy with IAM is used for that, but databases still often require internal user passwords)."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Terraform", "Secret Manager", "State Security", "Best Practices"]
+        "tags": [
+          "Terraform",
+          "Secret Manager",
+          "State Security",
+          "Best Practices"
+        ]
       },
       {
         "id": "q-gcppca-s91-005",
@@ -131,14 +151,19 @@
         ],
         "explanation": {
           "general explanation": "Service Account Impersonation allows a low-privilege service account (the runner) to temporarily assume the permissions of a high-privilege service account (the executer). 1) To accomplish this, the runner (`cloud-build-sa`) must be granted the `roles/iam.serviceAccountTokenCreator` role specifically on the resource of the target service account (`tf-exec-sa`). 2) The target service account (`tf-exec-sa`) must then possess the actual administrative roles (like `projectIamAdmin`, `compute.admin`, etc.) on the target project to provision the resources.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Grant `cloud-build-sa` the `roles/iam.serviceAccountUser` role on the target project.": "The `serviceAccountUser` role allows a principal to attach a service account to a compute instance (like a VM). It does not natively grant the ability to generate short-lived OAuth tokens for impersonation via APIs.",
             "Configure the Terraform provider block with the `credentials` attribute pointing to a JSON key file for `tf-exec-sa`.": "Using JSON key files is the exact opposite of Service Account Impersonation. Impersonation uses short-lived tokens generated via the `impersonate_service_account` attribute in the Terraform provider block.",
             "Grant `cloud-build-sa` the `roles/owner` role on the Organization to allow cross-project impersonation.": "Granting `roles/owner` to the runner SA completely violates the principle of least privilege and entirely defeats the purpose of establishing the impersonation architecture."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Cloud Build", "Service Account Impersonation", "Terraform", "IAM"]
+        "tags": [
+          "Cloud Build",
+          "Service Account Impersonation",
+          "Terraform",
+          "IAM"
+        ]
       },
       {
         "id": "q-gcppca-s91-006",
@@ -158,7 +183,7 @@
         ],
         "explanation": {
           "general explanation": "Terraform provides native lifecycle meta-arguments to control how resources are handled. The `prevent_destroy = true` lifecycle rule is specifically designed to protect mission-critical stateful resources (like databases or storage buckets). If a developer deletes the resource block from the code or attempts to run `terraform destroy`, Terraform will explicitly reject the plan and throw an error, actively preventing the destruction of the infrastructure.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure the Terraform backend to use `deletion_protection = true` in the `backend.tf` file.": "There is no `deletion_protection` attribute in the Terraform backend configuration. (Some specific GCP resources like Cloud SQL have their own `deletion_protection` API flags, but the TF-native way to protect any block is the lifecycle rule).",
             "Enable the `--disable-destroy` flag in the Cloud Build execution of the `terraform apply` command.": "There is no `--disable-destroy` flag for the `terraform apply` command.",
             "Use a `dynamic` block with a `count = 0` conditional to soft-delete the resource instead of hard-deleting it.": "Setting `count = 0` instructs Terraform to explicitly destroy the resource (reducing instances from 1 to 0). It does not protect it; it causes the exact destruction you are trying to avoid."
@@ -190,14 +215,19 @@
         ],
         "explanation": {
           "general explanation": "When an external system (like the GKE Autoscaler) modifies infrastructure parameters dynamically outside of Terraform, 'configuration drift' occurs. Terraform's default behavior is to revert the infrastructure back to the exact state defined in the code (e.g., reverting from 10 nodes back to 3). To prevent Terraform from fighting with the autoscaler, you must use the `ignore_changes` lifecycle meta-argument. By specifying `ignore_changes = [node_count]`, Terraform will create the cluster with 3 nodes initially, but during subsequent applies, it will completely ignore the live `node_count` value, allowing the autoscaler to function independently.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Disable the GKE Cluster Autoscaler and implement a custom Terraform script to scale the cluster periodically via Cloud Scheduler.": "Terraform is a declarative provisioning tool, not an operational, real-time autoscaling engine. Re-architecting autoscaling into TF scripts is a massive operational anti-pattern.",
             "Set the `initial_node_count` to a dynamic variable that queries the Kubernetes API for the current node count during `terraform plan`.": "While possible using external data sources, it introduces immense complexity and fragility to the pipeline. `ignore_changes` is the elegant, native HashiCorp solution.",
             "Update the Terraform Google provider block to include `autoscaler_conflict_resolution = true`.": "This is a fictitious setting. The Google provider does not have an automated conflict resolution flag for autoscalers; it relies on standard TF lifecycle blocks."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Terraform", "GKE Autoscaler", "Lifecycle Meta-Arguments", "Configuration Drift"]
+        "tags": [
+          "Terraform",
+          "GKE Autoscaler",
+          "Lifecycle Meta-Arguments",
+          "Configuration Drift"
+        ]
       },
       {
         "id": "q-gcppca-s91-008",
@@ -217,14 +247,19 @@
         ],
         "explanation": {
           "general explanation": "To bring existing infrastructure under Terraform management, you must use the `terraform import` command. The process is manual and meticulous: 1) You manually write the `resource` blocks in your `.tf` files to match what you believe the live infrastructure looks like. 2) You execute `terraform import [resource_address][resource_id]`. This command reaches out to Google Cloud and downloads the live state into your local `terraform.tfstate` file. 3) You run `terraform plan`. If your written `.tf` code diverges from the imported state, Terraform will show a diff. You adjust your `.tf` code until `terraform plan` shows 'No changes', meaning the code is perfectly synchronized with reality.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Run the `terraform refresh` command against the target GCP project. Terraform will automatically generate the `.tf` code files based on the discovered live resources.": "Terraform cannot automatically reverse-engineer and generate `.tf` configuration files from thin air (though third-party tools like Terraformer/Google Cloud Export can help, native Terraform does not). `terraform refresh` only updates the state file for resources *already* managed by Terraform.",
             "Create an empty `main.tf` file. Run `terraform apply -target=all`. Terraform will scan the project and ingest all live resources into the state file automatically.": "Terraform has no built-in auto-discovery magic to adopt an entire project's unmanaged resources just by running `apply`.",
             "Use Google Cloud Deployment Manager to export the project state into a Jinja template, then use a third-party conversion tool to translate it into a Terraform state file.": "Deployment Manager cannot export live state of manually created resources into Jinja templates. `terraform import` is the native workflow."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Terraform", "Import", "Infrastructure as Code", "Migration"]
+        "tags": [
+          "Terraform",
+          "Import",
+          "Infrastructure as Code",
+          "Migration"
+        ]
       },
       {
         "id": "q-gcppca-s91-009",
@@ -239,17 +274,24 @@
           "Anthos Service Mesh",
           "Google Cloud Deployment Manager"
         ],
-        "correctAnswers": ["Config Connector"],
+        "correctAnswers": [
+          "Config Connector"
+        ],
         "explanation": {
           "general explanation": "Config Connector is a Kubernetes add-on that extends the Kubernetes API (using Custom Resource Definitions or CRDs) to allow you to manage Google Cloud resources natively. When installed on a GKE cluster, a developer can write a standard Kubernetes YAML file defining a `SQLInstance` or `PubSubTopic` and apply it using `kubectl apply -f`. Config Connector intercepts this YAML, translates it, and programmatically provisions the corresponding infrastructure in Google Cloud, enabling a unified KRM approach for all infrastructure.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Config Sync": "Config Sync is a GitOps tool used to pull configurations (like RBAC or network policies) from a Git repository and enforce them on a cluster. It works *in tandem* with Config Connector, but Config Connector is the actual engine that provisions the GCP resources.",
             "Anthos Service Mesh": "ASM manages secure communication, traffic routing, and observability between microservices. It does not provision broad GCP infrastructure like databases or storage buckets.",
             "Google Cloud Deployment Manager": "Deployment Manager is an older infrastructure-as-code service that uses YAML/Jinja/Python templates to provision GCP resources. It operates independently of Kubernetes APIs and `kubectl`."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Config Connector", "GKE Enterprise", "Infrastructure as Code", "KRM"]
+        "tags": [
+          "Config Connector",
+          "GKE Enterprise",
+          "Infrastructure as Code",
+          "KRM"
+        ]
       },
       {
         "id": "q-gcppca-s91-010",
@@ -272,13 +314,18 @@
         ],
         "explanation": {
           "general explanation": "Securing a Terraform state bucket requires a defense-in-depth approach. 1) Object Versioning is critical because Terraform constantly overwrites the state file. If a bad deployment corrupts the state, versioning allows instant recovery. 2) Uniform Bucket-Level Access ensures that fine-grained, legacy Access Control Lists (ACLs) cannot be used to accidentally expose the state file; only strict IAM policies apply. 3) CMEK ensures that the highly sensitive plaintext secrets within the state file are encrypted with keys fully managed and controlled by the customer, offering supreme data-at-rest protection.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Apply a Bucket Retention Policy (Bucket Lock) set to 30 days to ensure immutable backups.": "A locked Retention Policy prevents any object from being overwritten or deleted for 30 days. Because Terraform must constantly overwrite the `terraform.tfstate` file on every single `apply` operation, a Bucket Lock would permanently break Terraform execution.",
             "Enable the 'Requester Pays' feature to deter external scraping and data exfiltration.": "Requester Pays simply shifts billing charges for egress to the project requesting the data. It is not a security or access control mechanism and does nothing to protect the plaintext secrets."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Terraform", "Cloud Storage", "Security", "Best Practices"]
+        "tags": [
+          "Terraform",
+          "Cloud Storage",
+          "Security",
+          "Best Practices"
+        ]
       },
       {
         "id": "q-gcppca-s91-011",
@@ -298,14 +345,19 @@
         ],
         "explanation": {
           "general explanation": "To deploy resources across multiple regions or completely different Google Cloud projects within a single Terraform configuration, you must use Provider Aliases. You define a default provider block, and then define additional provider blocks assigning them an `alias` (e.g., `alias = \"europe\"`). When writing the resource block for the database in Europe, you explicitly instruct Terraform which provider context to use by adding the meta-argument `provider = google.europe`. This cleanly handles multi-region logic.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Define a single `provider \"google\"` block and set the `region` attribute to an array of regions: `region = [\"europe-west1\", \"asia-east1\"]`.": "The `region` parameter in a provider block accepts only a single string value representing the default region. It does not accept arrays or lists.",
             "Terraform does not support multi-region deployments in a single state file. You must create separate directories for each region and run `terraform apply` sequentially.": "While splitting by region into different state files is a valid architectural choice for blast-radius isolation, it is absolutely false that Terraform *cannot* support multi-region deployments natively.",
             "Use a `dynamic` block inside the `provider` configuration to iterate over a local list of target regions dynamically during execution.": "Dynamic blocks are used to generate repeatable nested configuration blocks *inside* a resource (like multiple `ingress` rules). They cannot be used to dynamically generate top-level `provider` blocks."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Terraform", "Provider Aliases", "Multi-Region", "Infrastructure as Code"]
+        "tags": [
+          "Terraform",
+          "Provider Aliases",
+          "Multi-Region",
+          "Infrastructure as Code"
+        ]
       },
       {
         "id": "q-gcppca-s91-012",
@@ -325,14 +377,19 @@
         ],
         "explanation": {
           "general explanation": "To strictly enforce Policy as Code *preventatively* before infrastructure is built, you must inspect Terraform's intended actions. The `terraform plan` command calculates exactly what will be created, modified, or destroyed. By outputting this plan and converting it to a structured JSON format (`terraform show -json`), tools like Open Policy Agent (OPA) or HashiCorp Sentinel can programmatically evaluate every intended resource change against security policies. If OPA detects a violation (e.g., a public IP), the CI/CD pipeline fails, actively preventing the `terraform apply` from executing.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Execute the OPA policy evaluation against the `.tf` source code files directly as a pre-commit hook before pushing to the Git repository.": "Evaluating raw `.tf` code is extremely difficult because it doesn't resolve variables, modules, or dynamic expressions. You must evaluate the computed plan to know what will actually be deployed.",
             "Execute `terraform apply`, and configure Cloud Asset Inventory to feed the live infrastructure state back into OPA for continuous evaluation.": "This is a reactive control (detect after deployment). The prompt explicitly asks to evaluate the infrastructure *before* any resources are provisioned.",
             "Configure OPA as a Terraform Provider so it can natively block the creation of the resources during the `terraform apply` execution phase.": "OPA is a standalone policy engine, not a Terraform Provider. It operates on JSON inputs, usually orchestrated via bash scripts or pipeline logic between the plan and apply stages."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Policy as Code", "Terraform", "OPA", "CI/CD"]
+        "tags": [
+          "Policy as Code",
+          "Terraform",
+          "OPA",
+          "CI/CD"
+        ]
       },
       {
         "id": "q-gcppca-s91-013",
@@ -347,17 +404,24 @@
           "The `count` meta-argument inside the resource block.",
           "A Terraform local variable (`locals {}`) combined with the `flatten()` function."
         ],
-        "correctAnswers": ["The `for_each` meta-argument inside the resource block."],
+        "correctAnswers": [
+          "The `for_each` meta-argument inside the resource block."
+        ],
         "explanation": {
           "general explanation": "To iterate and create multiple distinct instances of an entire Terraform *resource* (like creating 50 separate firewall rules, or 50 separate Cloud Storage buckets) from a map or set of strings, the `for_each` meta-argument is the modern standard. It creates a resource instance for each item in the map, uniquely identifying them by their key. This prevents massive code duplication and allows for programmatic, data-driven IaC.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "A `dynamic` block placed inside the resource block.": "Dynamic blocks are used to generate repeating *nested blocks within a single resource* (for example, creating multiple `allow {}` port blocks inside a single firewall rule). They do not create entirely separate resources.",
             "The `count` meta-argument inside the resource block.": "While `count` can create multiple resources, it identifies them by index (0, 1, 2). If an item is removed from the middle of the list, Terraform destroys and recreates all subsequent resources, causing massive disruption. `for_each` identifies by key, making it far superior for complex objects.",
             "A Terraform local variable (`locals {}`) combined with the `flatten()` function.": "Locals and `flatten()` are data manipulation tools. They prepare data, but they do not inherently trigger the creation of multiple infrastructure resources without being fed into a `for_each`."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Terraform", "Iteration", "for_each", "Infrastructure as Code"]
+        "tags": [
+          "Terraform",
+          "Iteration",
+          "for_each",
+          "Infrastructure as Code"
+        ]
       },
       {
         "id": "q-gcppca-s91-014",
@@ -379,14 +443,19 @@
         ],
         "explanation": {
           "general explanation": "In a modern KRM (Kubernetes Resource Model) architecture: 1) Config Sync is the GitOps delivery engine. It monitors a designated Git repository and continuously pulls and applies those configurations to the cluster, instantly reverting any manual drift. 2) Config Connector is the infrastructure provisioning engine. It introduces Custom Resource Definitions (CRDs) to the Kubernetes API, allowing developers to write a YAML manifest that defines a GCP resource (like a Pub/Sub topic) and applies it via `kubectl`. Together, Config Sync pulls a Pub/Sub YAML from Git, and Config Connector translates it into actual GCP infrastructure.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Config Sync translates native Kubernetes workloads into serverless Cloud Run applications automatically.": "This is completely false. Config Sync enforces declarative cluster states; it does not translate container workloads into serverless platforms.",
             "Config Connector continuously monitors Terraform state files in Cloud Storage and syncs them to Kubernetes Etcd.": "Config Connector uses its own KRM declarative model. It has no integration with or awareness of HashiCorp Terraform state files.",
             "Config Sync replaces Google Cloud Identity and Access Management (IAM) with Kubernetes RBAC for organization-wide security.": "Config Sync can deploy Kubernetes RBAC to secure the cluster, but it absolutely does not replace Google Cloud IAM for securing broader GCP resources like billing or project management."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Config Connector", "Config Sync", "GitOps", "GKE"]
+        "tags": [
+          "Config Connector",
+          "Config Sync",
+          "GitOps",
+          "GKE"
+        ]
       },
       {
         "id": "q-gcppca-s91-015",
@@ -406,14 +475,19 @@
         ],
         "explanation": {
           "general explanation": "Terraform builds a dependency graph and attempts to provision resources in parallel whenever possible to optimize speed. If a VM resource does not explicitly reference the API enablement resource, Terraform might try to create the VM at the exact same moment it requests the API to be enabled, resulting in a race condition where the API isn't ready yet. By adding `depends_on = [google_project_service.compute_api]`, you explicitly instruct Terraform to halt the creation of the VM until the API enablement resource has completely and successfully finished provisioning.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "You must upgrade the Google Cloud Provider version to natively support asynchronous API enablement polling.": "While the provider does poll internally, it only polls for the resource it is currently creating (the API enablement). It does not magically know the VM needs to wait unless instructed via the dependency graph.",
             "You must configure the `retry_interval` and `timeout` settings globally within the `terraform` backend configuration block.": "These backend settings handle network timeouts when connecting to the state file bucket, not retry logic for individual resource creation failures due to API states.",
             "You must separate the project creation and VM provisioning into two distinct CI/CD pipeline steps, passing the state between them.": "While possible, this is incredibly inefficient and defeats the purpose of Terraform orchestrating the entire lifecycle end-to-end. `depends_on` solves this cleanly within a single configuration."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Terraform", "depends_on", "Race Conditions", "Google Provider"]
+        "tags": [
+          "Terraform",
+          "depends_on",
+          "Race Conditions",
+          "Google Provider"
+        ]
       },
       {
         "id": "q-gcppca-s91-016",
@@ -433,14 +507,19 @@
         ],
         "explanation": {
           "general explanation": "Terraform is fundamentally declarative and idempotent. During the initial run, as each of the 450 VMs was successfully created, Terraform recorded them in the state file. When the quota error occurred, execution halted, but the state was safely saved. If you simply re-run `terraform apply`, Terraform compares the desired state (500 VMs) against the current state file (450 VMs) and the live infrastructure. It determines that only 50 VMs are missing and intelligently resumes creating only the missing resources without destroying or duplicating the existing ones.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Execute `terraform destroy` to tear down the 450 partially completed VMs, and then run `terraform apply` to deploy all 500 from a clean state.": "This is completely unnecessary and wastes massive amounts of time and API calls. Terraform's idempotency handles partial failures natively.",
             "Manually edit the `terraform.tfstate` file to remove the partial API failure flags, then execute `terraform apply -refresh-only`.": "You should almost never manually edit a `.tfstate` file. There are no 'partial failure flags' in the state; it simply records what successfully finished.",
             "Run `terraform apply -target=google_compute_instance.remaining` to explicitly bypass the already created resources and focus on the failed ones.": "Using `-target` is an anti-pattern for routine execution and is generally reserved for exceptional troubleshooting. A standard `apply` automatically handles bypassing existing resources safely."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Terraform", "Idempotency", "Quotas", "Troubleshooting"]
+        "tags": [
+          "Terraform",
+          "Idempotency",
+          "Quotas",
+          "Troubleshooting"
+        ]
       },
       {
         "id": "q-gcppca-s91-017",
@@ -460,14 +539,19 @@
         ],
         "explanation": {
           "general explanation": "To force Terraform to recreate a specific resource that has become degraded (but whose configuration hasn't changed), the modern best practice (Terraform v0.15.2+) is using the `-replace` flag with the `terraform apply` command. By specifying `terraform apply -replace=\"google_compute_instance.database-primary\"`, you explicitly instruct Terraform to plan a destruction and recreation of that exact resource, leaving the rest of the infrastructure untouched.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Run `terraform destroy -target=\"google_compute_instance.database-primary\"`.": "This will strictly destroy the resource and leave it destroyed. It will not recreate it until a subsequent `terraform apply` is run, increasing downtime.",
             "Run `terraform state rm google_compute_instance.database-primary`, then manually delete the VM in the console, then run `terraform apply`.": "This is a massive, manual operational anti-pattern. Removing from state and manual console deletion defeats the purpose of IaC orchestration.",
             "Run `terraform taint google_compute_instance.database-primary` followed by `terraform apply`.": "While `terraform taint` was the historical way to do this, HashiCorp officially deprecated it in favor of the `-replace` flag, which is safer and doesn't permanently modify the state file before the apply occurs."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Terraform", "Troubleshooting", "State Management", "Replace"]
+        "tags": [
+          "Terraform",
+          "Troubleshooting",
+          "State Management",
+          "Replace"
+        ]
       },
       {
         "id": "q-gcppca-s91-018",
@@ -487,14 +571,19 @@
         ],
         "explanation": {
           "general explanation": "To bring existing, manually created infrastructure under Terraform management, the `terraform import` command is required. You must first manually write a `resource` block in your code that corresponds to the existing resource. Then you run `terraform import [resource_address] [resource_id]`, which downloads the live API state and saves it into your local state file. Finally, you run `terraform plan` to compare your written code against the imported state. If the plan shows 'No changes', you have successfully reverse-engineered the configuration and safely adopted the resource.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Execute `terraform refresh`. Terraform will automatically query the Google Cloud APIs, ingest all unmanaged resources into the state file, and dynamically generate the required `.tf` code.": "Terraform cannot automatically reverse-engineer or generate `.tf` code from thin air. Furthermore, `refresh` only updates the state for resources *already* tracked in the state file.",
             "Create a `terraform.tfstate` file manually. Paste the raw JSON output of the `gcloud sql instances describe` command into the state file.": "Manually editing a `terraform.tfstate` file is extremely dangerous and almost guaranteed to corrupt the state. The JSON structure of Terraform state is proprietary and distinct from Google Cloud's API responses.",
             "Use the `google_sql_database_instance` data source block. Terraform will natively read the live resource and adopt it into the state during the next `apply`.": "A `data` block is for read-only lookups. It explicitly tells Terraform *not* to manage the resource, meaning it will never be adopted for creation, updates, or destruction."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Terraform", "Import", "Migration", "Infrastructure as Code"]
+        "tags": [
+          "Terraform",
+          "Import",
+          "Migration",
+          "Infrastructure as Code"
+        ]
       },
       {
         "id": "q-gcppca-s91-019",
@@ -517,13 +606,18 @@
         ],
         "explanation": {
           "general explanation": "Migrating from Deployment Manager to Terraform requires carefully swapping the management 'wrapper' while keeping the underlying VMs running. 1) You must write the equivalent Terraform `.tf` code manually. 2) You use `terraform import` to pull the running resources into Terraform's state file. 3) To stop Deployment Manager from controlling (and potentially destroying) the resources, you must delete the deployment in DM. Crucially, you must use the `--delete-policy=ABANDON` flag. This deletes the deployment object but strictly leaves the actual infrastructure (VMs) running untouched. Terraform is now the sole manager.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Execute the `gcloud deployment-manager deployments delete` command to remove the resources from Deployment Manager before running Terraform.": "Running a standard delete command without the ABANDON flag will actively destroy the live production VMs and Load Balancers, causing a catastrophic outage.",
             "Use the Terraform `deployment_manager_import` provider to automatically translate the state between the two systems.": "There is no native Terraform provider or command that magically translates Deployment Manager templates or state into Terraform."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Terraform", "Deployment Manager", "Migration", "Infrastructure as Code"]
+        "tags": [
+          "Terraform",
+          "Deployment Manager",
+          "Migration",
+          "Infrastructure as Code"
+        ]
       },
       {
         "id": "q-gcppca-s91-020",
@@ -543,14 +637,19 @@
         ],
         "explanation": {
           "general explanation": "To guarantee that an approved deployment plan is exactly what gets executed, you must use Terraform plan files. The command `terraform plan -out=tfplan` evaluates the code, determines the exact API actions required, and saves this immutable intent to a binary file (`tfplan`). You pause the pipeline and store this file as an artifact. After human review and approval, the pipeline resumes and executes `terraform apply tfplan`. Because you pass the specific file to the apply command, Terraform does not re-evaluate the state; it blindly executes the exact, approved, immutable plan.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Run `terraform plan`. The engineer reviews the console output. Upon approval, run `terraform apply -auto-approve`.": "If you run a fresh `terraform apply` after the review, Terraform re-evaluates the live state. If someone manually changed the infrastructure in the intervening hour, the `apply` will execute unreviewed, destructive changes.",
             "Run `terraform apply` with manual confirmation enabled. Cloud Build will pause the execution indefinitely until the engineer types 'yes' in the console.": "Cloud Build is a non-interactive CI/CD environment. It cannot wait indefinitely for a user to type 'yes' into a terminal; the build will simply timeout and fail.",
             "Run `terraform show`. Save the output to a JSON file. The engineer reviews the JSON. Upon approval, run `terraform apply -json=file.json`.": "The `-json` flag is used for machine-readable output analysis (like OPA). `terraform apply` does not accept a JSON plan file as an input argument for execution."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Terraform", "Cloud Build", "CI/CD", "Plan Files"]
+        "tags": [
+          "Terraform",
+          "Cloud Build",
+          "CI/CD",
+          "Plan Files"
+        ]
       },
       {
         "id": "q-gcppca-s91-021",
@@ -570,14 +669,19 @@
         ],
         "explanation": {
           "general explanation": "The Google Cloud Foundation Toolkit and enterprise best practices dictate the 'Seed Project' pattern. To bootstrap a secure Organization programmatically, you first create a dedicated, locked-down 'Seed' project. Inside, you provision a Cloud Storage bucket (for the central Terraform state) and a dedicated Service Account. You grant this Service Account the broad Organization-level roles required (e.g., Folder Admin, Billing User). All CI/CD pipelines then impersonate this Seed Service Account to build the rest of the enterprise foundation, solving the chicken-and-egg IAM and state storage problem securely.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Use your personal Google Workspace super-admin account to run Terraform locally from your laptop, storing the state file in your personal Google Drive to ensure security.": "Running IaC locally from personal machines using personal credentials is a massive security risk, lacks auditability, and prevents team collaboration. State files must be in GCS, not Google Drive.",
             "Deploy Google Cloud Deployment Manager at the Organization root node, as Terraform cannot interact with high-level hierarchical APIs like Folder creation or Billing.": "Terraform's Google provider natively and robustly supports managing Folders, Organizations, Billing, and Org Policies.",
             "Create the core infrastructure using the Cloud Console manually, then use `terraform import` to bring it under management once the environment is stable.": "While possible, manual ClickOps introduces human error and defeats the purpose of an automated, repeatable bootstrapping process (Infrastructure as Code from day zero)."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Terraform", "Landing Zone", "Seed Project", "Bootstrapping"]
+        "tags": [
+          "Terraform",
+          "Landing Zone",
+          "Seed Project",
+          "Bootstrapping"
+        ]
       },
       {
         "id": "q-gcppca-s91-022",
@@ -597,14 +701,19 @@
         ],
         "explanation": {
           "general explanation": "The 'Project Factory' pattern is an enterprise standard for IaC. You create a reusable Terraform Module that encapsulates all the required logic (Project creation, API enablement, VPC attachments, IAM bindings). In your root Terraform configuration, you define a map variable containing the details of the 20 teams. You then call the module using a `for_each` meta-argument. Terraform iterates over the map, passing the specific variables (like project name and team lead email) into the module, elegantly stamping out 20 identical but uniquely configured projects with minimal code.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Write the baseline configuration once in a `main.tf` file. Run `terraform apply` 20 times in a bash loop, passing a different `-var=\"project_id=...\"` flag on each execution.": "Running Terraform 20 times over the same state file using different variables will cause Terraform to destroy the previous project and replace it with the new one. Each run overwrites the state.",
             "Use the `count` meta-argument on the `google_project` resource to create 20 projects, then use local provisioners (`local-exec`) with `gcloud` scripts to enable the APIs and configure networks.": "Mixing native Terraform resources with bash scripts (`local-exec`) breaks declarativeness, makes state tracking impossible for the scripted components, and is highly brittle.",
             "Create a golden project manually. Use the Google Cloud Console 'Duplicate Project' feature to clone the architecture 19 times.": "Google Cloud does not have a native 'Duplicate Project' feature in the console that clones internal architectures (VPCs, APIs)."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Terraform", "Modules", "for_each", "Project Factory"]
+        "tags": [
+          "Terraform",
+          "Modules",
+          "for_each",
+          "Project Factory"
+        ]
       },
       {
         "id": "q-gcppca-s91-023",
@@ -624,14 +733,19 @@
         ],
         "explanation": {
           "general explanation": "In Google Cloud IAM, when a Custom Role is deleted, it is not immediately expunged. It enters a soft-deleted tombstone state for 44 days. During this period, the specific Role ID (e.g., `myCustomRole`) remains reserved. If Terraform attempts to recreate a role using that exact same Role ID, the Google Cloud API throws a 409 Conflict. The programmatic best practice in IaC is to either append a `random_id` suffix to custom role IDs, or instead of destroying the Terraform block, simply update the role's `stage` property to `DISABLED` to deactivate it safely.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Terraform permanently caches deleted roles in the Cloud Storage state file. You must run `terraform state rm` to clear the cache before recreating the role.": "When Terraform destroys a resource, it successfully removes it from the state file. The conflict is happening at the GCP API layer, not within Terraform's local state.",
             "Custom roles require global propagation. The 409 Conflict indicates the role was created successfully but hasn't replicated to all regions yet. Add a `time_sleep` resource.": "While propagation takes seconds, a 409 Conflict explicitly means 'Resource already exists'. It is not a replication delay error.",
             "The developer lacks the `roles/iam.roleAdmin` permission to recreate roles. Terraform interprets IAM permission denials vaguely as 409 Conflicts.": "IAM permission failures return 403 Forbidden errors, not 409 Conflicts."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Terraform", "IAM", "Custom Roles", "Troubleshooting"]
+        "tags": [
+          "Terraform",
+          "IAM",
+          "Custom Roles",
+          "Troubleshooting"
+        ]
       },
       {
         "id": "q-gcppca-s91-024",
@@ -651,14 +765,19 @@
         ],
         "explanation": {
           "general explanation": "VPC Network Peering in Google Cloud requires explicit authorization from both sides to establish the connection (preventing malicious network attachments). In Terraform, a single `google_compute_network_peering` block only initiates the connection from one side (placing it in an INACTIVE state). To make the connection ACTIVE and allow traffic to flow, you absolutely must write a second `google_compute_network_peering` block in the other VPC's configuration, initiating the connection back in the reverse direction.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "You must also programmatically create a Cloud Router with BGP sessions in both VPCs to facilitate the exchange of peering routes.": "VPC Network Peering exchanges subnet routes automatically via Google's software-defined network. Cloud Router (BGP) is used for hybrid connectivity (VPN/Interconnect), not VPC peering.",
             "VPC Peering requires the execution service account to have the `roles/compute.networkAdmin` role explicitly at the Organization level.": "While `networkAdmin` is required, it only needs to be granted at the Project level for the two respective projects, not globally at the Organization level.",
             "You must attach a `depends_on` meta-argument linking the peering resource to the respective compute instances to ensure routes propagate.": "Routing propagation is handled natively by the VPC. `depends_on` controls Terraform execution order; it does not alter underlying GCP network physics or fix a one-sided peering connection."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Terraform", "VPC Peering", "Network Architecture", "Infrastructure as Code"]
+        "tags": [
+          "Terraform",
+          "VPC Peering",
+          "Network Architecture",
+          "Infrastructure as Code"
+        ]
       },
       {
         "id": "q-gcppca-s91-025",
@@ -673,17 +792,24 @@
           "Anthos Service Mesh (ASM) configurations",
           "Kpt (Kubernetes Package Tool) Blueprints"
         ],
-        "correctAnswers": ["Cloud Foundation Toolkit (CFT)"],
+        "correctAnswers": [
+          "Cloud Foundation Toolkit (CFT)"
+        ],
         "explanation": {
           "general explanation": "The Cloud Foundation Toolkit (CFT) is an open-source, Google-maintained repository of highly opinionated, enterprise-ready Terraform modules. These modules are specifically designed to codify Google Cloud security best practices (like CIS benchmarks, CMEK, and IAM policies). Platform engineering teams frequently use the CFT modules as the foundational building blocks to create secure Landing Zones or customized internal modules, accelerating development while enforcing security-by-default postures.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Google Cloud Deployment Manager Templates": "Deployment Manager is a legacy template-driven tool (Jinja/Python). It is not an open-source repository of Terraform modules.",
             "Anthos Service Mesh (ASM) configurations": "ASM manages Istio configurations for microservice routing and security. It does not provide Terraform modules for provisioning broad GCP infrastructure like storage or networking.",
             "Kpt (Kubernetes Package Tool) Blueprints": "Kpt is used to package and customize Kubernetes YAML manifests (KRM). It is not a library of HashiCorp Terraform infrastructure modules."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Cloud Foundation Toolkit", "Terraform", "Modules", "Best Practices"]
+        "tags": [
+          "Cloud Foundation Toolkit",
+          "Terraform",
+          "Modules",
+          "Best Practices"
+        ]
       },
       {
         "id": "q-gcppca-s91-026",
@@ -703,14 +829,19 @@
         ],
         "explanation": {
           "general explanation": "In Terraform, modules are encapsulated black boxes. The root configuration cannot magically see resources declared deep inside a module. To pass data (like a connection string) from inside a module back up to the caller (the root configuration), you must explicitly declare an `output` block within the module's `.tf` files. The root configuration can then access that specific exposed value using the standard module output syntax: `module.<MODULE_NAME>.<OUTPUT_NAME>`.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Define a `variable` block inside the module with the `export = true` flag. The root configuration will automatically inherit it in the global state.": "Variables (`variable {}`) are used to pass inputs *down* into a module. Outputs pass data *up*. There is no `export = true` flag.",
             "Use a `local-exec` provisioner inside the module to write the connection string to a text file, which the root configuration reads using the `local_file` data source.": "Writing operational metadata to physical text files on disk breaks declarativeness, causes race conditions, and is a severe anti-pattern.",
             "Add the `terraform_remote_state` data source within the root configuration to deeply inspect the module's internal state structures.": "`terraform_remote_state` is used to read data from a completely different, external Terraform state file (e.g., across teams). It is not used to read data from a module running within the current active configuration."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Terraform", "Modules", "Outputs", "Infrastructure as Code"]
+        "tags": [
+          "Terraform",
+          "Modules",
+          "Outputs",
+          "Infrastructure as Code"
+        ]
       },
       {
         "id": "q-gcppca-s91-027",
@@ -730,14 +861,19 @@
         ],
         "explanation": {
           "general explanation": "Refactoring state across completely different directories (and therefore different state files/backends) requires manually transferring the state tracking. The `terraform state mv` command only works easily within the same directory/state file. To move a resource across state files, you must first remove it from the old state tracking without deleting the actual cloud resource using `terraform state rm`. Then, you move your `.tf` code to the new directory. Finally, you ingest the live resource into the new directory's state file using `terraform import`. This seamlessly transfers management without touching the live infrastructure.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Move the `.tf` code to the `/network` folder. Run `terraform state mv google_compute_network.main_vpc ../network/` in the monolithic folder.": "While `terraform state mv` has an advanced `-state-out` flag to move between local state files, simply pointing it to a directory path (`../network/`) will fail, especially if remote backends (like GCS) are involved.",
             "Copy the `.tf` code to the `/network` folder. Run `terraform apply -refresh-only` in both folders simultaneously to automatically synchronize the states.": "Refresh-only checks live state against existing tracked resources; it will not magically discover and migrate tracking across separated state files.",
             "Run `terraform taint google_compute_network.main_vpc` in the monolithic folder, which safely copies the resource metadata to the new folder without destroying it.": "Tainting a resource forces Terraform to explicitly destroy and recreate it on the next run. This would cause a catastrophic network outage."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Terraform", "State Management", "Refactoring", "Import"]
+        "tags": [
+          "Terraform",
+          "State Management",
+          "Refactoring",
+          "Import"
+        ]
       },
       {
         "id": "q-gcppca-s91-028",
@@ -759,14 +895,19 @@
         ],
         "explanation": {
           "general explanation": "The best practice for GitOps branch mapping in Cloud Build is to keep the `cloudbuild.yaml` file generic and reusable. You achieve environment routing by creating distinct Cloud Build Triggers. One trigger fires only on the `develop` branch, and the other on the `main` branch. Inside the trigger configurations, you utilize Substitution Variables (like `_TF_WORKSPACE` or `_PROJECT_ID`) to pass the specific environment context down to the generic build steps. This allows the exact same pipeline code to seamlessly target different backend states or GCP projects securely based on the branch.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Write a single massive `cloudbuild.yaml` file that uses shell scripts and `if/else` statements to parse the active branch name and run `terraform apply` accordingly.": "Embedding heavy bash logic into a declarative build configuration makes the pipeline brittle, hard to debug, and difficult to test locally. Substitution variables managed by triggers are the cleaner architectural pattern.",
             "Grant the Cloud Build Service Account the `roles/owner` role at the Organization level so it has the necessary permissions to execute across both environments dynamically.": "Granting Org-level Owner violates least privilege. Triggers should utilize dedicated service accounts scoped strictly to their respective Dev or Prod projects via impersonation.",
             "Configure the Terraform backend block to dynamically accept the Git branch name as the Cloud Storage bucket name to isolate the state files.": "Terraform backend blocks (like the `bucket` name in `backend \"gcs\"`) are evaluated during initialization and do not support dynamic variables or interpolation. Backend configurations must be static or passed via `terraform init -backend-config` CLI arguments."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Cloud Build", "GitOps", "Terraform", "CI/CD"]
+        "tags": [
+          "Cloud Build",
+          "GitOps",
+          "Terraform",
+          "CI/CD"
+        ]
       },
       {
         "id": "q-gcppca-s91-029",
@@ -786,14 +927,19 @@
         ],
         "explanation": {
           "general explanation": "Terraform provides native, highly automated workflows for migrating state backends. To migrate from local state to a remote backend like Cloud Storage (GCS), you simply add the `backend \"gcs\"` block defining your bucket details to your Terraform configuration. When you subsequently run `terraform init`, Terraform actively detects that you are switching from local state to remote state. It will automatically ask for confirmation and then securely copy your existing local state file directly into the designated GCS bucket, enabling team sharing without downtime.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Manually upload the `terraform.tfstate` file to a Cloud Storage bucket using the `gsutil` CLI. Run `terraform apply -refresh-only` to sync the pipeline.": "While manually uploading might seem logical, it bypasses Terraform's internal safety checks and initialization protocols. Running `terraform init` is the required, seamless mechanism.",
             "Run `terraform destroy` locally to tear down the infrastructure, add the GCS backend configuration, and re-run `terraform apply` from the CI/CD pipeline.": "The prompt explicitly states the migration must happen 'without disrupting the running resources'. Tearing them down violates this core requirement.",
             "Use the `terraform state push` command to stream the local state file directly to the Google Cloud APIs.": "The `state push` command overwrites state files forcefully and is highly dangerous. `init` handles the migration safely and natively."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Terraform", "State Management", "Cloud Storage", "Migration"]
+        "tags": [
+          "Terraform",
+          "State Management",
+          "Cloud Storage",
+          "Migration"
+        ]
       },
       {
         "id": "q-gcppca-s91-030",
@@ -813,14 +959,19 @@
         ],
         "explanation": {
           "general explanation": "Understanding IAM resource types in the Google Terraform provider is critical. `google_project_iam_binding` is 'authoritative for a given role'. If you define a binding in Terraform that grants Role X to Alice and Bob, and a script manually grants Role X to Charlie via CLI, the next `terraform apply` will forcefully remove Charlie, ensuring only Alice and Bob hold Role X. To avoid breaking out-of-band assignments, you must use `google_project_iam_member`. The `member` resource is non-authoritative; it only ensures the specific user you declare gets the role, leaving all other manual additions untouched.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Characteristic: The `google_project_iam_binding` resource requires exclusive control over all IAM policies in the entire project.\nFix: Use `google_project_iam_policy` instead to merge the Terraform intent with the live state.": "This is backwards. `google_project_iam_policy` is authoritative for the ENTIRE project (all roles, all users). It is the most destructive option if you want to allow manual changes.",
             "Characteristic: Terraform state overrides live API state automatically on every run.\nFix: Implement a `depends_on` meta-argument linking the IAM role to the specific user email address.": "The `depends_on` argument controls execution timing during creation; it does not alter the fundamental authoritative nature of the resource type.",
             "Characteristic: Terraform interprets manual CLI changes as an aggressive configuration drift and forces a total project refresh.\nFix: Add the `lifecycle { ignore_changes = [members] }` block to the IAM resource.": "While `ignore_changes` would stop Terraform from removing the user, it also prevents Terraform from managing any future intended additions to that role, breaking the IaC pipeline entirely. `iam_member` is the correct structural fix."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Terraform", "IAM", "Authoritative Resources", "Infrastructure as Code"]
+        "tags": [
+          "Terraform",
+          "IAM",
+          "Authoritative Resources",
+          "Infrastructure as Code"
+        ]
       }
     ]
   }

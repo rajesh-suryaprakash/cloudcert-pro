@@ -21,14 +21,19 @@
         ],
         "explanation": {
           "general explanation": "Dedicated Interconnect provides highly reliable, private 10 Gbps connections, but traffic is not natively encrypted at the IPsec layer. To meet the strict IPsec mandate without traversing the public internet, you must deploy HA VPN over Cloud Interconnect. To achieve the 99.99% SLA for Interconnect, you must provision connections across two different metropolitan areas (two metros, two domains).",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Provision two 10 Gbps Dedicated Interconnect connections in the same metropolitan area. Rely on the native MACsec encryption provided by the Interconnect.": "While MACsec encrypts data at Layer 2 for Cloud Interconnect, it is only supported on select routers and facilities, and the prompt specifically mandates IPsec (Layer 3) encryption. Furthermore, deploying in a single metro only provides a 99.9% SLA.",
             "Deploy a standard HA VPN over the public internet utilizing multiple 3 Gbps tunnels bound together via Equal-Cost Multi-Path (ECMP) routing to achieve 10 Gbps.": "While ECMP can aggregate bandwidth, achieving a stable, guaranteed 10 Gbps throughput over the public internet is highly unreliable and unsuited for a massive financial data migration compared to a private Interconnect.",
             "Provision a Partner Interconnect Layer 3 connection. Use Cloud VPN to establish an IPsec tunnel terminating directly on the Partner's edge router.": "You cannot terminate a Google Cloud VPN tunnel on a third-party Partner's edge router in a way that provides end-to-end IPsec encryption from Google Cloud directly to your on-premises router."
           }
         },
         "difficulty": "Hard",
-        "tags": ["cloud-interconnect", "ha-vpn", "encryption", "hybrid-networking"]
+        "tags": [
+          "cloud-interconnect",
+          "ha-vpn",
+          "encryption",
+          "hybrid-networking"
+        ]
       },
       {
         "id": "q-gcppca-s20-002",
@@ -48,14 +53,19 @@
         ],
         "explanation": {
           "general explanation": "BigQuery Omni is Google Cloud's flexible, multi-cloud analytics solution. It allows you to analyze data directly in Amazon S3 and Azure Blob Storage using the standard BigQuery UI and SQL engine. Crucially, the compute engine (Dremel) runs locally in the AWS or Azure region where the data resides, meaning the raw data never leaves the third-party cloud, satisfying strict data residency and egress cost constraints.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure BigQuery Data Transfer Service to securely copy the data from AWS and Azure into BigQuery partitioned tables on a nightly schedule.": "The prompt explicitly forbids moving or copying the data out of the AWS/Azure regions. Data Transfer Service moves the data, violating the requirement.",
             "Deploy Dataproc clusters in AWS and Azure to process the data locally, and use Pub/Sub to stream the aggregated results back to BigQuery in GCP.": "While this processes data locally, it requires massive operational overhead to manage custom Hadoop/Spark clusters across multiple clouds. BigQuery Omni is a fully managed, serverless solution that uses standard SQL.",
             "Use Google Cloud Storage Transfer Service to perform a one-time migration of the data to multi-region GCS buckets, then create BigQuery external tables pointing to GCS.": "Storage Transfer Service physically moves the data out of AWS/Azure and into Google Cloud, violating the strict data residency and egress constraints."
           }
         },
         "difficulty": "Hard",
-        "tags": ["bigquery-omni", "multi-cloud", "data-analytics", "data-residency"]
+        "tags": [
+          "bigquery-omni",
+          "multi-cloud",
+          "data-analytics",
+          "data-residency"
+        ]
       },
       {
         "id": "q-gcppca-s20-003",
@@ -75,14 +85,19 @@
         ],
         "explanation": {
           "general explanation": "Workload Identity Federation allows you to grant external identities (like AWS, Azure, or GitHub Actions via OIDC) access to Google Cloud resources without using long-lived service account keys. You configure a workload identity pool and provider, and map the GitHub OIDC token subject to a GCP service account. The CI/CD pipeline exchanges its GitHub token for a short-lived GCP access token, completely eliminating the risk of leaked JSON keys.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Create a Google Cloud Service Account and generate an OAuth 2.0 access token manually. Store the token in GitHub Actions secrets and refresh it via a cron job every hour.": "This is an operational nightmare and highly insecure. Managing manual token refreshes via cron is prone to failure and does not adhere to modern federated identity best practices.",
             "Establish a Cloud VPN between the GitHub hosted runners and Google Cloud VPC, allowing the runners to inherit the permissions of the default Compute Engine service account.": "You cannot easily establish a persistent IPsec VPN to ephemeral, shared GitHub-hosted runners. Furthermore, external machines cannot magically 'inherit' internal Compute Engine metadata server permissions over a VPN.",
             "Deploy an Identity-Aware Proxy (IAP) connector in GitHub Actions to securely proxy the Terraform deployment commands through to the GCP Resource Manager API.": "IAP is designed to control access to web applications and VMs (via TCP forwarding) for human users. It is not used to authenticate CI/CD pipelines to the GCP Resource Manager API."
           }
         },
         "difficulty": "Medium",
-        "tags": ["workload-identity-federation", "security", "ci-cd", "github-actions"]
+        "tags": [
+          "workload-identity-federation",
+          "security",
+          "ci-cd",
+          "github-actions"
+        ]
       },
       {
         "id": "q-gcppca-s20-004",
@@ -102,7 +117,7 @@
         ],
         "explanation": {
           "general explanation": "Network Connectivity Center (NCC) allows enterprises to use Google's global network as a highly reliable Wide Area Network (WAN). By configuring a Site-to-Site data transfer topology, you can connect external networks (via Interconnect or VPN) to an NCC Hub. Traffic from the New York data center flows into the hub and is routed directly over Google's backbone to the London data center, completely abstracting the routing from standard VPC internal networking.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "VPC Network Peering with transit routing enabled.": "VPC Network Peering connects two Google Cloud VPCs. It explicitly does not support transitive routing (e.g., On-Prem A -> VPC A -> VPC B -> On-Prem B).",
             "Cloud VPN configured in a full mesh topology between the two Interconnect routers.": "You cannot build a Cloud VPN tunnel *between* two Interconnect Cloud Routers directly to bypass the VPC. Furthermore, NCC is the purpose-built service for site-to-site transit.",
             "Cloud Router configured with custom static BGP route advertisements for the on-premises subnets.": "While Cloud Router handles the BGP sessions, standard Cloud Router deployments within a VPC do not natively act as a global transit WAN for site-to-site traffic without NCC."
@@ -136,14 +151,19 @@
         ],
         "explanation": {
           "general explanation": "To achieve hybrid DNS seamlessly, Cloud DNS provides native policies. To allow GCP to resolve on-prem names, you create a Cloud DNS outbound forwarding zone for the on-prem domain, which points to the on-prem DNS IPs. To allow on-prem to resolve GCP names, you create an inbound server policy. This reserves an IP address in your VPC subnet. You then configure your on-prem DNS server to conditionally forward queries for `gcp.corp.internal` to that reserved inbound IP address.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure BGP on the Cloud Router to advertise the standard `35.199.192.0/19` Private Google Access CIDR block to the on-premises network.": "The `35.199.192.0/19` block is for Cloud DNS inbound server policies, not standard Private Google Access (which uses 199.36.153.8/30 or 199.36.153.4/30). While BGP advertisement of the inbound IP is needed, the zone configs are the *primary DNS architectural components*.",
             "Deploy an active-active pair of Compute Engine instances running BIND9 as forwarders to bridge the DNS traffic across the Interconnect.": "Before Cloud DNS forwarding policies existed, deploying BIND on VMs was a workaround. It is now a legacy anti-pattern that increases operational overhead and cost.",
             "Configure the on-premises DNS servers with an unconditional outbound forwarding zone targeting `169.254.169.254`.": "169.254.169.254 is the Compute Engine internal metadata server IP. It cannot be queried from on-premises over an Interconnect."
           }
         },
         "difficulty": "Hard",
-        "tags": ["cloud-dns", "hybrid-dns", "networking", "interconnect"]
+        "tags": [
+          "cloud-dns",
+          "hybrid-dns",
+          "networking",
+          "interconnect"
+        ]
       },
       {
         "id": "q-gcppca-s20-006",
@@ -165,14 +185,19 @@
         ],
         "explanation": {
           "general explanation": "Private Google Access for on-premises hosts allows servers without public IPs to reach Google APIs (like GCS) over Interconnect/VPN. You must complete two main steps. First, DNS: you must configure your on-prem DNS to resolve Google API requests to the VIPs associated with `restricted.googleapis.com` (199.36.153.4/30) or `private.googleapis.com`. Second, Routing: your Cloud Router must advertise that specific CIDR block (199.36.153.4/30) via BGP so the on-prem routers know to send that traffic across the Interconnect.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Enable the 'Private Google Access' toggle on the specific VPC subnets that the Interconnect VLAN attachments terminate on.": "The 'Private Google Access' subnet toggle is exclusively for enabling GCP VMs on that subnet to reach Google APIs without public IPs. It has absolutely no effect on routing traffic originating from on-premises networks.",
             "Deploy an External Application Load Balancer in the VPC and attach a serverless NEG pointing to the Cloud Storage bucket.": "An External Load Balancer exposes resources to the public internet, violating the strict requirement to keep traffic completely private.",
             "Assign external IP addresses to the on-premises servers but enforce egress firewall rules that only allow traffic to Google's AS15169.": "The prompt explicitly states the on-premises servers only have private IP addresses and traffic must not traverse the public internet."
           }
         },
         "difficulty": "Hard",
-        "tags": ["private-google-access", "cloud-storage", "hybrid-networking", "interconnect"]
+        "tags": [
+          "private-google-access",
+          "cloud-storage",
+          "hybrid-networking",
+          "interconnect"
+        ]
       },
       {
         "id": "q-gcppca-s20-007",
@@ -192,14 +217,19 @@
         ],
         "explanation": {
           "general explanation": "Apigee hybrid is designed exactly for data residency and multi-cloud scenarios. In a hybrid deployment, the management plane (UI, analytics, API proxy design) runs in Google Cloud. However, the runtime plane (the Message Processors that actually inspect, process, and route the API traffic and payloads) is deployed in your own environment (on-premises Kubernetes or another cloud). This ensures that sensitive API payload data never leaves your physical data center.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Deploy Apigee X in Google Cloud. Configure VPC Service Controls to extend the security perimeter over a Dedicated Interconnect to the Frankfurt data center.": "Apigee X runtime executes entirely within Google Cloud. Even with VPC Service Controls, the API payloads would still physically travel to GCP for processing, violating the strict on-premises processing requirement.",
             "Deploy Apigee Edge for Private Cloud exclusively. Disconnect it entirely from Google Cloud to ensure regulatory compliance.": "While Edge for Private Cloud keeps everything on-premises, it violates the business requirement to 'manage the API definitions, analytics, and monetization centrally from the Google Cloud control plane'.",
             "Deploy API Gateway in Google Cloud and configure an external backend service pointing to your on-premises backend endpoints via Cloud VPN.": "API Gateway evaluates and routes traffic in GCP. The data would traverse into GCP before hitting the backend, violating the data residency constraint."
           }
         },
         "difficulty": "Medium",
-        "tags": ["apigee", "apigee-hybrid", "api-management", "data-residency"]
+        "tags": [
+          "apigee",
+          "apigee-hybrid",
+          "api-management",
+          "data-residency"
+        ]
       },
       {
         "id": "q-gcppca-s20-008",
@@ -214,17 +244,24 @@
           "Anthos Service Mesh (ASM)",
           "Cloud Build with Terraform"
         ],
-        "correctAnswers": ["Anthos Config Management (Config Sync)"],
+        "correctAnswers": [
+          "Anthos Config Management (Config Sync)"
+        ],
         "explanation": {
           "general explanation": "Anthos Config Management (specifically Config Sync) enables GitOps for multicloud Kubernetes. You define your policies, RBAC, and configurations in a central Git repository. Config Sync agents run on every cluster (GKE, EKS, on-prem) and continuously monitor the Git repo. If a rogue admin modifies a policy directly on a cluster using `kubectl`, Config Sync instantly detects the drift and automatically remediates it back to the state defined in Git.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Google Cloud Armor": "Cloud Armor is a Web Application Firewall (WAF) and DDoS protection service. It does not manage Kubernetes cluster configurations or RBAC.",
             "Anthos Service Mesh (ASM)": "ASM manages L7 networking, traffic routing, and mTLS encryption between microservices. It does not manage cluster-level configurations, namespaces, or RBAC synchronization.",
             "Cloud Build with Terraform": "While Terraform can provision clusters and apply initial manifests, it is not an active reconciliation engine running on the cluster. It cannot instantly detect and revert manual `kubectl` changes made outside of the CI/CD pipeline in real-time."
           }
         },
         "difficulty": "Easy",
-        "tags": ["anthos", "config-management", "gitops", "multicloud"]
+        "tags": [
+          "anthos",
+          "config-management",
+          "gitops",
+          "multicloud"
+        ]
       },
       {
         "id": "q-gcppca-s20-009",
@@ -244,14 +281,19 @@
         ],
         "explanation": {
           "general explanation": "Google Cloud VMware Engine (GCVE) provides a fully managed VMware Cloud Foundation stack running on bare metal in GCP. This is the optimal architecture for rapid lift-and-shift of large VMware environments where the business wants to retain VMware tooling (vCenter) and avoid refactoring. By integrating HCX, you can stretch Layer 2 networks from on-prem to GCVE, allowing you to live-migrate (vMotion) VMs to the cloud with zero downtime and without changing IP addresses.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Use Google Cloud Migrate to Virtual Machines to continuously replicate the VMs into Compute Engine instances.": "While a valid lift-and-shift tool, migrating to native Compute Engine means you lose the VMware management tools (vCenter), and changing IP addresses is often required unless complex networking is configured.",
             "Use Google Cloud Migrate to Containers to automatically convert the VMware VMs into Docker containers and deploy them on GKE.": "The prompt explicitly states 'Refactoring applications to containers is out of scope'.",
             "Use Storage Transfer Service to move the VMDK disk files to Cloud Storage, then use a custom script to create Compute Engine Custom Images.": "This is a highly manual, error-prone process that would require massive downtime to export, upload, convert, and boot the VMs, violating the requirement to minimize cutover downtime."
           }
         },
         "difficulty": "Medium",
-        "tags": ["google-cloud-vmware-engine", "migration", "hybrid-cloud", "vcenter"]
+        "tags": [
+          "google-cloud-vmware-engine",
+          "migration",
+          "hybrid-cloud",
+          "vcenter"
+        ]
       },
       {
         "id": "q-gcppca-s20-010",
@@ -266,17 +308,23 @@
           "Dedicated Interconnect",
           "High Availability (HA) VPN over the public internet"
         ],
-        "correctAnswers": ["Cross-Cloud Interconnect"],
+        "correctAnswers": [
+          "Cross-Cloud Interconnect"
+        ],
         "explanation": {
           "general explanation": "Cross-Cloud Interconnect is a specialized Google Cloud service designed specifically for connecting GCP directly to other cloud providers (like AWS, Azure, Oracle). Google provisions the physical connection directly from their edge to the other cloud provider's edge. This entirely abstracts the need for the customer to rent colocation space, buy edge routing hardware, or manage physical cross-connects, while supporting massive bandwidths (10 Gbps or 100 Gbps).",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Partner Interconnect": "Partner Interconnect is used when you connect through a service provider. While it can bridge clouds, it generally does not support direct 100 Gbps port speeds, and you rely on the partner's infrastructure.",
             "Dedicated Interconnect": "Dedicated Interconnect requires you to physically place your own routing equipment in a colocation facility where Google has a point of presence, violating the requirement to avoid colocation hardware.",
             "High Availability (HA) VPN over the public internet": "VPNs over the internet cannot reliably sustain 100 Gbps of throughput due to internet routing fluctuations, and encrypting/decrypting 100 Gbps of traffic requires massive compute overhead."
           }
         },
         "difficulty": "Medium",
-        "tags": ["cross-cloud-interconnect", "multicloud", "networking"]
+        "tags": [
+          "cross-cloud-interconnect",
+          "multicloud",
+          "networking"
+        ]
       },
       {
         "id": "q-gcppca-s20-011",
@@ -296,14 +344,19 @@
         ],
         "explanation": {
           "general explanation": "Storage Transfer Service supports Event-driven transfers specifically for near real-time replication from AWS S3 to GCS. By configuring S3 to send event notifications to an AWS SQS queue, Storage Transfer Service can listen to that queue. When a new object arrives in S3, STS is immediately notified and transfers that specific object, providing a highly scalable, real-time sync without scanning the massive 2 PB bucket.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure a Scheduled batch transfer running every hour to scan the entire S3 bucket for changes and sync them to GCS.": "Scanning a 2 PB bucket every hour is extremely slow and expensive (API LIST calls). It also violates the 'near real-time' requirement, as data could sit for an hour before being discovered.",
             "Deploy a Dataproc cluster to run an Apache Spark streaming job that continuously reads the S3 bucket using the `s3a://` connector and writes to GCS.": "Building and managing a custom Spark streaming cluster introduces massive operational overhead and cost when a fully managed, purpose-built native service (STS) exists.",
             "Use a Transfer Appliance. Request multiple physical appliances to be shipped to the AWS data center, load the data, and ship them to Google.": "Transfer Appliance is for offline, air-gapped, or severely bandwidth-constrained migrations. You cannot physically ship a Transfer Appliance into a managed AWS availability zone to hook up to an S3 bucket."
           }
         },
         "difficulty": "Hard",
-        "tags": ["storage-transfer-service", "aws-s3", "event-driven", "multicloud"]
+        "tags": [
+          "storage-transfer-service",
+          "aws-s3",
+          "event-driven",
+          "multicloud"
+        ]
       },
       {
         "id": "q-gcppca-s20-012",
@@ -318,17 +371,24 @@
           "Dataflow with the JDBC connector",
           "Cloud Data Fusion"
         ],
-        "correctAnswers": ["Datastream"],
+        "correctAnswers": [
+          "Datastream"
+        ],
         "explanation": {
           "general explanation": "Datastream is Google Cloud's fully managed, serverless Change Data Capture (CDC) and replication service. It natively supports connecting to Oracle databases (as well as MySQL and PostgreSQL) and reads the transaction logs (redo logs) to stream changes in near real-time into GCP destinations like Cloud Storage, BigQuery, or Cloud Spanner. It operates agentlessly.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Database Migration Service (DMS)": "DMS is optimized for migrating databases to Google Cloud SQL or AlloyDB, taking over as the primary. It is not currently the native tool for ongoing, permanent CDC streaming from Oracle into Cloud Spanner.",
             "Dataflow with the JDBC connector": "While Dataflow can query databases via JDBC, polling an operational Oracle database via JDBC for changes is slow, places massive load on the primary database, and is not true log-based CDC.",
             "Cloud Data Fusion": "Data Fusion is an enterprise data integration service (ETL). While it has CDC plugins, Datastream is the purpose-built, lower-latency, and more native serverless CDC offering in GCP for this specific architectural pattern."
           }
         },
         "difficulty": "Medium",
-        "tags": ["datastream", "change-data-capture", "oracle", "hybrid-cloud"]
+        "tags": [
+          "datastream",
+          "change-data-capture",
+          "oracle",
+          "hybrid-cloud"
+        ]
       },
       {
         "id": "q-gcppca-s20-013",
@@ -348,14 +408,19 @@
         ],
         "explanation": {
           "general explanation": "To implement zero-trust (BeyondCorp) for an on-premises application without a VPN, you use Identity-Aware Proxy (IAP) with Hybrid NEGs. The External Application Load Balancer is deployed in GCP and acts as the global front door. IAP protects this Load Balancer, verifying user identity and context (device health) before allowing access. Once authenticated, the Load Balancer uses a Hybrid NEG to route the traffic securely over an Interconnect/VPN to the on-premises backend. For environments that cannot route directly, an IAP connector can be used to tunnel the traffic.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Deploy Cloud VPN between the on-premises data center and Google Cloud. Require all employees to authenticate to Google Workspace, which automatically grants VPN access to the internal IP space.": "The prompt explicitly states the security team 'forbids issuing traditional VPN clients to employees'. Zero-trust focuses on application-level access, not network-level VPN access.",
             "Migrate the on-premises web application into a Compute Engine VM. Enforce VPC Service Controls around the VM and allow external access only from corporate-managed devices.": "The requirement is to expose the *existing* on-premises application, not to migrate it to GCP. Furthermore, VPC Service Controls are for protecting Google APIs, not Compute Engine VMs exposing web UIs.",
             "Configure Cloud Armor on the on-premises edge router to perform Deep Packet Inspection (DPI) and integrate it with Google Cloud Identity for SAML authentication.": "Cloud Armor is a GCP service; it cannot be 'configured on an on-premises edge router'. It operates at the edge of Google's network."
           }
         },
         "difficulty": "Hard",
-        "tags": ["identity-aware-proxy", "beyondcorp", "zero-trust", "hybrid-neg"]
+        "tags": [
+          "identity-aware-proxy",
+          "beyondcorp",
+          "zero-trust",
+          "hybrid-neg"
+        ]
       },
       {
         "id": "q-gcppca-s20-014",
@@ -375,14 +440,19 @@
         ],
         "explanation": {
           "general explanation": "In BGP routing for Cloud Router, the Multi-Exit Discriminator (MED) is the primary metric used to determine path priority when multiple paths exist to the same destination. A lower MED value indicates a higher priority (more preferred) route. To make Tunnel A the primary (active) path, both the on-premises router and the Cloud Router must advertise their routes over Tunnel A with a lower MED value than the routes advertised over Tunnel B.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure the on-premises Router 1 to advertise routes with a higher BGP Multi-Exit Discriminator (MED) value than Router 2...": "A higher MED value makes the route *less* preferred, which would result in Tunnel B becoming the active path, reversing the requirement.",
             "Configure ECMP (Equal-Cost Multi-Path) on the Cloud Router and assign a static route weight of 100 to Tunnel A and 50 to Tunnel B.": "ECMP is used for active/active load balancing, not active/passive failover. Furthermore, dynamic BGP routing metrics (MED) override static route weights.",
             "Enable BGP AS-Path prepending on Cloud Router to artificially lengthen the AS-Path for Tunnel A, making it the preferred route.": "In BGP, a shorter AS-Path is preferred. Prepending the AS-Path makes it artificially longer, ensuring that route becomes the *backup* (passive) path, not the preferred path."
           }
         },
         "difficulty": "Hard",
-        "tags": ["cloud-router", "bgp", "ha-vpn", "hybrid-networking"]
+        "tags": [
+          "cloud-router",
+          "bgp",
+          "ha-vpn",
+          "hybrid-networking"
+        ]
       },
       {
         "id": "q-gcppca-s20-015",
@@ -402,14 +472,19 @@
         ],
         "explanation": {
           "general explanation": "To protect an on-premises application with Cloud Armor, you route the public traffic through Google Cloud's edge infrastructure. You deploy a Global External Application Load Balancer and attach a Hybrid Network Endpoint Group (NEG) to it. The Hybrid NEG points to the IP and port of your on-premises server (reachable via Interconnect or VPN). You then apply Cloud Armor security policies to the backend service. All incoming internet traffic hits the GCP Load Balancer, is inspected/scrubbed by Cloud Armor, and only clean traffic is forwarded to the on-premises server.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Install the Cloud Armor agent directly onto the on-premises web server using Anthos attached clusters.": "Cloud Armor is a network edge service built into Google's Global Load Balancing infrastructure. There is no host-based 'Cloud Armor agent' to install on operating systems.",
             "Configure VPC Service Controls in GCP. Create an ingress rule that maps the on-premises IP space to the Cloud Armor WAF inspection engine.": "VPC Service Controls are used to prevent data exfiltration from Google-managed APIs (like Cloud Storage or BigQuery). They do not perform L7 Deep Packet Inspection (WAF) for SQL injection.",
             "Change the public DNS records of the on-premises application to point to a Cloud DNS Managed Zone, and enable the native Cloud Armor DNS proxy feature.": "Cloud Armor works in conjunction with Cloud Load Balancing, not Cloud DNS. DNS alone cannot proxy and inspect Layer 7 HTTP payloads for SQL injection."
           }
         },
         "difficulty": "Medium",
-        "tags": ["cloud-armor", "hybrid-neg", "load-balancing", "hybrid-cloud"]
+        "tags": [
+          "cloud-armor",
+          "hybrid-neg",
+          "load-balancing",
+          "hybrid-cloud"
+        ]
       },
       {
         "id": "q-gcppca-s20-016",
@@ -429,14 +504,18 @@
         ],
         "explanation": {
           "general explanation": "To allow an on-premises network to access APIs protected by a VPC Service Controls perimeter over a private connection (Interconnect/VPN), you must configure an Ingress Rule (or add the VPC to the perimeter). The Ingress Rule can be configured to trust traffic originating from the specific VPC network where the Interconnect VLAN attachments terminate, effectively bridging the private on-premises traffic into the secure perimeter without exposing it to the public internet.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Create a VPC Service Controls Access Level that explicitly whitelists the public, routable IP addresses of the on-premises NAT gateway.": "While Access Levels based on public IPs work for internet traffic, the prompt explicitly states the connection is via Dedicated Interconnect (a private connection). The traffic will arrive with private RFC 1918 IPs, not the public NAT IP.",
             "Configure the Cloud Router to strip the VPC Service Controls headers from the Interconnect traffic before forwarding it to the BigQuery API.": "There are no 'VPC Service Controls headers' attached to packets by Cloud Router. VPC-SC is evaluated at the API gateway layer based on IAM and network context.",
             "Create an egress firewall rule on the VPC network allowing port 443 out to the on-premises subnets, which automatically extends the VPC Service Controls perimeter.": "VPC firewall rules govern VM-level traffic (L3/L4). VPC Service Controls govern API access (L7). Firewall rules do not affect or extend VPC-SC perimeters."
           }
         },
         "difficulty": "Hard",
-        "tags": ["vpc-service-controls", "hybrid-networking", "security"]
+        "tags": [
+          "vpc-service-controls",
+          "hybrid-networking",
+          "security"
+        ]
       },
       {
         "id": "q-gcppca-s20-017",
@@ -456,14 +535,19 @@
         ],
         "explanation": {
           "general explanation": "Oracle RAC (Real Application Clusters) requires very specific architecture, primarily shared block storage (where multiple physical nodes read/write to the exact same LUN concurrently) and Oracle-certified hardware. Google Cloud Bare Metal Solution (BMS) is designed precisely for this 'lift and shift' scenario. It provides dedicated, certified physical servers and SAN storage in regional extensions connected directly to your Google Cloud VPC with ultra-low latency.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Migrate the database to Cloud Spanner, using the Oracle Compatibility interface to seamlessly translate the RAC queries into Spanner SQL.": "Cloud Spanner has a PostgreSQL interface, not an Oracle interface. Refactoring a complex Oracle RAC database to Spanner is a massive, multi-year rewrite, not a viable solution for specialized hardware dependencies.",
             "Deploy Compute Engine Sole-Tenant Nodes, enabling the 'Shared Disk' feature to attach a single Persistent Disk to multiple VMs simultaneously in Read/Write mode.": "Compute Engine Persistent Disks support multi-writer mode only in very specific, limited configurations and are generally not certified for complex clustered file systems required by Oracle RAC.",
             "Deploy Anthos on bare metal inside your on-premises data center, and use Anthos Service Mesh to accelerate the network traffic to the GCP application layer.": "Service Mesh does not overcome the speed of light. If the physical distance between the on-premises DB and GCP is causing latency, software routing will not fix it. The database must physically move to GCP."
           }
         },
         "difficulty": "Medium",
-        "tags": ["bare-metal-solution", "oracle-rac", "migration", "hybrid-cloud"]
+        "tags": [
+          "bare-metal-solution",
+          "oracle-rac",
+          "migration",
+          "hybrid-cloud"
+        ]
       },
       {
         "id": "q-gcppca-s20-018",
@@ -483,14 +567,19 @@
         ],
         "explanation": {
           "general explanation": "Cloud EKM (External Key Manager) is designed for strict key sovereignty. It allows you to encrypt data in GCP services (like BigQuery or Compute Engine) using keys that physically remain in an external key management system (like an on-premises HSM or a third-party key manager like Thales or Fortanix). Google never sees or stores the key material; instead, GCP makes a secure API call to the external key manager whenever cryptographic operations are required.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Implement Customer-Supplied Encryption Keys (CSEK). The bank provides the raw 256-bit AES key in the API payload during BigQuery load jobs, ensuring Google only uses it in memory.": "With CSEK, the raw key material is technically sent into Google Cloud's infrastructure (even if only briefly in memory), which violates the strict mandate that keys cannot be exported into GCP infrastructure.",
             "Deploy a Dedicated Interconnect and use Cloud HSM. Manually sync the cryptographic material from the on-premises HSM to the Cloud HSM cluster over the private connection.": "Cloud HSM is a managed service where the HSM hardware resides inside Google Cloud data centers. Syncing keys to it violates the physical on-premises residency requirement.",
             "Encrypt the data on-premises using the local HSM, and then upload the ciphertext to BigQuery using a custom Dataproc ingestion pipeline.": "This is Client-Side Encryption. While secure, BigQuery cannot run native analytical SQL queries (like SUM or JOIN) on raw ciphertext. Cloud EKM allows native querying while maintaining key sovereignty."
           }
         },
         "difficulty": "Hard",
-        "tags": ["cloud-kms", "ekm", "security", "encryption"]
+        "tags": [
+          "cloud-kms",
+          "ekm",
+          "security",
+          "encryption"
+        ]
       },
       {
         "id": "q-gcppca-s20-019",
@@ -510,14 +599,19 @@
         ],
         "explanation": {
           "general explanation": "Standard Cloud Build runs in a secure, multi-tenant Google network isolated from your VPC. To allow Cloud Build to access private resources (like an on-premises Nexus repo over VPN, or an internal Cloud SQL instance), you must use Cloud Build Private Pools. Private Pools run in a dedicated tenant project but can be connected to your own VPC via VPC Network Peering. This allows the build VMs to route traffic through your VPC, across your Cloud VPN, and into your on-premises network.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Deploy an API Gateway with an external IP address to expose the on-premises Nexus repository to the public internet, securing it with an API key for Cloud Build to use.": "Exposing a highly proprietary internal dependency repository to the public internet is a massive security risk and an architectural anti-pattern when private networking solutions exist.",
             "Configure the Cloud Build trigger to use a VPC Connector (Serverless VPC Access), assigning it a `/28` subnet in the VPC to bridge the network gap.": "Serverless VPC Access connectors are used for Cloud Functions, Cloud Run, and App Engine. They are not the supported mechanism for bridging Cloud Build into a VPC (Private Pools are).",
             "Use Cloud Run to run the CI/CD pipeline instead of Cloud Build, as Cloud Run natively supports Direct VPC Egress for building code.": "Cloud Run is a runtime serving platform, not a CI/CD build engine. Attempting to run complex, multi-step Docker builds inside a stateless Cloud Run container is not standard practice."
           }
         },
         "difficulty": "Medium",
-        "tags": ["cloud-build", "private-pools", "hybrid-networking", "ci-cd"]
+        "tags": [
+          "cloud-build",
+          "private-pools",
+          "hybrid-networking",
+          "ci-cd"
+        ]
       },
       {
         "id": "q-gcppca-s20-020",
@@ -537,14 +631,19 @@
         ],
         "explanation": {
           "general explanation": "The Google Cloud Ops Agent (which replaces the legacy Stackdriver logging and monitoring agents) is designed to run on Linux and Windows instances not just in GCP, but also in AWS and on-premises environments. By providing the external agents with appropriate authentication (like a JSON key for a GCP Service Account with log/metric writer roles), they can securely stream metrics and logs directly into Cloud Monitoring and Cloud Logging, creating a unified observability platform.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure AWS CloudWatch and the on-premises Syslog servers to export data to an AWS S3 bucket. Use Storage Transfer Service to move the logs to GCS, and query them with BigQuery.": "This is a batch analytics pipeline, not a real-time observability platform. It introduces massive latency and entirely bypasses Cloud Monitoring's alerting capabilities.",
             "Deploy Anthos Service Mesh (ASM) globally. ASM will automatically inject sidecars into all bare-metal and EC2 instances to capture telemetry data and route it to Cloud Monitoring.": "ASM is for Kubernetes microservices. While it can connect external VMs to a mesh, it is incredibly complex to set up globally just for basic CPU/RAM metric collection compared to installing a simple agent.",
             "Install the Stackdriver Kubernetes Engine (GKE) monitoring agent on all environments to unify the metric formats.": "The GKE monitoring agent is specifically for Kubernetes nodes and pods. It cannot be installed on raw EC2 instances or bare-metal Linux servers to gather OS-level metrics."
           }
         },
         "difficulty": "Easy",
-        "tags": ["cloud-monitoring", "ops-agent", "observability", "multicloud"]
+        "tags": [
+          "cloud-monitoring",
+          "ops-agent",
+          "observability",
+          "multicloud"
+        ]
       },
       {
         "id": "q-gcppca-s20-021",
@@ -566,14 +665,19 @@
         ],
         "explanation": {
           "general explanation": "To integrate an on-premises AD with Google Cloud under strict password security constraints, you must separate synchronization from authentication. First, use Google Cloud Directory Sync (GCDS) to securely sync users and groups (but NOT passwords) from AD to Cloud Identity. This allows you to write IAM policies against AD groups. Second, configure SAML SSO in Cloud Identity pointing to your on-premises IdP (like Active Directory Federation Services - ADFS). When a user tries to log in to GCP, Google redirects them to your on-prem ADFS server to authenticate, satisfying the requirement that Google never sees or stores the password.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Deploy Managed Service for Microsoft Active Directory in Google Cloud and establish a one-way forest trust to the on-premises AD environment.": "Managed AD is useful for running Windows workloads in GCP that require AD domain joins. It is not the standard architectural component for federating human user identities into GCP IAM for console/API access.",
             "Install the Password Sync tool on the on-premises Domain Controllers to enforce a one-way cryptographic hash sync to Google Cloud Identity.": "The prompt explicitly mandates: 'User passwords must NEVER be synced or stored in Google Cloud'. Password Sync violates this requirement.",
             "Configure Identity-Aware Proxy (IAP) to intercept authentication requests and route them directly to the on-premises LDAP server using an IAP connector.": "IAP is an authorization proxy for applications; it relies on Cloud Identity for the underlying authentication token. It does not natively perform raw LDAP lookups against on-prem servers for initial user login to the GCP Console."
           }
         },
         "difficulty": "Hard",
-        "tags": ["cloud-identity", "active-directory", "sso", "gcds"]
+        "tags": [
+          "cloud-identity",
+          "active-directory",
+          "sso",
+          "gcds"
+        ]
       },
       {
         "id": "q-gcppca-s20-022",
@@ -595,14 +699,18 @@
         ],
         "explanation": {
           "general explanation": "When using Partner Interconnect, the layer at which the partner operates dictates the BGP configuration responsibilities. With a Layer 2 connection, the partner simply provides a transparent Ethernet pipe (a VLAN). You are responsible for establishing the Layer 3 BGP routing session directly through that pipe to Google's Cloud Router. With a Layer 3 connection, the partner acts as an active router. The partner establishes a BGP session with Google Cloud, and establishes a separate BGP session (or static routing) with your on-premises router, essentially acting as the middleman for routing.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Layer 2 Partner Interconnect provides MACsec encryption by default, whereas Layer 3 relies on Cloud VPN for encryption.": "Neither Layer 2 nor Layer 3 Partner Interconnect provides MACsec encryption natively. If you need encryption, you must run HA VPN over the connection regardless of the partner type.",
             "Layer 3 Partner Interconnect requires you to install Google's proprietary routing hardware in your data center, whereas Layer 2 uses standard Ethernet.": "Google does not force you to install proprietary hardware in your data center. The connection relies on standard industry routing protocols (BGP).",
             "Layer 2 Partner Interconnect allows Google Cloud to directly assign IP addresses via DHCP to your on-premises bare-metal servers.": "Google Cloud VPC DHCP servers do not assign IP addresses to resources running in external, on-premises networks across an Interconnect."
           }
         },
         "difficulty": "Medium",
-        "tags": ["partner-interconnect", "bgp", "hybrid-networking"]
+        "tags": [
+          "partner-interconnect",
+          "bgp",
+          "hybrid-networking"
+        ]
       },
       {
         "id": "q-gcppca-s20-023",
@@ -622,14 +730,18 @@
         ],
         "explanation": {
           "general explanation": "Transfer Appliance is a high-capacity hardware appliance provided by Google. It is specifically designed for offline data migrations in disconnected, air-gapped, or extremely low-bandwidth environments. Transferring 1.5 PB over a 5 Mbps link would literally take decades. Shipping a ruggedized physical appliance is the only mathematically and architecturally viable solution for massive data volume from a remote location with poor connectivity.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Use Storage Transfer Service. Configure a bandwidth limit to ensure the satellite link is not overwhelmed, allowing the transfer to occur slowly in the background.": "1.5 PB over 5 Mbps takes over 70 years. This is not a viable migration strategy.",
             "Establish a Cloud VPN over the satellite link and use the `gsutil rsync` command to synchronize the local filesystem with Cloud Storage.": "A VPN over an unstable satellite link will constantly drop. Even if it stayed up, the math (70 years) makes network-based transfer impossible.",
             "Deploy an AWS Snowmobile to the rig, transfer the data to AWS S3, and use BigQuery Omni to query it.": "AWS Snowmobile is a competitor product (a literal semi-truck). Furthermore, putting data in AWS S3 does not migrate it to Google Cloud Storage as requested."
           }
         },
         "difficulty": "Easy",
-        "tags": ["transfer-appliance", "offline-migration", "storage"]
+        "tags": [
+          "transfer-appliance",
+          "offline-migration",
+          "storage"
+        ]
       },
       {
         "id": "q-gcppca-s20-024",
@@ -649,14 +761,19 @@
         ],
         "explanation": {
           "general explanation": "Cloud Build with Private Pools provides a managed, secure execution environment that can be peered with your VPC. This allows you to offload the actual deployment execution (running Terraform, applying kubectl manifests) into Google Cloud securely. The on-premises Jenkins server acts purely as the orchestrator, making an API call to trigger Cloud Build, avoiding the need to funnel extensive deployment traffic and complex credentials back and forth across the hybrid connection.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Cloud Run configured with an internal ingress setting, executing deployment scripts triggered by Jenkins over a VPN.": "Cloud Run is a serverless application platform, not a dedicated CI/CD execution engine. Using it to run long-running infrastructure deployment scripts is an anti-pattern.",
             "Compute Engine VMs running Jenkins worker agents connected to the on-premises master via public IPs.": "Connecting Jenkins workers over public IPs is highly insecure and violates the premise of needing to execute securely within a private GCP VPC.",
             "Anthos Service Mesh, injecting deployment sidecars into the on-premises Jenkins master.": "Anthos Service Mesh is for microservice communication and telemetry, not for facilitating CI/CD build execution or infrastructure deployment."
           }
         },
         "difficulty": "Medium",
-        "tags": ["cloud-build", "private-pools", "ci-cd", "hybrid-cloud"]
+        "tags": [
+          "cloud-build",
+          "private-pools",
+          "ci-cd",
+          "hybrid-cloud"
+        ]
       },
       {
         "id": "q-gcppca-s20-025",
@@ -676,14 +793,19 @@
         ],
         "explanation": {
           "general explanation": "Anthos Service Mesh (ASM) is the enterprise version of Istio. It is designed precisely to unify communication, security, and observability across hybrid and multicloud Kubernetes environments. By configuring a multi-cluster mesh, services in GCP can discover and securely communicate with services on-premises as if they were in the same cluster. ASM's control plane automatically issues and rotates certificates to the Envoy sidecar proxies, enforcing end-to-end mTLS encryption for all cross-boundary traffic.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Deploy Cloud VPN between the environments. Configure standard Kubernetes Services on both sides to use NodePorts, and map them manually via Cloud DNS.": "VPN provides network-level encryption, but it does not provide service-level mTLS (which compliance often requires for identity-based access control), nor does it provide seamless, automated cross-cluster service discovery.",
             "Implement Apigee X as an API Gateway in GCP. Force all on-premises microservices to route outbound calls through Apigee to reach GKE services.": "Apigee is for north-south traffic (external clients to internal APIs). Routing massive volumes of internal east-west microservice traffic through an API gateway creates a huge bottleneck and latency overhead.",
             "Configure Network Connectivity Center to link the VPC and on-premises network, and rely on MACsec encryption at the Interconnect layer to secure the microservice communication.": "MACsec provides Layer 2 encryption. Zero-trust compliance for healthcare microservices requires Layer 7 application identity verification and encryption via mTLS."
           }
         },
         "difficulty": "Hard",
-        "tags": ["anthos-service-mesh", "mtls", "hybrid-cloud", "security"]
+        "tags": [
+          "anthos-service-mesh",
+          "mtls",
+          "hybrid-cloud",
+          "security"
+        ]
       },
       {
         "id": "q-gcppca-s20-026",
@@ -703,14 +825,19 @@
         ],
         "explanation": {
           "general explanation": "To expose a serverless GCP application (Cloud Run) privately to an on-premises network, you must change its ingress setting to 'Internal' so it drops public internet traffic. However, you cannot route traffic directly from on-prem to the internal Cloud Run URL without a bridge. The architectural standard is to deploy an Internal Application Load Balancer in your VPC, which provides a private RFC 1918 IP address. You attach a Serverless NEG to this LB. The on-prem application connects over the Interconnect to the private IP of the Load Balancer, which proxies the request privately to Cloud Run.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure the Cloud Run service with 'Ingress: Internal'. Configure the on-premises edge router to perform NAT translation, converting the private traffic to a public IP to hit the standard Cloud Run endpoint.": "If ingress is set to 'Internal', traffic arriving from a public IP (via NAT) will be rejected. This contradicts the requirement to keep traffic off the public internet entirely.",
             "Deploy an API Gateway in front of Cloud Run. Enable Identity-Aware Proxy (IAP) on the gateway, and install the IAP desktop client on the on-premises Linux servers.": "IAP desktop clients are for human users connecting to VMs, not for server-to-server API communication. Furthermore, this does not solve the private routing requirement.",
             "Configure a Cloud VPN tunnel. Define a static route on the on-premises router directing all traffic for `*.run.app` into the VPN tunnel to bypass the internet.": "You cannot simply route `*.run.app` (public IP addresses) into a VPN tunnel and expect GCP to route them internally to a service marked as 'Internal' ingress without a Load Balancer or Private Google Access setup."
           }
         },
         "difficulty": "Hard",
-        "tags": ["cloud-run", "internal-load-balancer", "hybrid-networking", "serverless-neg"]
+        "tags": [
+          "cloud-run",
+          "internal-load-balancer",
+          "hybrid-networking",
+          "serverless-neg"
+        ]
       },
       {
         "id": "q-gcppca-s20-027",
@@ -725,17 +852,23 @@
           "Cloud VPN with custom NAT translation",
           "Network Connectivity Center (NCC)"
         ],
-        "correctAnswers": ["Private Service Connect (PSC)"],
+        "correctAnswers": [
+          "Private Service Connect (PSC)"
+        ],
         "explanation": {
           "general explanation": "Private Service Connect (PSC) allows service producers (the SaaS provider) to publish their services, and service consumers (the enterprise) to access them privately from their own VPC networks. The enterprise creates a PSC endpoint in their own VPC, which appears as a local private IP address. They then route their on-premises traffic (via their own Interconnect/VPN) to this local PSC endpoint. This entirely avoids VPC peering and solves all IP overlapping issues because the traffic is seamlessly NAT'd under the hood by PSC.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "VPC Network Peering": "VPC Peering requires non-overlapping IP spaces, which the prompt states is an issue. Furthermore, peering grants broad network access, which violates the strict security concerns.",
             "Cloud VPN with custom NAT translation": "While technically possible to hack together using complex NAT rules, the enterprise explicitly 'refuses to set up a VPN directly to the SaaS provider's VPC'. PSC abstracts the connection securely.",
             "Network Connectivity Center (NCC)": "NCC is for transit routing between your own sites using Google's backbone. It is not designed for exposing API endpoints privately to third-party consumers."
           }
         },
         "difficulty": "Medium",
-        "tags": ["private-service-connect", "networking", "saas-integration"]
+        "tags": [
+          "private-service-connect",
+          "networking",
+          "saas-integration"
+        ]
       },
       {
         "id": "q-gcppca-s20-028",
@@ -757,14 +890,19 @@
         ],
         "explanation": {
           "general explanation": "To allow Dataflow to communicate with an on-premises resource over a private connection (Interconnect), the Dataflow worker VMs must reside on the private network. By default, Dataflow spins up workers on the 'default' VPC and assigns them public IPs. To integrate securely, you must explicitly pass the `--usePublicIps=false` flag (so they only get private IPs) and pass the `--network` and `--subnetwork` flags to place the workers in a specific VPC that has the BGP routing configured for the Dedicated Interconnect.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Deploy an External Application Load Balancer in front of the on-premises Kafka cluster to terminate the Dataflow connections.": "An external LB exposes the Kafka cluster to the internet. The goal is to use the private Dedicated Interconnect.",
             "Configure Dataflow to use the Streaming Engine, which automatically proxies the traffic to on-premises via Google's internal backbone.": "Streaming Engine offloads state and shuffle processing to a managed service; it does not act as a network proxy for reaching on-premises databases or message brokers.",
             "Configure the Cloud Router to advertise the public IP addresses of the Dataflow workers to the on-premises edge router.": "If `--usePublicIps=false` is used, the workers do not have public IPs. Advertising public IPs over a private Interconnect defeats the purpose of private RFC 1918 routing."
           }
         },
         "difficulty": "Hard",
-        "tags": ["cloud-dataflow", "kafka", "hybrid-networking", "interconnect"]
+        "tags": [
+          "cloud-dataflow",
+          "kafka",
+          "hybrid-networking",
+          "interconnect"
+        ]
       },
       {
         "id": "q-gcppca-s20-029",
@@ -784,14 +922,19 @@
         ],
         "explanation": {
           "general explanation": "When private connectivity (VPN/Interconnect) is impossible, DMS must connect to the source database over the public internet. Because the source DB has a private IP and the firewall restricts inbound traffic, you must expose it safely. The architectural standard is to deploy a reverse proxy in an on-premises DMZ (with a public IP). You configure the corporate firewall to allow the proxy to reach the internal database. You then configure DMS to connect to the proxy's public IP, securing the connection using TLS and IP allowlisting (allowing only Google's DMS IP range).",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Use the Google Cloud CLI to generate a one-time presigned URL for DMS, and configure the on-premises MySQL server to push the binlogs outward via port 443.": "DMS is a pull-based service; it reaches out to connect to the source database. You cannot configure native MySQL to 'push' binlogs via HTTPS presigned URLs.",
             "Install the Cloud SQL Auth proxy on the on-premises database servers to establish an outbound TLS tunnel to the Cloud SQL instance.": "The Cloud SQL Auth proxy is used by applications connecting TO Cloud SQL. It is not used to facilitate DMS replication FROM an on-premises source database.",
             "Configure DMS to use a VPC Peering connection, which bypasses the corporate firewall by routing traffic natively through Google's edge.": "VPC Peering connects two Google Cloud VPCs. It cannot peer with an external, on-premises network across the public internet."
           }
         },
         "difficulty": "Hard",
-        "tags": ["database-migration-service", "cloud-sql", "networking", "hybrid-cloud"]
+        "tags": [
+          "database-migration-service",
+          "cloud-sql",
+          "networking",
+          "hybrid-cloud"
+        ]
       },
       {
         "id": "q-gcppca-s20-030",
@@ -811,14 +954,19 @@
         ],
         "explanation": {
           "general explanation": "To access Google APIs (like Pub/Sub) privately from an external network (AWS) over an Interconnect, Private Service Connect (PSC) is the modern, highly scalable architectural solution. You create a PSC endpoint for Google APIs within your GCP VPC. This endpoint gets a private IP address from your subnet. You advertise this private IP over the Interconnect to AWS via BGP. Finally, you configure DNS in AWS so that calls to `pubsub.googleapis.com` resolve to that private PSC IP, ensuring the traffic routes securely and privately over the Interconnect.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure Cloud VPN over the Cross-Cloud Interconnect. Enable BGP to automatically advertise the global BigQuery API endpoints to AWS.": "While BGP advertises routes, the default global API endpoints resolve to public IPs. Traffic would route over the internet unless Private Google Access or PSC is specifically configured.",
             "Deploy a pool of Compute Engine instances running HAProxy in the GCP VPC to intercept the traffic and forward it to Pub/Sub via the internal network.": "Deploying and managing a custom fleet of HAProxy VMs introduces a massive operational bottleneck, high costs, and unnecessary complexity when PSC handles API proxying natively and infinitely scales.",
             "Enable VPC Service Controls on the Pub/Sub API and create an ingress rule allowing traffic from the AWS ASN.": "VPC Service Controls enforce access policies; they do not dictate network routing paths. Enabling VPC-SC will not magically pull the traffic off the public internet and onto the Interconnect."
           }
         },
         "difficulty": "Hard",
-        "tags": ["private-service-connect", "pubsub", "cross-cloud-interconnect", "multicloud"]
+        "tags": [
+          "private-service-connect",
+          "pubsub",
+          "cross-cloud-interconnect",
+          "multicloud"
+        ]
       }
     ]
   }

@@ -21,14 +21,19 @@
         ],
         "explanation": {
           "general explanation": "In Dataproc, Primary Workers store HDFS data and process compute, while Secondary Workers only process compute and do not store HDFS data. Because Spot VMs can be preempted at any time, using them for Primary Workers would lead to HDFS block loss and cluster corruption. Therefore, Spot VMs must only be used for Secondary Workers, with Master and Primary nodes running on Standard VMs.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Provision the Master node as a Standard VM, and provision both Primary Workers and Secondary Workers as Spot VMs.": "Using Spot VMs for Primary Workers is highly dangerous because they hold HDFS data. Preemption will cause data loss and job failures.",
             "Provision the Master node as a Spot VM with a persistent disk, and allocate all worker nodes as Standard VMs to ensure data durability.": "The Master node manages the cluster state (YARN resource manager, HDFS NameNode). If the Master node is preempted, the entire cluster fails immediately.",
             "Provision the entire cluster (Master, Primary, and Secondary Workers) as Spot VMs and enable Dataproc Auto-scaling to recover preempted nodes rapidly.": "An all-Spot cluster is highly unstable. Preemption of the master or primary workers will destroy the cluster and lose data before auto-scaling can respond."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Dataproc", "Spot VMs", "Hadoop", "Compute Volatility"]
+        "tags": [
+          "Dataproc",
+          "Spot VMs",
+          "Hadoop",
+          "Compute Volatility"
+        ]
       },
       {
         "id": "q-gcppca-s46-002",
@@ -48,14 +53,19 @@
         ],
         "explanation": {
           "general explanation": "When you create a node pool using Spot VMs in GKE, Google automatically applies the `cloud.google.com/gke-spot=true:NoSchedule` taint to those nodes. This ensures that standard workloads are not accidentally scheduled on volatile hardware. You must explicitly add a matching toleration to your worker pods for them to run on the Spot nodes.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "GKE forces Spot node pools to run in a separate VPC subnet that standard pods cannot route traffic to.": "Spot nodes share the same VPC subnets and networking as standard nodes in the cluster.",
             "Spot nodes in GKE natively reject all Deployments unless they are explicitly wrapped in a SpotWorkload custom resource definition.": "There is no 'SpotWorkload' CRD requirement. Native Kubernetes tolerations and nodeSelectors are used.",
             "GKE assigns a lower PriorityClass to Spot nodes, ensuring standard pods always preempt Spot workloads.": "PriorityClasses are assigned to Pods, not Nodes, and dictate Pod-to-Pod preemption for scheduling, not underlying infrastructure volatility."
           }
         },
         "difficulty": "Hard",
-        "tags": ["GKE", "Spot VMs", "Taints and Tolerations", "Compute Volatility"]
+        "tags": [
+          "GKE",
+          "Spot VMs",
+          "Taints and Tolerations",
+          "Compute Volatility"
+        ]
       },
       {
         "id": "q-gcppca-s46-003",
@@ -75,14 +85,19 @@
         ],
         "explanation": {
           "general explanation": "Compute Engine Managed Instance Groups (MIGs) dictate their instance type and provisioning model strictly through the attached Instance Template. A single MIG cannot natively mix Standard and Spot VMs via a distribution policy (unlike AWS ASGs). To achieve a guaranteed baseline of Standard VMs and scale out using Spot VMs, you must create two separate MIGs and attach them both to the same Load Balancer backend service.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Create a single Managed Instance Group (MIG) with a Standard Instance Template. Set the autoscaler's `scaleOutProfile` to 'SPOT_ONLY'.": "There is no 'scaleOutProfile' setting in GCP MIG autoscalers that switches the provisioning model dynamically.",
             "Configure a single MIG with an Instance Template configured for Spot VMs, but apply a Stateful Policy to the first 50 instances to prevent them from being preempted.": "Stateful Policies protect data disks and IPs during recreation; they cannot magically convert a Spot VM into a non-preemptible Standard VM.",
             "Use a Regional MIG and configure the `mixedInstancesPolicy` to maintain a 20% Standard and 80% Spot distribution target.": "GCP MIGs do not currently support a native `mixedInstancesPolicy` for blending Spot and Standard instances within a single group."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Compute Engine", "Managed Instance Groups", "Spot VMs", "Auto-scaling"]
+        "tags": [
+          "Compute Engine",
+          "Managed Instance Groups",
+          "Spot VMs",
+          "Auto-scaling"
+        ]
       },
       {
         "id": "q-gcppca-s46-004",
@@ -102,14 +117,19 @@
         ],
         "explanation": {
           "general explanation": "When Compute Engine preempts a Spot VM, it sends an ACPI G2 Soft Off signal to the guest OS. You have a maximum of 30 seconds to run a shutdown script before the instance is forcibly terminated. Capturing this signal allows you to gracefully flush intermediate states/buffers to persistent storage (like Cloud Storage) within that 30-second window, preventing the loss of work.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Use a Compute Engine startup script to monitor the `compute.googleapis.com/instance/preemptions` metric and pause the encoding process when the metric spikes.": "Metrics are aggregated and delayed. They cannot be used for real-time interception of an impending preemption on a specific instance.",
             "Configure the Spot VM with a 'Suspend' preemption action instead of 'Delete', ensuring the VM automatically pauses the video encoding without any application-level changes.": "While suspending Spot VMs is possible under certain constraints, application-level checkpointing is vastly more reliable for video encoding because Spot suspend requires specific machine families and capacity guarantees that might not be met, resulting in termination anyway.",
             "Set the `terminationGracePeriodSeconds` to 300 on the VM instance template to allow the 5-minute chunk to complete before Google forces the preemption.": "`terminationGracePeriodSeconds` is a Kubernetes (GKE) concept, not a Compute Engine instance template property. Furthermore, Spot VMs enforce a hard 30-second preemption limit regardless."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Compute Engine", "Spot VMs", "Shutdown Scripts", "Preemption"]
+        "tags": [
+          "Compute Engine",
+          "Spot VMs",
+          "Shutdown Scripts",
+          "Preemption"
+        ]
       },
       {
         "id": "q-gcppca-s46-005",
@@ -129,14 +149,19 @@
         ],
         "explanation": {
           "general explanation": "When using Spot VMs for Vertex AI Custom Training, preemptions are highly likely over a 48-hour period. Vertex AI handles the underlying infrastructure by automatically provisioning a replacement Spot VM when one is preempted. However, the application must handle the state. The training code must implement checkpointing (saving model weights periodically to Cloud Storage) and must automatically detect and resume from the latest checkpoint when the script restarts on the new VM.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "The training code must be wrapped in a Docker container that exposes an HTTP endpoint for Vertex AI to send a REST payload before preemption.": "Vertex AI does not send a REST payload before preemption. The VM simply receives standard OS termination signals.",
             "The training code must use a shared NFS volume (Filestore) to store in-memory tensors, as Vertex AI automatically re-attaches Filestore to new Spot instances.": "While possible, Cloud Storage is the standard, native, and cost-effective method for ML checkpointing in Vertex AI. Managing Filestore for ephemeral training workers is an anti-pattern.",
             "The training code must be split into execution graphs that strictly finish within the 24-hour Spot VM maximum runtime limit.": "Spot VMs do not have a 24-hour maximum runtime limit (unlike legacy Preemptible VMs). They can run indefinitely until preempted."
           }
         },
         "difficulty": "Medium",
-        "tags": ["Vertex AI", "Spot VMs", "Machine Learning", "Checkpointing"]
+        "tags": [
+          "Vertex AI",
+          "Spot VMs",
+          "Machine Learning",
+          "Checkpointing"
+        ]
       },
       {
         "id": "q-gcppca-s46-006",
@@ -156,14 +181,19 @@
         ],
         "explanation": {
           "general explanation": "A key difference between the older legacy Preemptible VMs and the modern Spot VMs is the maximum runtime. Preemptible VMs have a hard system-enforced termination at 24 hours. Spot VMs do not have any maximum runtime limit. They will run indefinitely until Google Cloud needs the compute capacity. Therefore, custom scripts designed to preemptively restart at 23 hours are unnecessary and should be removed.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Spot VMs enforce a 12-hour maximum runtime, so the restart logic must be aggressively updated to run twice as often.": "Spot VMs have no maximum runtime limit.",
             "Spot VMs utilize the same strict 24-hour hard limit as legacy Preemptible VMs, so the legacy restart logic must be maintained exactly as is.": "This is factually incorrect; Spot VMs explicitly removed the 24-hour constraint.",
             "Spot VMs automatically snapshot their memory to persistent disk at the 24-hour mark, eliminating the need for application-level restart logic.": "Spot VMs do not automatically snapshot memory. If preempted, they terminate or stop based on configuration, but state management is up to the user."
           }
         },
         "difficulty": "Easy",
-        "tags": ["Compute Engine", "Spot VMs", "Preemptible VMs", "Compute Volatility"]
+        "tags": [
+          "Compute Engine",
+          "Spot VMs",
+          "Preemptible VMs",
+          "Compute Volatility"
+        ]
       },
       {
         "id": "q-gcppca-s46-007",
@@ -183,14 +213,18 @@
         ],
         "explanation": {
           "general explanation": "In GKE Autopilot, you do not manage nodes or node pools directly. To run workloads on Spot compute, you simply specify the requirement at the Pod level using a `nodeSelector`. By adding `cloud.google.com/gke-spot: \"true\"` to your pod spec, GKE Autopilot automatically provisions Spot capacity on the backend and schedules the pod onto it, seamlessly managing the volatility.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Use gcloud to create a secondary Autopilot cluster dedicated entirely to Spot compute.": "Autopilot clusters are not strictly 'spot' or 'standard'. The cluster dynamically provisions capacity based on the pod specifications submitted.",
             "Configure a custom Kubernetes `StorageClass` with the provisioner set to `spot.gke.io` and mount it to the analytics pod.": "StorageClasses manage persistent volumes, not compute node provisioning.",
             "Modify the Autopilot cluster's default NodePool settings in the Google Cloud Console to enable Spot pricing.": "You cannot manage NodePools in GKE Autopilot; node management is entirely abstracted away."
           }
         },
         "difficulty": "Medium",
-        "tags": ["GKE Autopilot", "Spot VMs", "nodeSelector"]
+        "tags": [
+          "GKE Autopilot",
+          "Spot VMs",
+          "nodeSelector"
+        ]
       },
       {
         "id": "q-gcppca-s46-008",
@@ -210,14 +244,19 @@
         ],
         "explanation": {
           "general explanation": "Local SSDs are physically attached to the host server where the VM runs. When a Spot VM is preempted (regardless of whether it is configured to STOP or DELETE), the VM is removed from the host hardware. Consequently, any data on the attached Local SSDs is irrevocably lost. You must design Spot VM workloads to treat Local SSDs as strictly volatile scratch space.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "The data is perfectly retained because the instance was stopped and restarted within the same zone.": "When stopped, the VM loses its association with the physical host, meaning the Local SSD is lost.",
             "The data is preserved only if the preemption action was configured to 'STOP' instead of 'DELETE'.": "Configuring the preemption action to STOP preserves the *Persistent Disk* (the boot disk or attached PDs), but it does not preserve Local SSDs.",
             "The data is temporarily backed up to a hidden Cloud Storage bucket and will be transparently restored upon boot.": "GCP does not automatically backup or restore Local SSD data. It is ephemeral by definition."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Compute Engine", "Spot VMs", "Local SSD", "Compute Volatility"]
+        "tags": [
+          "Compute Engine",
+          "Spot VMs",
+          "Local SSD",
+          "Compute Volatility"
+        ]
       },
       {
         "id": "q-gcppca-s46-009",
@@ -239,14 +278,19 @@
         ],
         "explanation": {
           "general explanation": "Dataflow Flexible Resource Scheduling (FlexRS) is designed specifically to reduce batch processing costs by utilizing a mix of standard and preemptible (Spot) VMs. It delays job execution to find the optimal time to grab cheap compute capacity, guaranteeing execution within a 6-hour window. FlexRS is only applicable to Batch jobs, not Streaming jobs.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Set the worker machine type to a Preemptible VM class explicitly in the pipeline options.": "While you can manually set workers to preemptible, using FlexRS is the native, managed way to guarantee completion within a timeframe while optimizing for Spot pricing without manual intervention.",
             "Configure the pipeline to write intermediate PCollection states to a multi-region Cloud Storage bucket manually.": "Dataflow automatically handles state and checkpointing when using FlexRS and Dataflow Shuffle. You do not need to manually write intermediate PCollections to GCS to survive preemptions.",
             "Disable Dataflow Shuffle to prevent data loss when Spot worker nodes are preempted.": "You should actually *enable* (or rely on the default) Dataflow Shuffle. FlexRS requires the Dataflow Shuffle service because it moves the shuffle state off the volatile worker VMs and into the Google-managed backend, protecting data during preemptions."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Dataflow", "FlexRS", "Spot VMs", "Cost Optimization"]
+        "tags": [
+          "Dataflow",
+          "FlexRS",
+          "Spot VMs",
+          "Cost Optimization"
+        ]
       },
       {
         "id": "q-gcppca-s46-010",
@@ -268,14 +312,19 @@
         ],
         "explanation": {
           "general explanation": "Spot VMs provide a strict 30-second warning before termination. In GKE, when the kubelet detects the preemption notice on a Spot node, it begins gracefully terminating the pods (sending `SIGTERM`). However, because the underlying hardware will vanish in 30 seconds, GKE caps the graceful shutdown window for pods on Spot nodes to 25 seconds. After 25 seconds, a `SIGKILL` is issued, forcefully terminating the pod, even if the pod's `terminationGracePeriodSeconds` requested 120 seconds.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "The pod will be allowed to run for the full 120 seconds defined in `terminationGracePeriodSeconds` before the Spot node is terminated.": "Hardware limits supersede Kubernetes software configurations. The hardware vanishes in 30 seconds, so the 120-second request is physically impossible to honor.",
             "GKE will intercept the Spot preemption signal and automatically Live Migrate the pod to a Standard node to honor the 120-second grace period.": "Spot VMs do not support Live Migration, and Kubernetes pods cannot be seamlessly live-migrated between nodes in this manner without a restart.",
             "The pod will be suspended and its memory state saved to disk, bypassing the `SIGTERM` process entirely.": "GKE pods do not suspend memory state to disk natively upon node preemption; they are terminated."
           }
         },
         "difficulty": "Hard",
-        "tags": ["GKE", "Spot VMs", "Graceful Shutdown", "terminationGracePeriodSeconds"]
+        "tags": [
+          "GKE",
+          "Spot VMs",
+          "Graceful Shutdown",
+          "terminationGracePeriodSeconds"
+        ]
       },
       {
         "id": "q-gcppca-s46-011",
@@ -295,14 +344,19 @@
         ],
         "explanation": {
           "general explanation": "Spot VMs receive a 30-second ACPI termination warning. By catching this signal in a shutdown script, you can instruct your application to negatively acknowledge (NACK) the message or reset its ack deadline to 0. This tells Pub/Sub that the worker is abandoning the task, prompting Pub/Sub to instantly redeliver the message to a different, active worker, completely eliminating the 9-minute wait.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure the Spot MIG to use an external HTTPS load balancer and set the backend timeout to 30 seconds.": "The workers are Pub/Sub subscribers pulling messages, not HTTP servers behind a load balancer receiving requests.",
             "Switch the Pub/Sub subscription from Pull to Push, as Push subscriptions automatically detect Spot VM preemption and retry immediately.": "Push subscriptions rely on HTTP responses. If the VM dies unexpectedly, the Push endpoint will simply time out based on the ack deadline. It does not automatically detect preemption any faster.",
             "Reduce the Pub/Sub ack deadline to 30 seconds, and configure the application to process the task faster.": "The task intrinsically takes 5 minutes. Reducing the deadline to 30 seconds would cause Pub/Sub to constantly redeliver the message while the worker is still actively processing it, leading to massive duplicate processing."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Pub/Sub", "Spot VMs", "Compute Volatility", "Helicopter Racing League"]
+        "tags": [
+          "Pub/Sub",
+          "Spot VMs",
+          "Compute Volatility",
+          "Helicopter Racing League"
+        ]
       },
       {
         "id": "q-gcppca-s46-012",
@@ -322,14 +376,19 @@
         ],
         "explanation": {
           "general explanation": "Dedicated game servers (like those managed by Agones) maintain long-lived, active UDP/TCP connections with clients. They are highly stateful in memory during a match. If a Spot node is preempted, the 30-second warning is insufficient to gracefully migrate active player connections to a new server without dropping them. Disconnecting players mid-match is unacceptable for gaming architectures. Spot VMs should only be used for stateless microservices (e.g., matchmaking, leaderboards).",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Agones requires strict stateful disk attachments (Persistent Volumes) for high-speed logging, which are incompatible with Spot VMs.": "Spot VMs fully support Persistent Volumes. However, statefulness in gaming is primarily in-memory and connection-based, not just disk-based.",
             "GKE Spot node pools cannot be exposed via external UDP Load Balancers, which are required for real-time multiplayer gaming traffic.": "Spot nodes share the exact same networking capabilities as standard nodes; they can absolutely be exposed via UDP load balancers.",
             "Agones relies on Kubernetes daemonsets that are natively blocked from running on Spot nodes by the `cloud.google.com/gke-spot=true:NoSchedule` taint.": "While the taint exists, DaemonSets can simply be configured with the appropriate tolerations to run on Spot nodes. The real issue is the abrupt termination of player sessions."
           }
         },
         "difficulty": "Easy",
-        "tags": ["GKE", "Agones", "Spot VMs", "Mountkirk Games"]
+        "tags": [
+          "GKE",
+          "Agones",
+          "Spot VMs",
+          "Mountkirk Games"
+        ]
       },
       {
         "id": "q-gcppca-s46-013",
@@ -349,14 +408,19 @@
         ],
         "explanation": {
           "general explanation": "Unlike legacy Preemptible VMs which had a fixed discount, Spot VM pricing is highly dynamic. The discount (up to 91%) fluctuates based on the current available compute capacity in a specific zone or region. For a massive 50,000 vCPU grid, capacity in a single zone will likely be exhausted, leading to high preemption rates. Distributing the load globally allows you to target zones with the lowest current Spot prices and the highest available idle capacity.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Deploy all 50,000 vCPUs in a single zone (e.g., `us-central1-a`) to maximize data locality and minimize inter-zone egress costs, relying on the fixed 91% Spot discount.": "Spot discounts are not fixed at 91%; they vary. Furthermore, requesting 50k vCPUs in one zone using Spot will almost certainly hit capacity limits and trigger massive preemptions.",
             "Provision the grid using Preemptible VMs instead of Spot VMs to guarantee a flat, predictable 80% discount rate globally.": "Preemptible VMs are the older generation and their pricing model is being deprecated in favor of Spot VMs. Spot VMs provide deeper potential discounts and no 24-hour runtime limit.",
             "Commit to a 3-year Flexible Committed Use Discount (CUD) applied directly to the Spot VM fleets to lower the dynamic price floor further.": "Committed Use Discounts (CUDs) cannot be applied to Spot VMs or Preemptible VMs. They are completely separate pricing mechanisms."
           }
         },
         "difficulty": "Medium",
-        "tags": ["Compute Engine", "Spot Pricing", "Cost Optimization", "Architecture"]
+        "tags": [
+          "Compute Engine",
+          "Spot Pricing",
+          "Cost Optimization",
+          "Architecture"
+        ]
       },
       {
         "id": "q-gcppca-s46-014",
@@ -378,14 +442,19 @@
         ],
         "explanation": {
           "general explanation": "When a Spot VM's preemption action is set to STOP, Compute Engine shuts down the VM and changes its state to TERMINATED instead of deleting it. This preserves the boot disk and any attached persistent disks. Because the VM is not actively running, you are not billed for vCPU or memory, but you are still billed for the storage consumed by the persistent disks and any attached static IP addresses.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Compute Engine will automatically restart the stopped Spot VM as soon as new spot capacity becomes available in the zone.": "Compute Engine does *not* automatically restart stopped Spot VMs. You must manually start them or use a script/MIG to attempt restarts.",
             "You must manually configure a snapshot schedule, as the STOP action deletes the persistent disk but retains an automatic snapshot for recovery.": "The STOP action retains the actual persistent disk, not just a snapshot. It does not delete the PD.",
             "Configuring the action to STOP allows the Spot VM to retain its attached Local SSD data across the preemption event.": "Local SSD data is always lost upon preemption, regardless of whether the preemption action is STOP or DELETE."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Compute Engine", "Spot VMs", "Preemption Actions", "Billing"]
+        "tags": [
+          "Compute Engine",
+          "Spot VMs",
+          "Preemption Actions",
+          "Billing"
+        ]
       },
       {
         "id": "q-gcppca-s46-015",
@@ -405,14 +474,19 @@
         ],
         "explanation": {
           "general explanation": "Live Migration is a premium feature of Standard Compute Engine VMs that allows Google to move running VMs from one physical host to another without downtime during infrastructure maintenance. Spot VMs, due to their discounted and volatile nature, do not support Live Migration. If the underlying host requires maintenance, the Spot VM is simply preempted (terminated). Therefore, running a critical ERP system on Spot VMs is an anti-pattern.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Standard VMs are rebooted instantly, whereas Spot VMs are suspended to disk and restored automatically after the maintenance event completes.": "Spot VMs are not automatically suspended and restored by Google during maintenance; they are preempted.",
             "Spot VMs receive priority over Standard VMs during Live Migration to ensure ephemeral workloads are not abruptly disrupted.": "Spot VMs do not support Live Migration at all, let alone receive priority.",
             "Both Standard and Spot VMs are Live Migrated, but Spot VMs will incur full standard pricing during the migration window.": "Spot VMs cannot Live Migrate."
           }
         },
         "difficulty": "Easy",
-        "tags": ["Compute Engine", "Live Migration", "Spot VMs", "Host Maintenance"]
+        "tags": [
+          "Compute Engine",
+          "Live Migration",
+          "Spot VMs",
+          "Host Maintenance"
+        ]
       },
       {
         "id": "q-gcppca-s46-016",
@@ -432,14 +506,19 @@
         ],
         "explanation": {
           "general explanation": "Node Auto-provisioning (NAP) examines pending pods and their scheduling constraints to dynamically create matching node pools. By adding a nodeSelector or nodeAffinity targeting `cloud.google.com/gke-spot=true` to your Pod specification, you explicitly signal to NAP that the pod requires a Spot node. NAP will automatically provision a Spot node pool to fulfill this request.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure the NAP profile globally in the GKE control plane to enable `spot-only-mode=true`.": "Setting this globally would force *all* newly auto-provisioned node pools to use Spot instances, violating the requirement to keep other workloads on standard nodes.",
             "Create a dedicated PriorityClass named `SpotPriority` and assign it to the batch workload's deployment.": "PriorityClasses are used for Pod preemption logic (which pod to evict if a node is full), not for dictating the underlying infrastructure provisioning model to NAP.",
             "Deploy the batch workload as a Kubernetes `Job` resource, which NAP intrinsically maps to Spot instances by default.": "NAP does not natively assume all `Jobs` should run on Spot instances. You must explicitly request Spot capacity via labels/selectors."
           }
         },
         "difficulty": "Medium",
-        "tags": ["GKE", "Node Auto-provisioning", "Spot VMs", "nodeSelector"]
+        "tags": [
+          "GKE",
+          "Node Auto-provisioning",
+          "Spot VMs",
+          "nodeSelector"
+        ]
       },
       {
         "id": "q-gcppca-s46-017",
@@ -459,14 +538,19 @@
         ],
         "explanation": {
           "general explanation": "Google Cloud Batch is fully integrated with Compute Engine's Spot provisioning model. It is designed to handle compute volatility gracefully. If a Spot VM running a Batch task is preempted, Cloud Batch automatically detects the interruption, marks the task execution as failed due to preemption, and requeues the task to be processed again on a newly provisioned instance. (Note: Because it restarts from the beginning, tasks should ideally be idempotent or implement checkpointing).",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "The specific task permanently fails, and Cloud Batch marks the overall job as 'FAILED'.": "Batch is designed for fault tolerance; it retries preempted tasks based on its internal retry policies, preventing immediate job failure.",
             "Cloud Batch falls back to executing the interrupted task on a Standard VM to guarantee its completion.": "Cloud Batch honors the provisioning model you specified. It does not automatically upgrade your workload to a more expensive Standard VM tier without explicit configuration.",
             "Cloud Batch suspends the preempted VM's memory state and instantly live-migrates the active task to another Spot VM in the pool.": "Spot VMs cannot be live-migrated, and memory state is lost. The task starts fresh on the new VM."
           }
         },
         "difficulty": "Medium",
-        "tags": ["Cloud Batch", "Spot VMs", "Fault Tolerance", "Compute Volatility"]
+        "tags": [
+          "Cloud Batch",
+          "Spot VMs",
+          "Fault Tolerance",
+          "Compute Volatility"
+        ]
       },
       {
         "id": "q-gcppca-s46-018",
@@ -486,14 +570,19 @@
         ],
         "explanation": {
           "general explanation": "Spot VMs and legacy Preemptible VMs utilize spare, idle capacity across Google's shared multi-tenant infrastructure. Sole-Tenant Nodes provide dedicated hardware strictly for a single customer. Because the hardware is fully dedicated to you, there is no 'spare Google capacity' to utilize dynamically. Therefore, GCP strictly prohibits provisioning Spot or Preemptible VMs on Sole-Tenant Nodes.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "The Spot VMs will provision successfully, but the discount will be capped at 30% instead of 91% due to the dedicated hardware overhead.": "Spot VMs cannot be provisioned on sole-tenant nodes at all.",
             "The Spot VMs will provision successfully, but they will never be preempted because the customer exclusively owns the capacity of the node.": "Spot VMs are blocked from placement on sole-tenant nodes by design.",
             "The provisioning request will fail unless the Sole-Tenant Node group is configured with the 'Dynamic Capacity' flag enabled.": "There is no 'Dynamic Capacity' flag for sole-tenant nodes that enables Spot VMs."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Compute Engine", "Sole-Tenant Nodes", "Spot VMs", "Constraints"]
+        "tags": [
+          "Compute Engine",
+          "Sole-Tenant Nodes",
+          "Spot VMs",
+          "Constraints"
+        ]
       },
       {
         "id": "q-gcppca-s46-019",
@@ -513,14 +602,20 @@
         ],
         "explanation": {
           "general explanation": "In a mixed Dataproc cluster, Spot (secondary) workers perform computation but also locally store intermediate shuffle data during complex Spark operations. If a Spot node is preempted, its local shuffle data is lost, causing downstream tasks to fail (FetchFailedException). Dataproc Enhanced Flexibility for Spark (EFS) solves this by decoupling compute from shuffle storage. It configures the Spot workers to write their intermediate shuffle data to the stable Primary workers (or HDFS), ensuring that if a Spot worker dies, the shuffle data survives and the job continues smoothly.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Switch the Primary workers to Spot VMs and the Secondary workers to Standard VMs to invert the shuffle dependency.": "This is an extreme anti-pattern. Primary workers hold HDFS data; if they are Spot VMs and get preempted, the entire cluster faces data corruption and failure.",
             "Implement a Dataproc Initialization Action to mount a single shared Filestore volume across all 45 Spot workers for synchronized shuffle storage.": "Using Filestore as a Spark shuffle backend is a massive performance bottleneck and highly non-standard. EFS is the native, optimized solution.",
             "Increase the `spark.task.maxFailures` parameter to infinity so the job retries the lost shuffle partitions indefinitely until Spot capacity returns.": "While retrying helps with transient errors, indefinitely retrying massive shuffle stages wastes compute time and delays the job indefinitely. EFS solves the root cause."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Dataproc", "Spot VMs", "Spark", "EFS", "Shuffle Data"]
+        "tags": [
+          "Dataproc",
+          "Spot VMs",
+          "Spark",
+          "EFS",
+          "Shuffle Data"
+        ]
       },
       {
         "id": "q-gcppca-s46-020",
@@ -542,14 +637,19 @@
         ],
         "explanation": {
           "general explanation": "High-end GPUs (like A100s) have extremely high demand and low spare capacity, making Spot provisioning volatile. To mitigate `ZONE_RESOURCE_POOL_EXHAUSTED` errors, you must maximize your surface area by deploying across multiple zones (or regions). Additionally, if the workload is time-sensitive, you should implement fallback logic to provision Standard (on-demand) VMs when Spot capacity is entirely unavailable, ensuring the training can proceed.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Purchase a 1-year Committed Use Discount (CUD) specifically for A100 GPUs and apply it to the Spot VMs to guarantee allocation priority.": "CUDs cannot be applied to Spot VMs. Spot VMs inherently provide no capacity guarantees, regardless of billing commitments.",
             "Change the preemption action of the Spot VMs from DELETE to STOP, ensuring the GPU allocation remains reserved even when the instance is preempted.": "Stopping a Spot VM does not reserve the underlying hardware or GPU. The hardware is returned to the pool. When you try to start it again, you may still hit capacity errors.",
             "Upgrade your Cloud Billing account to Premium Support to unlock dedicated Spot capacity reserves in your preferred zone.": "Spot capacity is based strictly on global idle infrastructure. Support tiers do not grant 'dedicated Spot reserves'."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Compute Engine", "Spot VMs", "GPUs", "Capacity Planning"]
+        "tags": [
+          "Compute Engine",
+          "Spot VMs",
+          "GPUs",
+          "Capacity Planning"
+        ]
       },
       {
         "id": "q-gcppca-s46-021",
@@ -569,14 +669,19 @@
         ],
         "explanation": {
           "general explanation": "The fundamental architectural principle for designing resilient applications on volatile compute (like Spot VMs) is to decouple state from the ephemeral compute node. Writing processed message states to a local disk is an anti-pattern because the disk can be destroyed, or the VM might fail to restart. Externalizing the state to a managed, durable, highly available database (like Cloud SQL or Firestore) ensures that any replacement worker can instantly query the true, globally consistent state and resume processing.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure the Spot VM's preemption action to STOP instead of DELETE, so the SQLite database on the boot disk is preserved across preemptions.": "While STOP preserves the disk, relying on a specific VM to restart to resume a streaming pipeline introduces massive latency and potential deadlocks if that specific zone remains out of capacity. Ephemeral workers should be totally replaceable.",
             "Use a Compute Engine startup script to immediately take a snapshot of the boot disk every 60 seconds.": "Taking snapshots every 60 seconds is highly inefficient, costly, and still leaves up to a 59-second window of data loss for non-replayable messages.",
             "Mount a Regional Persistent Disk to the Spot VM so the SQLite database is synchronously replicated to a backup zone.": "A Regional PD ensures data survives a zone failure, but if the Spot VM is preempted and the disk is deleted (or locked by the terminated instance), it doesn't solve the architectural flaw of binding state to a volatile worker."
           }
         },
         "difficulty": "Medium",
-        "tags": ["Architecture", "Spot VMs", "State Management", "Compute Volatility"]
+        "tags": [
+          "Architecture",
+          "Spot VMs",
+          "State Management",
+          "Compute Volatility"
+        ]
       },
       {
         "id": "q-gcppca-s46-022",
@@ -596,14 +701,19 @@
         ],
         "explanation": {
           "general explanation": "In a Managed Instance Group, preemption is an infrastructure-level event managed directly by the MIG controller. When a Spot VM is preempted, the MIG knows immediately (via internal signaling) that the VM is gone and that it must maintain the target size. It will proactively attempt to provision replacement instances. The autohealer is an application-level mechanism (checking if an HTTP endpoint responds) and is bypassed completely during a preemption event.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "The autohealer detects the instances are unreachable after 10 seconds, waits for the 300-second initial delay, and then signals the MIG to recreate them.": "The autohealer is irrelevant for preemptions. Preemptions are recognized directly by the infrastructure. (Also, initial delay applies to *newly* created instances, not existing ones failing).",
             "The MIG disables the autohealer for Spot instances by default to prevent continuous recreation loops during capacity shortages.": "Autohealers are fully supported and highly recommended on Spot MIGs to catch application crashes, independent of preemptions.",
             "The autohealer marks the 5 instances as UNHEALTHY, but because they were preempted rather than crashed, the MIG waits 24 hours before attempting recreation.": "The MIG actively and continuously attempts to recreate preempted instances to meet its target size; it does not wait 24 hours."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Compute Engine", "Managed Instance Groups", "Spot VMs", "Autohealing"]
+        "tags": [
+          "Compute Engine",
+          "Managed Instance Groups",
+          "Spot VMs",
+          "Autohealing"
+        ]
       },
       {
         "id": "q-gcppca-s46-023",
@@ -625,14 +735,19 @@
         ],
         "explanation": {
           "general explanation": "Connection draining allows existing connections to complete when an instance is removed from a load balancer. However, Spot VMs have a strict, unchangeable 30-second preemption warning. When preemption occurs, the instance is removed from the backend, so new requests stop. Even though connection draining is set to 300 seconds, the hardware disappears after 30 seconds. Therefore, the load balancer will sever any active connections that haven't finished within that 30-second window, overriding the 300-second draining configuration.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "The Spot VM will honor the 300-second connection draining timeout and remain active until all existing connections successfully close.": "Hardware limits (30s preemption) override software configurations (300s draining). The VM physically cannot remain active.",
             "Compute Engine will suspend the instance's preemption process until the Load Balancer signals that connection draining is complete.": "Preemption is driven by Google's global capacity needs and cannot be delayed by customer application load balancers.",
             "The Spot VM will automatically migrate the active TCP connections to another healthy instance in the MIG.": "TCP connections cannot be seamlessly migrated between distinct VMs in this architecture."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Cloud Load Balancing", "Connection Draining", "Spot VMs", "Compute Volatility"]
+        "tags": [
+          "Cloud Load Balancing",
+          "Connection Draining",
+          "Spot VMs",
+          "Compute Volatility"
+        ]
       },
       {
         "id": "q-gcppca-s46-024",
@@ -652,14 +767,19 @@
         ],
         "explanation": {
           "general explanation": "Spot VMs are highly volatile and can be preempted at any time, often simultaneously if a region experiences a capacity crunch. Stateful clustered databases (like MongoDB, Cassandra, ZooKeeper) rely on maintaining a quorum of active nodes to accept writes and ensure consistency. If multiple Spot nodes are preempted at once, the database loses quorum, goes offline, and might suffer split-brain or data corruption scenarios. Spot nodes are strictly an anti-pattern for core stateful database workloads.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "StatefulSets are incompatible with the `pd.csi.storage.gke.io` provisioner on Spot instances.": "StatefulSets and Persistent Volumes work perfectly fine on Spot nodes technically, the issue is architectural resilience, not technical incompatibility.",
             "Spot instances cannot be attached to internal VPC networks, preventing the MongoDB replicas from communicating.": "Spot instances have standard VPC networking capabilities.",
             "GKE automatically forces pods on Spot nodes to be stateless by mounting `/data` as an ephemeral `emptyDir` volume.": "GKE does not alter pod volume mounts based on the node's provisioning model. If you specify a PersistentVolumeClaim, GKE will mount a PD."
           }
         },
         "difficulty": "Medium",
-        "tags": ["GKE", "StatefulSets", "Spot VMs", "Databases"]
+        "tags": [
+          "GKE",
+          "StatefulSets",
+          "Spot VMs",
+          "Databases"
+        ]
       },
       {
         "id": "q-gcppca-s46-025",
@@ -679,14 +799,19 @@
         ],
         "explanation": {
           "general explanation": "Spot VM pricing is a market-driven model designed to sell Google's excess, idle infrastructure capacity. The price dynamically fluctuates (up to a 91% discount off standard on-demand pricing) based on the real-time supply and demand for specific machine types within specific zones. When demand is low and idle capacity is high, the discount is deep. When capacity tightens, the price rises (and preemptions occur).",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "The pricing is dynamically adjusted based on the aggregate spot capacity demanded by the customer's specific billing account.": "Pricing is based on global multi-tenant supply/demand, not isolated to a single customer's account usage.",
             "The pricing is determined by the `terminationGracePeriodSeconds` specified in the instance template; shorter grace periods yield steeper discounts.": "The preemption warning is fixed at 30 seconds for Spot VMs; there is no configurable grace period that alters the price.",
             "The pricing varies based on the amount of Committed Use Discounts (CUDs) the organization has purchased globally.": "CUDs and Spot pricing are entirely separate mechanisms. Purchasing CUDs does not affect your Spot discount rate."
           }
         },
         "difficulty": "Easy",
-        "tags": ["Compute Engine", "Spot VMs", "Pricing", "Cost Optimization"]
+        "tags": [
+          "Compute Engine",
+          "Spot VMs",
+          "Pricing",
+          "Cost Optimization"
+        ]
       },
       {
         "id": "q-gcppca-s46-026",
@@ -708,14 +833,19 @@
         ],
         "explanation": {
           "general explanation": "To configure an instance template for Spot VMs via Terraform or API, you must specify the `provisioning_model` as `\"SPOT\"`. To ensure the instances are stopped rather than deleted upon preemption, you must set the `instance_termination_action` to `\"STOP\"`. Note that for Spot VMs, `preemptible` must generally be set to `true` (or omitted as it defaults based on model), `on_host_maintenance` must be `TERMINATE`, and `automatic_restart` must be `false`.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Set `on_host_maintenance` to `\"MIGRATE\"`.": "Spot VMs do not support live migration. This must be set to `TERMINATE`.",
             "Set `preemptible` to `false` to explicitly differentiate it from legacy models.": "Spot VMs are a type of preemptible VM. Setting this to false conflicts with the SPOT provisioning model.",
             "Set `automatic_restart` to `true` to ensure the instance recovers quickly.": "Spot VMs cannot use automatic_restart. If they are preempted, the infrastructure does not restart them automatically (unless managed by a MIG)."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Compute Engine", "Terraform", "Spot VMs", "Instance Templates"]
+        "tags": [
+          "Compute Engine",
+          "Terraform",
+          "Spot VMs",
+          "Instance Templates"
+        ]
       },
       {
         "id": "q-gcppca-s46-027",
@@ -735,14 +865,19 @@
         ],
         "explanation": {
           "general explanation": "Spot VMs are fully capable of mounting Cloud Filestore (NFS) in read-write mode. However, if a Spot VM is preempted abruptly while writing a file, the NFS connection drops. The file on Filestore will be partially written. The underlying infrastructure does not automatically clean up these application-level files. The media pipeline architecture must be robust enough to detect incomplete tasks and overwrite or delete partially rendered frames when another worker picks up the job.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Because Spot VMs are ephemeral, Cloud Filestore forces the NFS mount to be strictly read-only to prevent data corruption during preemptions.": "Filestore allows ReadWriteMany access regardless of the compute provisioning model.",
             "Compute Engine intelligently flushes all pending NFS I/O operations to Filestore automatically when the 30-second preemption signal is sent.": "The OS does not guarantee flushing of application buffers to network storage automatically upon receiving an ACPI signal. You must handle this in a shutdown script.",
             "Spot VMs cannot mount Cloud Filestore because NFS requires persistent IP reservations which are dropped upon preemption.": "Spot VMs receive standard internal IPs within the VPC and can perfectly mount Filestore."
           }
         },
         "difficulty": "Medium",
-        "tags": ["Cloud Filestore", "Spot VMs", "Architecture", "Compute Volatility"]
+        "tags": [
+          "Cloud Filestore",
+          "Spot VMs",
+          "Architecture",
+          "Compute Volatility"
+        ]
       },
       {
         "id": "q-gcppca-s46-028",
@@ -762,14 +897,19 @@
         ],
         "explanation": {
           "general explanation": "Google Cloud provides a native, dedicated Cloud Monitoring metric specifically for tracking Spot/Preemptible VM preemptions: `compute.googleapis.com/instance/preemptions`. By creating an alerting policy based on the rate of this metric relative to your fleet size, you can effectively monitor capacity tightening and operational disruption.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Create a log-based metric counting the 'GCE_VM_PREEMPTION' audit logs, and build an alerting policy dividing this by the total active instance count.": "While preemptions generate audit logs, building custom log-based metrics is unnecessary and less efficient than using the native, pre-calculated `instance/preemptions` metric.",
             "Configure the MIG Autoscaler to push its internal `SpotCapacityError` events to a Pub/Sub topic linked to Cloud Functions for alerting.": "This is overly complex and does not directly measure the preemption rate of running instances, only the failure to provision new ones.",
             "Monitor the `compute.googleapis.com/instance/uptime` metric; any VM with an uptime under 1 hour triggers a preemption alert.": "Instances can have low uptime for many reasons (autoscaling scale-up, manual restarts, deployments). This does not accurately track preemptions."
           }
         },
         "difficulty": "Medium",
-        "tags": ["Cloud Monitoring", "Spot VMs", "Observability", "Metrics"]
+        "tags": [
+          "Cloud Monitoring",
+          "Spot VMs",
+          "Observability",
+          "Metrics"
+        ]
       },
       {
         "id": "q-gcppca-s46-029",
@@ -789,14 +929,19 @@
         ],
         "explanation": {
           "general explanation": "A 'Pilot Light' DR strategy maintains a minimal, always-on core infrastructure (like AD and DB replicas) that allows you to rapidly scale up application servers when a disaster hits. These core components must be rock-solid and highly available. If they are run on Spot VMs, they could be preempted at any moment. If a disaster occurs while your Pilot Light Spot VMs are preempted, your entire DR strategy fails. Spot VMs are strictly an anti-pattern for foundational DR infrastructure.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Spot VMs cannot establish cross-region VPN or Interconnect connections required for data replication.": "Spot VMs have full networking capabilities and can use Cloud VPN/Interconnect.",
             "During a primary region disaster, traffic will spike in `us-west1`, causing Google to immediately preempt all Spot VMs to preserve bandwidth.": "Spot preemption is based on compute capacity supply/demand, not network traffic spikes.",
             "Spot VMs do not support asynchronous disk replication across regions.": "PD Asynchronous Replication is supported on disks attached to Spot VMs (though functionally useless if the VM is volatile)."
           }
         },
         "difficulty": "Easy",
-        "tags": ["Disaster Recovery", "Spot VMs", "Architecture", "Anti-patterns"]
+        "tags": [
+          "Disaster Recovery",
+          "Spot VMs",
+          "Architecture",
+          "Anti-patterns"
+        ]
       },
       {
         "id": "q-gcppca-s46-030",
@@ -816,14 +961,19 @@
         ],
         "explanation": {
           "general explanation": "The standard architectural pattern for mixed reliability requirements in GKE is to use multiple node pools. The mission-critical 'Checkout' service must run on stable, Standard nodes to ensure payments are never dropped due to infrastructure volatility. The asynchronous, fault-tolerant 'Analytics' service is a perfect fit for Spot nodes to save costs. `nodeAffinity` or `nodeSelector` is used to enforce this scheduling segregation.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Deploy both services in a single Spot node pool. Add a `PreemptionPriority: High` label to the Checkout pod so GKE preempts the Analytics pods first when capacity tightens.": "Preemption logic is dictated by Google Cloud infrastructure, not Kubernetes priority labels. If the node is preempted, ALL pods on it are killed, regardless of priority.",
             "Deploy both services on a Standard node pool, but configure the Analytics service to use Local SSDs to offset the compute cost.": "Local SSDs actually increase infrastructure costs, they do not offset compute costs.",
             "Use a Regional cluster and deploy the Checkout service to the primary zone on Standard nodes, and the Analytics service to the secondary zone on Spot nodes.": "GKE node pools automatically span all zones in a regional cluster. You segregate by node pool, not by forcing services into specific physical zones manually just for volatility routing."
           }
         },
         "difficulty": "Easy",
-        "tags": ["GKE", "Workload Segregation", "Spot VMs", "nodeAffinity"]
+        "tags": [
+          "GKE",
+          "Workload Segregation",
+          "Spot VMs",
+          "nodeAffinity"
+        ]
       }
     ]
   }

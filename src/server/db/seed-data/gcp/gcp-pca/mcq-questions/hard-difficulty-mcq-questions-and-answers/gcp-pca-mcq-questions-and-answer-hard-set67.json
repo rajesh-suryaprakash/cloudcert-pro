@@ -21,14 +21,19 @@
         ],
         "explanation": {
           "general explanation": "To effectively minimize PCI-DSS audit scope, the Cardholder Data Environment (CDE) must be strictly isolated from other systems. Using a Shared VPC with separate Service Projects provides strong administrative and logical isolation (Separation of Duties). Deploying the CDE into a dedicated subnet within the Shared VPC and using Service Account-based firewall rules provides robust, identity-centric network security that easily satisfies PCI segmentation requirements, allowing explicit, tightly controlled ingress from non-CDE systems.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Place all applications in a single VPC. Use network tags to isolate the CDE instances and configure VPC firewall rules to allow traffic only from specific non-CDE network tags on port 443.": "While network tags work, placing the CDE and non-CDE in the same project and VPC does not provide adequate administrative Separation of Duties. Furthermore, network tags are less secure than Service Accounts because any user with instance admin rights can alter a network tag, potentially bringing a non-CDE instance into the CDE scope.",
             "Deploy the CDE microservices into a completely separate VPC. Use VPC Network Peering to connect it to the non-CDE VPC, enabling 'export custom routes' to allow communication.": "VPC Network Peering connects the entire VPCs seamlessly, which can inadvertently widen the PCI scope if strict firewalls aren't managed perfectly. Shared VPC with explicit Service Account firewalls is the Google-recommended pattern for enterprise isolation and centralized network governance.",
             "Place the CDE in a separate Google Cloud Organization. Connect the non-CDE Organization to the CDE Organization using a Dedicated Interconnect to ensure physical separation.": "Creating multiple Google Cloud Organizations for a single enterprise introduces massive, unnecessary overhead for identity, billing, and policy management. Dedicated Interconnect is for connecting on-premises to GCP, not GCP-to-GCP."
           }
         },
         "difficulty": "Hard",
-        "tags": ["pci-dss", "compliance", "shared-vpc", "network-segmentation"]
+        "tags": [
+          "pci-dss",
+          "compliance",
+          "shared-vpc",
+          "network-segmentation"
+        ]
       },
       {
         "id": "q-gcppca-s67-002",
@@ -48,14 +53,20 @@
         ],
         "explanation": {
           "general explanation": "Deterministic Encryption (specifically Format-Preserving Encryption or FPE) via the Cloud DLP API ensures that the same plaintext PAN always encrypts to the same ciphertext string. This allows analysts to perform `JOIN` operations on the ciphertext in BigQuery without ever having access to the plaintext PAN, perfectly satisfying both the PCI-DSS compliance mandate and the business analytics requirement.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Write the raw data to BigQuery. Use BigQuery Dynamic Data Masking to hide the PAN column from the analysts, allowing them to join on the masked values.": "Writing the raw PAN to BigQuery brings the entire BigQuery dataset into the scope of the PCI-DSS audit. The compliance requirement states raw PANs must *never* be stored in the downstream warehouse.",
             "Use a Cloud Dataflow pipeline to read from Pub/Sub. Integrate the Cloud DLP API to use cryptographic hashing with a unique random salt per record to obscure the PANs before writing to BigQuery.": "If a unique random salt is used per record, the identical PANs will hash to different values. Analysts will be unable to perform SQL JOINs on these columns.",
             "Configure a Pub/Sub push subscription to trigger a Cloud Function that replaces the PANs with 'XXXX-XXXX-XXXX-0000' using regular expressions before writing to BigQuery.": "Replacing the PAN with a static mask destroys the uniqueness of the data, making it impossible for analysts to join tables based on the user's card."
           }
         },
         "difficulty": "Hard",
-        "tags": ["pci-dss", "cloud-dlp", "format-preserving-encryption", "dataflow", "bigquery"]
+        "tags": [
+          "pci-dss",
+          "cloud-dlp",
+          "format-preserving-encryption",
+          "dataflow",
+          "bigquery"
+        ]
       },
       {
         "id": "q-gcppca-s67-003",
@@ -75,14 +86,20 @@
         ],
         "explanation": {
           "general explanation": "To achieve strict regulatory Write Once, Read Many (WORM) storage compliance (like SOX or SEC Rule 17a-4), you must route logs to Cloud Storage and apply a Bucket Lock retention policy. Crucially, once the retention policy is *locked*, it mathematically guarantees that no user, not even a Google Cloud super administrator, can delete or modify the objects until the specified retention period (7 years) has expired.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Create a Cloud Logging sink routing audit logs to a Cloud Storage bucket. Configure an Object Lifecycle rule to delete objects after 2555 days (7 years). Remove the `storage.objects.delete` permission from all IAM roles.": "IAM permissions can be modified at any time by a user with `Owner` or `Security Admin` privileges. A malicious or compromised admin could simply grant themselves the delete permission and erase the logs, violating SOX immutability requirements.",
             "Export the audit logs to a dedicated BigQuery dataset. Configure Row-Level Security on the tables to explicitly deny `DELETE` or `UPDATE` operations.": "BigQuery Row-Level Security restricts who can *read* data. It does not provide WORM compliance or prevent an admin from dropping the table or modifying the dataset.",
             "Enable Cloud KMS Customer-Managed Encryption Keys (CMEK) for Cloud Logging. Store the keys in a separate project and enforce a 7-year key rotation schedule.": "CMEK encrypts the data at rest. It does not prevent a user from deleting the underlying log files, thus it does not satisfy the immutability (WORM) requirement."
           }
         },
         "difficulty": "Medium",
-        "tags": ["sox", "compliance", "cloud-storage", "bucket-lock", "audit-logging"]
+        "tags": [
+          "sox",
+          "compliance",
+          "cloud-storage",
+          "bucket-lock",
+          "audit-logging"
+        ]
       },
       {
         "id": "q-gcppca-s67-004",
@@ -97,17 +114,24 @@
           "Security Command Center (SCC) Premium",
           "Google Cloud Armor"
         ],
-        "correctAnswers": ["Security Command Center (SCC) Premium"],
+        "correctAnswers": [
+          "Security Command Center (SCC) Premium"
+        ],
         "explanation": {
           "general explanation": "Security Command Center (SCC) Premium is Google Cloud's native security and risk management platform. It includes the Security Health Analytics service, which continuously scans the entire organization for misconfigurations and maps those findings directly to industry compliance standards (like CIS, PCI-DSS, ISO 27001, and SOC 2). This provides the exact continuous compliance dashboard and reporting required by SOC 2 auditors.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Cloud Asset Inventory": "While Cloud Asset Inventory provides a historical record of resource states, it does not inherently evaluate those states against compliance frameworks (like CIS benchmarks) or generate security vulnerability findings automatically.",
             "VPC Service Controls": "VPC Service Controls are used to establish network perimeters around Google APIs to prevent data exfiltration. They do not scan infrastructure for general misconfigurations or generate compliance reports.",
             "Google Cloud Armor": "Cloud Armor is a Web Application Firewall (WAF) and DDoS mitigation service for protecting web applications. It does not monitor internal cloud infrastructure misconfigurations or compliance postures."
           }
         },
         "difficulty": "Easy",
-        "tags": ["soc2", "compliance", "security-command-center", "scc"]
+        "tags": [
+          "soc2",
+          "compliance",
+          "security-command-center",
+          "scc"
+        ]
       },
       {
         "id": "q-gcppca-s67-005",
@@ -131,14 +155,20 @@
         ],
         "explanation": {
           "general explanation": "To secure GKE for PCI-DSS compliance: 1) A Private Cluster ensures worker nodes have only private IPs, and master authorized networks lock down the control plane from the public internet. 2) Workload Identity implements the principle of least privilege, preventing pods from using the underlying node's compute service account and limiting their access to GCP APIs. 3) Kubernetes Network Policies act as pod-level firewalls, strictly controlling east-west traffic within the cluster, fulfilling the PCI-DSS requirement for strict network segmentation.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Deploy Anthos Service Mesh (ASM) and enable an egress gateway for all internet-bound traffic.": "While ASM offers advanced security (like mTLS), Network Policies are the foundational requirement for pod-to-pod network segmentation. ASM is an overlay, not the primary answer for restricting basic pod permissions or hiding the control plane.",
             "Configure the GKE nodes to use Preemptible VMs to rotate the node operating systems frequently.": "Preemptible/Spot VMs are for cost savings on fault-tolerant batch workloads. They are not a security or compliance control, and forced rotations mid-transaction could disrupt payment processing.",
             "Enable the `legacy-endpoints` flag on the GKE cluster metadata to secure the Kubelet API.": "Enabling legacy endpoints actually *weakens* security by exposing legacy, unauthenticated metadata APIs. It should be disabled (the default in modern GKE) for compliance."
           }
         },
         "difficulty": "Hard",
-        "tags": ["pci-dss", "gke", "security", "network-policies", "workload-identity"]
+        "tags": [
+          "pci-dss",
+          "gke",
+          "security",
+          "network-policies",
+          "workload-identity"
+        ]
       },
       {
         "id": "q-gcppca-s67-006",
@@ -158,7 +188,7 @@
         ],
         "explanation": {
           "general explanation": "To satisfy strict data sovereignty rules where keys must reside on-premises and Google cannot hold the key material, Cloud External Key Manager (EKM) is required. EKM connects Google Cloud to the bank's on-premises HSM. Key Access Justifications (KAJ) is the mechanism that provides a cryptographically signed justification for *why* Google is requesting the key (e.g., a customer query vs. a support ticket). The bank's external key manager can be programmed to read this KAJ and automatically approve or deny the decryption request, fulfilling all compliance constraints.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Cloud KMS with Customer-Managed Encryption Keys (CMEK) and Access Approval.": "With standard CMEK, the key material is stored within Google Cloud infrastructure. Access Approval governs when Google support can view your data, but it does not keep the cryptographic keys off-site.",
             "Customer-Supplied Encryption Keys (CSEK) combined with VPC Service Controls.": "CSEK requires the client to send the raw key with every API request. Cloud Spanner does not support CSEK natively for background encryption at rest. Furthermore, CSEK does not provide the KAJ framework for evaluating decryption reasons programmatically.",
             "Cloud HSM in the `europe-west3` region combined with Cloud Audit Logs.": "Cloud HSM utilizes hardware modules, but they are physically located inside Google's data centers, violating the requirement that keys must be managed exclusively on the bank's own on-premises HSMs."
@@ -191,14 +221,20 @@
         ],
         "explanation": {
           "general explanation": "To satisfy SOC 2 Separation of Duties (SoD) for deployments, humans must not have write access to production. Developers should have broad access in lower environments to innovate, but only read-only (`Viewer`) access in Production to view logs and troubleshoot. The deployment identity (the Cloud Build Service Account) must be granted the specific, least-privilege administrative roles required to apply the infrastructure and code changes in Production. This ensures all changes go through the automated, auditable pipeline.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Grant developers the `Project Editor` role in the Non-Production project. Grant the Cloud Build Service Account the `Project Editor` role in the Production project. Grant developers no roles in the Production project.": "Granting developers zero roles in Production hinders their ability to troubleshoot live issues or view logs, which is a standard business requirement. Furthermore, granting the CI/CD pipeline `Project Editor` is overly broad and violates the principle of least privilege compared to targeting specific deployment roles.",
             "Place the Production project in a VPC Service Controls perimeter. Configure an ingress rule that only allows the Cloud Build Service Account to cross the perimeter.": "VPC Service Controls prevent data exfiltration; they are not a replacement for fundamental IAM role-based access control for enforcing SoD.",
             "Enable Binary Authorization on the Production environment. Create an Attestor controlled by the developers, allowing them to sign images that the CI/CD pipeline then deploys.": "If developers control the Attestor, they can sign and push any rogue image to production, bypassing the automated security checks of the CI/CD pipeline, completely violating the intent of SoD."
           }
         },
         "difficulty": "Medium",
-        "tags": ["soc2", "compliance", "iam", "separation-of-duties", "ci-cd"]
+        "tags": [
+          "soc2",
+          "compliance",
+          "iam",
+          "separation-of-duties",
+          "ci-cd"
+        ]
       },
       {
         "id": "q-gcppca-s67-008",
@@ -218,14 +254,20 @@
         ],
         "explanation": {
           "general explanation": "To strictly isolate a serverless environment for PCI-DSS compliance: Setting 'Ingress: Internal' on Cloud Run guarantees that the service cannot be reached from the public internet; it will only accept traffic from within the same VPC network (or VPC SC perimeter). To allow the Cloud Run container to route its outbound (egress) traffic into the VPC to reach the private Cloud SQL database, you must attach a Serverless VPC Access connector to the Cloud Run service.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Deploy the Cloud Run service with an External Application Load Balancer. Enable Cloud Armor with a security policy that whitelists only the public IPs of the Compute Engine NAT gateway.": "Using an External Load Balancer exposes the service to the public internet edge, which violates the strict compliance mandate that it 'must absolutely not be accessible from the public internet'. Cloud Armor mitigates risk but does not satisfy the internal-only requirement.",
             "Configure the Cloud Run service with 'Ingress: All'. Implement Identity-Aware Proxy (IAP) on the service, granting access only to the Service Account used by the Compute Engine VMs.": "'Ingress: All' exposes the Cloud Run endpoint to the internet. While IAP adds authentication, the network perimeter is still public, violating the PCI segmentation requirement.",
             "Place the Cloud Run service in a VPC Service Controls perimeter. Create an Egress rule allowing the Cloud Run service to reach the Cloud SQL instance.": "While VPC SC is an excellent additional layer of defense against exfiltration, it does not replace the fundamental need to set 'Ingress: Internal' and configure a Serverless VPC Access connector for data plane routing to the internal Cloud SQL instance."
           }
         },
         "difficulty": "Medium",
-        "tags": ["pci-dss", "cloud-run", "networking", "serverless-vpc-access", "compliance"]
+        "tags": [
+          "pci-dss",
+          "cloud-run",
+          "networking",
+          "serverless-vpc-access",
+          "compliance"
+        ]
       },
       {
         "id": "q-gcppca-s67-009",
@@ -245,14 +287,20 @@
         ],
         "explanation": {
           "general explanation": "To achieve cryptographic isolation and the ability to crypto-shred individual tenant data, you must adopt a 'key-per-tenant' architecture. By assigning a unique Customer-Managed Encryption Key (CMEK) to each tenant's specific table (or dataset), you isolate them cryptographically. When a tenant leaves, destroying their specific KMS key version instantly renders all data encrypted by that key permanently unreadable across all live tables, backups, and snapshots, satisfying the crypto-shredding requirement without impacting other tenants.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Store all tenants in a single partitioned table. Use Cloud DLP to encrypt the sensitive columns using a master Symmetric Key. Delete the tenant's mapping index when they leave.": "Using a single master key violates the requirement for cryptographic isolation between tenants. If the master key is compromised, all tenants are compromised. You also cannot destroy the master key without destroying everyone's data.",
             "Create a separate BigQuery dataset for each tenant. Use Google's default encryption. Execute a `DROP DATASET` command when the client leaves, relying on Google's immediate physical media overwrite guarantees.": "A `DROP` command is a logical deletion. The data may persist on physical disks until it is overwritten, or it may reside in BigQuery Time Travel/snapshots for days. It does not provide the instant guarantee of crypto-shredding.",
             "Store all data in a single table and rely on Row-Level Security (RLS) to enforce isolation. Remove the client's Google Group from the RLS policy when they leave.": "RLS is a logical access control layer, not a cryptographic isolation layer. It does not encrypt the data uniquely per tenant, nor does it support crypto-shredding."
           }
         },
         "difficulty": "Hard",
-        "tags": ["soc2", "compliance", "crypto-shredding", "cmek", "bigquery"]
+        "tags": [
+          "soc2",
+          "compliance",
+          "crypto-shredding",
+          "cmek",
+          "bigquery"
+        ]
       },
       {
         "id": "q-gcppca-s67-010",
@@ -274,14 +322,20 @@
         ],
         "explanation": {
           "general explanation": "To meet an RPO of zero (no data loss) during a regional failure for a transactional database, Cloud Spanner with a multi-region topology is required. It uses synchronous replication and Paxos consensus across regions. To meet an RPO of <15 minutes for Cloud Storage media files across regions, a Dual-Region bucket with Turbo Replication must be used. Turbo Replication provides a 15-minute RPO SLA, ensuring newly uploaded objects are replicated to the secondary region rapidly.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Deploy Cloud SQL for PostgreSQL configured for Regional High Availability with a cross-region read replica.": "Cloud SQL cross-region replicas use asynchronous replication. In a sudden regional failure, transactions committed to the primary but not yet replicated are lost, failing the RPO=0 requirement.",
             "Store media files in a Multi-Region Cloud Storage bucket using the standard eventual consistency replication.": "Standard Multi-Region Cloud Storage provides eventual consistency for cross-region replication but does not offer an SLA-backed RPO. It may take longer than 15 minutes to replicate massive files, failing the audit requirement.",
             "Deploy Cloud Bigtable with multi-cluster routing enabled across two geographically separated regions.": "Bigtable replication is eventual. It does not provide synchronous, strongly consistent cross-region replication required to guarantee an RPO of zero for a transactional database."
           }
         },
         "difficulty": "Hard",
-        "tags": ["iso-27001", "compliance", "disaster-recovery", "cloud-spanner", "cloud-storage"]
+        "tags": [
+          "iso-27001",
+          "compliance",
+          "disaster-recovery",
+          "cloud-spanner",
+          "cloud-storage"
+        ]
       },
       {
         "id": "q-gcppca-s67-011",
@@ -301,14 +355,20 @@
         ],
         "explanation": {
           "general explanation": "SOX compliance requires an immutable audit trail of who accessed or modified financial data. In Google Cloud, operations that read data (like a BigQuery `SELECT` statement) are recorded in 'Data Access' audit logs, which must be explicitly enabled. To ensure immutability (WORM compliance), these logs must be routed via a log sink to a Cloud Storage bucket configured with a locked retention policy (Bucket Lock).",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Enable BigQuery Query History. Use the `INFORMATION_SCHEMA.JOBS_BY_PROJECT` view to extract query texts daily and export them to a standard Cloud Storage bucket.": "While `INFORMATION_SCHEMA` contains query history, it is not a secure, immutable audit log. Furthermore, a standard Cloud Storage bucket without a Bucket Lock does not satisfy the immutability requirement for SOX.",
             "Configure VPC Service Controls around the BigQuery dataset. Enable perimeter violation logging and route the logs to Security Command Center.": "VPC Service Controls only log *violations* (blocked requests). They do not log successful, authorized `SELECT` queries, which the auditor specifically requested.",
             "Enable Access Transparency for the Google Cloud Organization. Route the Access Transparency logs to a Pub/Sub topic consumed by a third-party SIEM.": "Access Transparency logs record when *Google Cloud personnel* access your data (e.g., during a support ticket). They do not log actions taken by your own internal users or service accounts."
           }
         },
         "difficulty": "Medium",
-        "tags": ["sox", "audit-logging", "bigquery", "compliance", "cloud-storage"]
+        "tags": [
+          "sox",
+          "audit-logging",
+          "bigquery",
+          "compliance",
+          "cloud-storage"
+        ]
       },
       {
         "id": "q-gcppca-s67-012",
@@ -328,14 +388,19 @@
         ],
         "explanation": {
           "general explanation": "Cloud Data Loss Prevention (DLP) is the purpose-built service for discovering, classifying, and protecting sensitive data. By creating a DLP Inspection Job and configuring a Job Trigger, you can automatically and continuously scan the contents of a Cloud Storage bucket for specific InfoTypes (like `CREDIT_CARD_NUMBER`). If DLP discovers a PAN in the archived logs, it will generate an alert or report, allowing the security team to identify the leakage and maintain PCI-DSS compliance.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Security Command Center (SCC) Premium configured with Event Threat Detection to parse the log streams in real-time.": "SCC Event Threat Detection looks for malicious behavior (like brute force attacks or crypto-mining) by analyzing audit logs and VPC flow logs. It does not perform deep payload inspection for PII/PCI data within application log text.",
             "Cloud Logging Log Router configured with a Regex exclusion filter designed to drop any log entries matching a 16-digit credit card pattern.": "Using regex to drop logs is brittle, prone to false positives, and does not provide an auditable report of *where* the leakage is occurring in the application. DLP uses machine learning and checksums (Luhn algorithm) to accurately identify real credit cards.",
             "Cloud Armor configured with custom pre-configured WAF rules to detect and block PAN data from exiting the Compute Engine instances.": "Cloud Armor is a WAF protecting inbound traffic at the Load Balancer level. It does not inspect or block application logs being written to Cloud Storage."
           }
         },
         "difficulty": "Easy",
-        "tags": ["pci-dss", "cloud-dlp", "data-discovery", "compliance"]
+        "tags": [
+          "pci-dss",
+          "cloud-dlp",
+          "data-discovery",
+          "compliance"
+        ]
       },
       {
         "id": "q-gcppca-s67-013",
@@ -355,14 +420,20 @@
         ],
         "explanation": {
           "general explanation": "Google Cloud Directory Sync (GCDS) is the standard architectural tool for integrating an on-premises Active Directory (or LDAP) with Google Cloud. It acts as a one-way synchronization engine. When an employee is disabled or deleted in the on-premises AD (the source of truth), GCDS runs and mirrors that state to Cloud Identity/Google Workspace. This instantly suspends the user's Google account, revoking their access to all GCP resources and satisfying the automated SOC 2 offboarding requirement.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure SAML 2.0 Single Sign-On (SSO) between the on-premises AD FS and Google Cloud. Require users to re-authenticate every 24 hours.": "While SAML delegates authentication, the user identity still exists in Google Cloud. If their active session token is valid, they maintain access until it expires (up to 24 hours in this scenario). GCDS physically suspends the account, invalidating all active sessions immediately.",
             "Use a Cloud Function triggered nightly by Cloud Scheduler to pull a CSV of terminated employees from the HR system and execute `gcloud projects remove-iam-policy-binding`.": "A nightly script leaves a massive vulnerability window (up to 24 hours) where a terminated employee retains access. Furthermore, managing IAM bindings manually is fragile compared to suspending the root identity.",
             "Deploy Managed Service for Microsoft Active Directory in GCP and establish a one-way trust from the on-premises domain.": "Managed AD is for hosting AD-dependent workloads (like Windows VMs) in the cloud. It is not the tool used to synchronize human user identities to Google Cloud IAM for console/API access."
           }
         },
         "difficulty": "Medium",
-        "tags": ["soc2", "compliance", "iam", "gcds", "active-directory"]
+        "tags": [
+          "soc2",
+          "compliance",
+          "iam",
+          "gcds",
+          "active-directory"
+        ]
       },
       {
         "id": "q-gcppca-s67-014",
@@ -382,14 +453,19 @@
         ],
         "explanation": {
           "general explanation": "Secret Manager is the purpose-built service for storing and rotating sensitive payloads like API tokens. It natively supports rotation schedules. When the 60-day schedule hits, Secret Manager publishes a message to a Pub/Sub topic, which triggers a Cloud Function. The Cloud Function executes the custom business logic to communicate with the external third-party system, generates the new token, and saves it as the new 'latest' version in Secret Manager, archiving the old version automatically.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Store the tokens in Cloud KMS. Use a Cloud Scheduler cron job to execute the `gcloud kms keys versions create` command every 60 days to generate a new cryptographic key pair.": "Cloud KMS rotates encryption keys (KEKs), it does not manage or rotate string payloads like API tokens.",
             "Store the tokens in a Cloud Storage bucket. Use Object Lifecycle Management to delete tokens older than 60 days, forcing the application to request a new token from the client.": "Cloud Storage is not designed for secure secret management. Deleting the file causes application downtime until a human client intervenes, which violates the requirement for 'fully automated' rotation.",
             "Store the tokens as Kubernetes Secrets in GKE. Deploy a sidecar container running a bash script that patches the Secret object via the Kubernetes API every 60 days.": "This is a fragile, custom-built solution. It lacks central auditing, does not automatically update the third-party system (only the internal cluster secret), and introduces massive operational overhead compared to managed Secret Manager rotation."
           }
         },
         "difficulty": "Medium",
-        "tags": ["iso-27001", "secret-manager", "secret-rotation", "compliance"]
+        "tags": [
+          "iso-27001",
+          "secret-manager",
+          "secret-rotation",
+          "compliance"
+        ]
       },
       {
         "id": "q-gcppca-s67-015",
@@ -411,14 +487,20 @@
         ],
         "explanation": {
           "general explanation": "To satisfy the first mandate, the Organization Policy `constraints/gcp.restrictNonCmekServices` forces the Google Cloud API to reject the creation of any resource (like a GCS bucket or Compute disk) if a CMEK is not provided. To satisfy the second mandate (Separation of Duties), you separate the IAM roles: Security gets `cloudkms.admin` (to manage key lifecycles), and the data service agents/engineers get `cloudkms.cryptoKeyEncrypterDecrypter` (to use the keys for encryption, but they cannot rotate or delete them).",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Apply the Organization Policy `constraints/compute.requireOsLogin` to all projects in the Production folder.": "OS Login manages SSH access to virtual machines. It has nothing to do with enforcing encryption at rest or KMS key management.",
             "Store the CMEK keys in the same project as the data, but use IAM Conditions to restrict access based on the time of day.": "Best practice dictates storing keys in a dedicated centralized Security project, not in the data project. Time-based IAM conditions do not enforce Separation of Duties (SoD) between key management and data management.",
             "Grant the Data Engineers the `roles/cloudkms.admin` role but use VPC Service Controls to prevent them from accessing the KMS API from outside the corporate network.": "Granting data engineers `cloudkms.admin` completely violates the second mandate, which explicitly states they must not have the ability to manage keys. VPC SC network restrictions do not fix over-privileged IAM roles."
           }
         },
         "difficulty": "Hard",
-        "tags": ["compliance", "cmek", "organization-policies", "separation-of-duties", "iam"]
+        "tags": [
+          "compliance",
+          "cmek",
+          "organization-policies",
+          "separation-of-duties",
+          "iam"
+        ]
       },
       {
         "id": "q-gcppca-s67-016",
@@ -433,17 +515,24 @@
           "Security Command Center Premium and Event Threat Detection",
           "Cloud Audit Logs and Cloud Data Loss Prevention (DLP)"
         ],
-        "correctAnswers": ["Access Transparency and Access Approval"],
+        "correctAnswers": [
+          "Access Transparency and Access Approval"
+        ],
         "explanation": {
           "general explanation": "Access Transparency provides near real-time logs when Google Cloud administrators access your content. However, Access Transparency is reactive. To achieve the required *proactive* authorization, it must be paired with Access Approval. Access Approval requires Google personnel to send a cryptographic request to your enterprise's designated administrators, who must explicitly approve the request before the Google engineer can access the data, fulfilling the board's mandate.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "VPC Service Controls and Identity-Aware Proxy (IAP)": "VPC SC prevents data exfiltration by defining network perimeters. IAP secures access for your *own* employees to web apps. Neither governs the actions of Google's internal support personnel.",
             "Security Command Center Premium and Event Threat Detection": "These are threat detection tools for finding malware, misconfigurations, and external attacks. They do not manage or gate Google support access.",
             "Cloud Audit Logs and Cloud Data Loss Prevention (DLP)": "Cloud Audit Logs record your own API calls. DLP scans and masks data. Neither provides an approval gate for Google support personnel."
           }
         },
         "difficulty": "Medium",
-        "tags": ["compliance", "access-approval", "access-transparency", "security"]
+        "tags": [
+          "compliance",
+          "access-approval",
+          "access-transparency",
+          "security"
+        ]
       },
       {
         "id": "q-gcppca-s67-017",
@@ -458,17 +547,24 @@
           "Security Command Center Premium",
           "Identity-Aware Proxy (IAP)"
         ],
-        "correctAnswers": ["Google Cloud Armor"],
+        "correctAnswers": [
+          "Google Cloud Armor"
+        ],
         "explanation": {
           "general explanation": "Google Cloud Armor is an enterprise Web Application Firewall (WAF) and DDoS mitigation service. It attaches natively to the Global External Application Load Balancer. It includes pre-configured WAF rules based on the ModSecurity core rule set that instantly detect and block common Layer 7 web attacks, including SQLi and XSS, satisfying the PCI-DSS requirement for a WAF without altering backend application code.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "VPC Service Controls": "VPC Service Controls protect managed Google Cloud APIs (like BigQuery or Cloud Storage) from data exfiltration. They do not inspect HTTP payloads for web application vulnerabilities like SQLi or XSS.",
             "Security Command Center Premium": "SCC Premium provides vulnerability scanning (Web Security Scanner) to *find* vulnerabilities, but it is not an inline WAF that actively *blocks* malicious web traffic in real-time.",
             "Identity-Aware Proxy (IAP)": "IAP enforces identity-based access control (authentication and authorization) for web applications. It does not inspect the payloads of authenticated users for SQLi or XSS attacks."
           }
         },
         "difficulty": "Easy",
-        "tags": ["pci-dss", "cloud-armor", "waf", "compliance"]
+        "tags": [
+          "pci-dss",
+          "cloud-armor",
+          "waf",
+          "compliance"
+        ]
       },
       {
         "id": "q-gcppca-s67-018",
@@ -483,17 +579,24 @@
           "Security Command Center",
           "Cloud Storage Object Versioning"
         ],
-        "correctAnswers": ["Cloud Asset Inventory"],
+        "correctAnswers": [
+          "Cloud Asset Inventory"
+        ],
         "explanation": {
           "general explanation": "Cloud Asset Inventory is designed specifically for this compliance and auditing use case. It allows you to view, monitor, and analyze all GCP resources and IAM policies. Crucially, it supports exporting historical asset metadata (time-series data) to BigQuery or querying it directly, allowing you to prove the exact state of an IAM policy or resource configuration at a specific point in time in the past.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Cloud Audit Logs": "While Admin Activity Audit Logs record the *action* of changing a policy (e.g., 'User A updated the policy'), they do not natively provide a queryable, complete snapshot of the entire resource state at an arbitrary timestamp in the past without complex log parsing.",
             "Security Command Center": "SCC provides point-in-time vulnerability and threat findings. It is not a historical configuration management database (CMDB) for querying past infrastructure states.",
             "Cloud Storage Object Versioning": "Object Versioning retains older versions of the *data* (files) inside the bucket. It does not version or track the historical IAM policies or metadata configurations of the bucket resource itself."
           }
         },
         "difficulty": "Medium",
-        "tags": ["iso-27001", "compliance", "cloud-asset-inventory", "auditing"]
+        "tags": [
+          "iso-27001",
+          "compliance",
+          "cloud-asset-inventory",
+          "auditing"
+        ]
       },
       {
         "id": "q-gcppca-s67-019",
@@ -513,14 +616,20 @@
         ],
         "explanation": {
           "general explanation": "BigQuery Column-Level Security (via Data Catalog Policy Tags) is the native, most efficient way to restrict access to specific sensitive columns while allowing users to query the rest of the table. By applying a tag (e.g., 'High Security') to the PAN and Email columns, and withholding the `Fine-Grained Reader` role from the data scientists, they are technologically barred from querying those columns. If they attempt a `SELECT *`, the query will fail, ensuring compliance without duplicating data.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Use a Cloud Dataflow pipeline to extract the data, call the Cloud DLP API to apply Format-Preserving Encryption (FPE) to the sensitive columns, and write the obscured dataset to a new, dedicated BigQuery dataset for the data scientists.": "While FPE works, creating a duplicate dataset via an ETL pipeline introduces massive operational overhead and storage costs when BigQuery native Column-Level Security (or native BigQuery dynamic data masking) handles this in-place.",
             "Create a BigQuery Authorized View that utilizes the `SESSION_USER()` function to dynamically mask the PAN and email columns if the user belongs to the 'Data Science' group.": "Authorized views are useful, but managing dynamic masking via complex SQL logic and hardcoded user/group checks is fragile and difficult to audit. Policy Tags are the enterprise-grade solution.",
             "Enable BigQuery Data Masking on the sensitive columns to hash the values. Grant the data scientists access to the table.": "BigQuery native Data Masking is built *on top* of Policy Tags. You must use Policy Tags first. Simply 'hashing' the values might also break ML models if not done correctly, but Policy Tags (Column-level security) are the foundational requirement."
           }
         },
         "difficulty": "Medium",
-        "tags": ["compliance", "bigquery", "column-level-security", "data-catalog", "privacy"]
+        "tags": [
+          "compliance",
+          "bigquery",
+          "column-level-security",
+          "data-catalog",
+          "privacy"
+        ]
       },
       {
         "id": "q-gcppca-s67-020",
@@ -542,14 +651,20 @@
         ],
         "explanation": {
           "general explanation": "The most effective way to reduce PCI-DSS scope is to prevent the Cardholder Data Environment (CDE) from ever handling raw Primary Account Numbers (PANs). By using client-side tokenization (like Stripe Elements or Braintree iFrames), the user's browser sends the raw card data directly to the third-party payment processor over HTTPS. The processor returns a secure, non-sensitive token to the browser, which is then submitted to the GKE backend. The GKE application only ever sees and stores the token, completely removing the GKE infrastructure from the scope of handling raw card data.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Deploy Cloud Data Loss Prevention (DLP) as a sidecar proxy in GKE to instantly mask the PAN data before the application logic processes it.": "If the raw PAN hits the GKE sidecar proxy, the GKE network, nodes, and load balancers have processed raw card data, meaning the entire infrastructure remains firmly inside the PCI-DSS audit scope.",
             "Place the GKE cluster inside a strict VPC Service Controls perimeter to prove to auditors that the data cannot be exfiltrated.": "VPC SC is a great security control, but if the cluster is processing raw PANs, it is still in scope for PCI-DSS regardless of the perimeter.",
             "Enable Customer-Managed Encryption Keys (CMEK) on the GKE Persistent Disks to ensure the raw PAN data is encrypted at rest.": "Encrypting raw PAN data at rest is a requirement *if* you store it, but it does not remove the infrastructure from the PCI-DSS audit scope. Tokenization removes the scope entirely."
           }
         },
         "difficulty": "Hard",
-        "tags": ["pci-dss", "compliance", "tokenization", "scope-reduction", "gke"]
+        "tags": [
+          "pci-dss",
+          "compliance",
+          "tokenization",
+          "scope-reduction",
+          "gke"
+        ]
       },
       {
         "id": "q-gcppca-s67-021",
@@ -564,17 +679,24 @@
           "Binary Authorization",
           "Google Cloud Armor"
         ],
-        "correctAnswers": ["Web Security Scanner"],
+        "correctAnswers": [
+          "Web Security Scanner"
+        ],
         "explanation": {
           "general explanation": "Web Security Scanner (part of Security Command Center) provides automated vulnerability scanning for web applications deployed on App Engine, GKE, and Compute Engine. It crawls the public-facing application, simulating a penetration test to detect vulnerabilities like Cross-Site Scripting (XSS), outdated libraries, and mixed content. Integrating this into the CI/CD pipeline or running it on a schedule provides continuous, automated evidence of vulnerability management for SOC 2 compliance.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Container Analysis (Artifact Registry)": "Container Analysis scans Docker images for OS-level CVEs (e.g., an outdated Debian package). It does not crawl or dynamically test running internet-facing web applications for vulnerabilities like XSS or SQLi.",
             "Binary Authorization": "Binary Authorization ensures only trusted container images are deployed. It is a deployment-time control, not a dynamic web application vulnerability scanner.",
             "Google Cloud Armor": "Cloud Armor is a Web Application Firewall (WAF) that actively blocks attacks. While necessary for security, it is a preventative control, not a vulnerability scanner providing proof of continuous testing."
           }
         },
         "difficulty": "Easy",
-        "tags": ["soc2", "compliance", "web-security-scanner", "vulnerability-management"]
+        "tags": [
+          "soc2",
+          "compliance",
+          "web-security-scanner",
+          "vulnerability-management"
+        ]
       },
       {
         "id": "q-gcppca-s67-022",
@@ -594,14 +716,19 @@
         ],
         "explanation": {
           "general explanation": "BigQuery Omni is Google Cloud's multi-cloud analytics solution. It deploys BigQuery's compute engine directly onto AWS or Azure infrastructure. By executing the SQL query on BigQuery Omni compute nodes located in the AWS `eu-central-1` region, the raw data never leaves AWS, perfectly satisfying the strict data sovereignty constraint. Only the aggregated query results are sent back to the GCP console over a secure control plane.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Establish a dedicated Cross-Cloud Interconnect. Use BigQuery Data Transfer Service to securely stream the data into a BigQuery dataset located in GCP `europe-west3` (Frankfurt).": "Streaming the data into a BigQuery dataset in GCP involves copying and moving the data outside of AWS, which directly violates the explicit commercial data sovereignty policy forbidding data movement.",
             "Use Google Cloud Dataproc Serverless. Write a PySpark job that reads from S3, processes the data in memory, and writes the results to BigQuery.": "Dataproc running in GCP would pull the raw data over the network from S3 to process it in memory on Google servers, violating the policy against moving data out of the AWS region.",
             "Configure Storage Transfer Service to perform a nightly, encrypted sync of the S3 bucket to a Cloud Storage bucket in `europe-west3`, then query it via BigQuery External Tables.": "Syncing the data copies it to GCP, violating the core sovereignty constraint."
           }
         },
         "difficulty": "Medium",
-        "tags": ["compliance", "data-sovereignty", "bigquery-omni", "multi-cloud"]
+        "tags": [
+          "compliance",
+          "data-sovereignty",
+          "bigquery-omni",
+          "multi-cloud"
+        ]
       },
       {
         "id": "q-gcppca-s67-023",
@@ -616,17 +743,25 @@
           "Identity-Aware Proxy (IAP)",
           "Cloud Endpoints"
         ],
-        "correctAnswers": ["Apigee API Management"],
+        "correctAnswers": [
+          "Apigee API Management"
+        ],
         "explanation": {
           "general explanation": "Apigee API Management acts as an intelligent proxy at the edge of the network. Apigee policies (like ServiceCallout and AssignMessage) can intercept an incoming HTTP request, extract sensitive payload data, make a synchronous call to an external third-party vault API to tokenize the data, replace the raw data with the token, and forward the clean payload to the backend. This keeps the backend GKE cluster completely out of the PCI-DSS scope for raw PAN data.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Google Cloud Armor": "Cloud Armor is a WAF that protects against DDoS and web exploits. It cannot intercept API payloads, modify them, make external API calls for tokenization, and rewrite the payload before forwarding.",
             "Identity-Aware Proxy (IAP)": "IAP provides zero-trust access control by verifying user identity before allowing access to an application. It does not perform payload manipulation or external API tokenization callouts.",
             "Cloud Endpoints": "Cloud Endpoints is a lightweight API gateway (ESP) that handles authentication and logging. It lacks the advanced policy mediation and payload transformation orchestration capabilities required to build a custom tokenization proxy compared to Apigee."
           }
         },
         "difficulty": "Medium",
-        "tags": ["pci-dss", "apigee", "tokenization", "mountkirk-games", "compliance"]
+        "tags": [
+          "pci-dss",
+          "apigee",
+          "tokenization",
+          "mountkirk-games",
+          "compliance"
+        ]
       },
       {
         "id": "q-gcppca-s67-024",
@@ -646,14 +781,20 @@
         ],
         "explanation": {
           "general explanation": "To achieve strict isolation for disparate compliance regimes (HIPAA vs. PCI-DSS) while maintaining central network governance, a Shared VPC with separate Service Projects is the enterprise best practice. This provides strong administrative Separation of Duties. The Billing team only has access to the Billing project and its specific subnet, and the Medical team only has access to the Medical project. This isolation ensures a compromise in one project cannot escalate into the other, strictly defining the scope of each compliance audit.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Create a Shared VPC. Deploy the Medical app into 'Subnet-A' and the Billing app into 'Subnet-B'. Apply strict VPC Firewall rules blocking traffic between the subnets.": "If both apps are in the same project, or if developers have broad access within a single project, administrative isolation is weak. A compromised administrator account could alter the firewall rules. Separate Service Projects provide stronger logical isolation.",
             "Create a single Shared VPC. Deploy the Medical app and Billing app into the same subnet. Use Kubernetes Network Policies to separate the traffic.": "Deploying completely different compliance domains into the exact same subnet and relying purely on software-defined Kubernetes policies is a weak security posture and will likely fail strict PCI-DSS segmentation audits.",
             "Create two separate Google Cloud Organizations. Place the Medical project in Org 1 and the Billing project in Org 2.": "Creating multiple Organizations for a single company is massive operational overkill and creates immense friction for centralized billing, global IAM, and standard organizational policies."
           }
         },
         "difficulty": "Hard",
-        "tags": ["pci-dss", "hipaa", "shared-vpc", "network-segmentation", "ehr-healthcare"]
+        "tags": [
+          "pci-dss",
+          "hipaa",
+          "shared-vpc",
+          "network-segmentation",
+          "ehr-healthcare"
+        ]
       },
       {
         "id": "q-gcppca-s67-025",
@@ -676,13 +817,19 @@
         ],
         "explanation": {
           "general explanation": "To satisfy comprehensive SOX auditing: 1) Admin Activity logs record administrative actions (like changing IAM or nodes) and are on by default. 2) Data Access logs record when users read or write data (e.g., executing SQL queries) and must be explicitly enabled, as they generate high volume. 3) To make this massive history easily 'queryable' by auditors, you must route these logs via a Cloud Logging sink into BigQuery, where auditors can use standard SQL to analyze access patterns and changes.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Configure Cloud Spanner to use Point-in-Time Recovery (PITR).": "PITR allows you to recover data from a specific timestamp in the past. It does not provide an audit trail of *who* performed specific actions, which is the core SOX requirement.",
             "Enable VPC Service Controls logging for the Spanner perimeter.": "VPC Service Controls logs record network perimeter violations (e.g., a blocked IP address). They do not record valid, authorized SQL queries or administrative infrastructure changes."
           }
         },
         "difficulty": "Hard",
-        "tags": ["sox", "compliance", "cloud-spanner", "audit-logging", "bigquery"]
+        "tags": [
+          "sox",
+          "compliance",
+          "cloud-spanner",
+          "audit-logging",
+          "bigquery"
+        ]
       },
       {
         "id": "q-gcppca-s67-026",
@@ -702,7 +849,7 @@
         ],
         "explanation": {
           "general explanation": "VPC Service Controls (VPC SC) create a virtual network perimeter around Google Cloud managed APIs (like Cloud Storage). By placing the bucket in a perimeter, all access from outside the perimeter (the public internet) is blocked by default, regardless of whether the user has valid IAM credentials. By adding an Ingress Rule (via Access Context Manager) that explicitly whitelists the corporate office's IP addresses, you guarantee that the data can physically only be accessed from that approved network location, mitigating credential theft risks.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Remove all public access from the bucket. Ensure only specific employee Google Workspace accounts are granted the `Storage Object Viewer` IAM role.": "If an employee's credentials are stolen (as stated in the scenario), the attacker could log in from anywhere in the world and download the data because there is no network perimeter block.",
             "Enable Identity-Aware Proxy (IAP) on the Cloud Storage bucket. Configure Access Context Manager to allow access only from managed corporate devices.": "IAP provides zero-trust access to web applications hosted on Compute Engine, GKE, or App Engine. IAP cannot be applied directly to a native Cloud Storage bucket API.",
             "Configure the Cloud Storage bucket to only accept Customer-Supplied Encryption Keys (CSEK), keeping the keys on an internal corporate server.": "While CSEK adds encryption control, the attacker could still access the bucket API. If they managed to steal the CSEK alongside the credentials, they could exfiltrate the data. VPC SC provides the required network-level block."
@@ -734,7 +881,7 @@
         ],
         "explanation": {
           "general explanation": "Binary Authorization is a deploy-time security control for GKE. It mathematically guarantees the secure supply chain required for SOC 2. By integrating with Artifact Registry (Container Analysis), you can configure Binary Authorization policies that physically block the deployment of any image that lacks specific cryptographic signatures (Attestations). By requiring attestations from both the automated scanner and a QA human/service account, you provide undeniable technological proof to the auditor that the policy is enforced.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Implement a Cloud Build CI/CD pipeline that runs a vulnerability scan. If the scan passes, use the `kubectl` CLI to push the image to GKE.": "While a good CI/CD practice, it does not prevent a malicious or compromised developer from bypassing Cloud Build and using `kubectl` manually from their laptop to deploy an unscanned, unapproved image directly to GKE. Binary Authorization enforces the rule at the cluster API level.",
             "Deploy an open-source image scanning sidecar in the GKE cluster. If the sidecar detects a CVE, configure it to terminate the pod immediately.": "This is a reactive approach. The container is already running in production before it is scanned and killed. Compliance mandates preventative controls (secure supply chain) before deployment.",
             "Store container images in Cloud Storage. Apply Object Lifecycle policies to delete images that have not been tagged as 'QA_Approved'.": "Container images should be stored in Artifact Registry (or Container Registry), not raw Cloud Storage buckets. Furthermore, lifecycle policies do not prevent a GKE cluster from pulling and running an image."
@@ -767,14 +914,20 @@
         ],
         "explanation": {
           "general explanation": "To achieve strict egress control for PCI-DSS compliance while keeping instances private, the architecture requires Cloud NAT. Cloud NAT provides outbound internet access for VMs without public IPs. To fulfill the auditor's requirement to limit outbound destinations, you must configure VPC Egress Firewall rules. By implementing a 'deny all' default egress rule (priority 65535) and explicitly allowing traffic (priority 1000) only to the known, trusted IP addresses of the external suppliers, you enforce strict network isolation.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Assign external IP addresses to the Compute Engine instances. Configure Google Cloud Armor to block all outbound traffic except to the trusted inventory suppliers.": "Assigning external IPs to instances handling credit card data is a severe security risk and violates PCI best practices for internal environments. Furthermore, Cloud Armor is an *ingress* WAF, it does not control *egress* traffic from VMs.",
             "Deploy an internal TCP/UDP Load Balancer. Route all outbound traffic through the load balancer and configure backend health checks to the inventory suppliers.": "Internal Load Balancers proxy traffic to internal Google Cloud backends. They are not used as outbound internet proxy gateways to third-party APIs.",
             "Use VPC Service Controls. Add the Compute Engine instances to a perimeter and configure an egress rule specifying the URLs of the inventory suppliers.": "VPC Service Controls only govern traffic to and from *Google Cloud managed APIs* (like Cloud Storage or BigQuery). They do not govern general internet egress to external third-party inventory suppliers."
           }
         },
         "difficulty": "Medium",
-        "tags": ["pci-dss", "compliance", "cloud-nat", "firewall", "helicopter-racing-league"]
+        "tags": [
+          "pci-dss",
+          "compliance",
+          "cloud-nat",
+          "firewall",
+          "helicopter-racing-league"
+        ]
       },
       {
         "id": "q-gcppca-s67-029",
@@ -789,17 +942,25 @@
           "Cloud Endpoints",
           "Google Cloud Armor"
         ],
-        "correctAnswers": ["Apigee API Management"],
+        "correctAnswers": [
+          "Apigee API Management"
+        ],
         "explanation": {
           "general explanation": "Apigee is Google Cloud's enterprise API management platform, specifically designed for B2B API monetization and external partner integration. It provides robust, out-of-the-box mechanisms to authenticate third-party developers (via OAuth, API keys, or mTLS), enforce granular, partner-specific rate limits and quotas to protect backend availability (a key SOC 2 availability requirement), and provides centralized, auditable analytics logging for all API traffic.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Identity-Aware Proxy (IAP)": "IAP is an identity-based proxy designed to control human user access (employees/contractors) to internal web applications (Zero Trust). It is not designed to manage programmatic B2B API consumption, enforce API quotas, or provide developer monetization portals.",
             "Cloud Endpoints": "Cloud Endpoints is a lightweight API gateway. While it can handle authentication and basic rate limiting, it lacks the advanced quota management, partner onboarding, and enterprise monetization features of Apigee required for a commercial external API platform.",
             "Google Cloud Armor": "Cloud Armor is a Web Application Firewall (WAF). It protects against DDoS and Layer 7 attacks. It does not manage API authentication workflows, issue API keys to partners, or manage business-logic API quotas."
           }
         },
         "difficulty": "Easy",
-        "tags": ["soc2", "apigee", "api-management", "compliance", "terramearth"]
+        "tags": [
+          "soc2",
+          "apigee",
+          "api-management",
+          "compliance",
+          "terramearth"
+        ]
       },
       {
         "id": "q-gcppca-s67-030",
@@ -821,14 +982,20 @@
         ],
         "explanation": {
           "general explanation": "To grant auditor access securely and comply with least privilege: 1) A Custom IAM Role is required because the predefined `Viewer` role grants access to view data payloads (like querying BigQuery tables or viewing GCS objects), which violates the data privacy requirement. The custom role should only contain `get` and `list` permissions for metadata. 2) To satisfy the prohibition against permanent accounts, use IAM Conditions to apply a time-bound expiration to the role binding. When the audit period ends, the access automatically revokes.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Grant the auditors the predefined `roles/viewer` role at the Organization level.": "The predefined `roles/viewer` role includes permissions to read data payloads in some services (e.g., Cloud Storage objects, BigQuery tables), which directly violates the requirement that auditors must not view data payloads.",
             "Configure the auditors to use Service Account Impersonation, granting them the `Service Account Token Creator` role on a highly privileged service account.": "Granting auditors the ability to impersonate a highly privileged service account violates the principle of least privilege and would allow them to bypass the read-only restrictions.",
             "Enable VPC Service Controls and configure an ingress rule allowing the auditor's IP address temporary access.": "VPC Service Controls govern network access boundaries. They do not grant IAM permissions to view configurations. The auditor still needs specific IAM roles to authenticate and interact with the GCP Console."
           }
         },
         "difficulty": "Hard",
-        "tags": ["pci-dss", "soc2", "iam-conditions", "custom-roles", "compliance"]
+        "tags": [
+          "pci-dss",
+          "soc2",
+          "iam-conditions",
+          "custom-roles",
+          "compliance"
+        ]
       }
     ]
   }

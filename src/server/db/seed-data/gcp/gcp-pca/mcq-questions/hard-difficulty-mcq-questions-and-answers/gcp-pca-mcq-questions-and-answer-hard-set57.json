@@ -21,14 +21,19 @@
         ],
         "explanation": {
           "general explanation": "Workload Identity Federation (WIF) is the native, secure method for granting external identities (like AWS IAM roles, Azure managed identities, or GitHub Actions) access to Google Cloud resources without using long-lived service account keys. By configuring a pool and a provider, the external workload can exchange its native AWS token for a short-lived Google Cloud access token, which inherits the permissions of the mapped Google Service Account.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Establish an HA VPN between AWS and GCP. Deploy a proxy in GCP that uses the Compute Engine default service account to write to Cloud Storage on behalf of the AWS application.": "While possible, building and maintaining a custom proxy just for API authentication introduces massive operational overhead, a single point of failure, and ignores native IAM federation capabilities.",
             "Configure Cloud Identity to sync users from AWS Directory Service using GCDS, and use AWS STS to generate short-lived GCP OAuth tokens.": "GCDS syncs human users from Active Directory or LDAP, not machine/service identities from AWS IAM. WIF is designed for non-human workload identities.",
             "Use the Google Cloud IAM REST API to dynamically generate a service account key inside the AWS Lambda function, use it to upload the file, and instantly delete the key.": "This still generates a static JSON key (violating the spirit of the CISO's mandate against generating them) and leaves a vulnerability window if the process crashes before deletion. WIF completely avoids key generation."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Workload Identity Federation", "IAM", "Security", "Multi-Cloud"]
+        "tags": [
+          "Workload Identity Federation",
+          "IAM",
+          "Security",
+          "Multi-Cloud"
+        ]
       },
       {
         "id": "q-gcppca-s57-002",
@@ -50,14 +55,19 @@
         ],
         "explanation": {
           "general explanation": "To use GKE Workload Identity cross-project, you must map the Kubernetes Service Account (KSA) in the GKE cluster (Project A) to a Google Service Account (GSA) that has the required permissions (in Project B). First, create the GSA in Project B and grant it the Spanner access. Second, bind the KSA to the GSA by granting the KSA the `roles/iam.workloadIdentityUser` role on the GSA. The identity string takes the format `serviceAccount:PROJECT_A_ID.svc.id.goog[K8S_NAMESPACE/KSA_NAME]`.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "In Project A, grant the Kubernetes Service Account (KSA) the `roles/spanner.databaseUser` role directly via IAM.": "You cannot directly assign Google Cloud resource permissions to a Kubernetes Service Account without binding it to a Google Service Account via Workload Identity.",
             "In Project A, grant the `roles/iam.serviceAccountTokenCreator` role to the GKE node pool's underlying Compute Engine service account.": "This is not required for modern GKE Workload Identity and violates least privilege by giving the entire node pool impersonation capabilities.",
             "In Project A, create a Google Service Account (GSA) with Spanner access and export its JSON key to a Kubernetes Secret for the pod to mount.": "Storing static JSON keys in Kubernetes Secrets is a legacy anti-pattern that violates the requirement to use GKE Workload Identity."
           }
         },
         "difficulty": "Hard",
-        "tags": ["GKE", "Workload Identity", "Cross-Project", "IAM"]
+        "tags": [
+          "GKE",
+          "Workload Identity",
+          "Cross-Project",
+          "IAM"
+        ]
       },
       {
         "id": "q-gcppca-s57-003",
@@ -77,14 +87,19 @@
         ],
         "explanation": {
           "general explanation": "The 'Domain Restricted Sharing' organization policy (`constraints/iam.allowedPolicyMemberDomains`) is the most robust, proactive governance control to prevent data exfiltration via IAM misconfiguration. By enforcing this policy at the Organization node, you strictly limit the set of identities that can be added to any IAM policy within the organization to only those belonging to your specific Cloud Identity/Workspace domain(s). It physically blocks any user, even a Project Owner, from adding `allUsers`, `allAuthenticatedUsers`, or external Gmail accounts to any resource.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Apply an IAM Deny policy at the Organization level that denies the `roles/storage.objectAdmin` role to the principal `allUsers` and `allAuthenticatedUsers`.": "While IAM Deny policies are powerful, managing deny rules for every single role and every single external identity is complex. The Domain Restricted Sharing Org Policy is the purpose-built tool for this exact boundary definition.",
             "Create a custom IAM role that omits the `resourcemanager.projects.setIamPolicy` permission and force all developers to use it.": "Project Owners inherently have `setIamPolicy`. Revoking it from all developers prevents them from managing access for their own internal team members, destroying agility.",
             "Deploy a Cloud Function triggered by Cloud Audit Logs that detects any IAM binding to `allUsers` and automatically executes an API call to revert it.": "This is a reactive, custom 'do-it-yourself' remediation. The policy might be active for a few seconds/minutes before the function reverts it, which is enough time for data exfiltration. Org policies are proactive and block the action entirely."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Organization Policies", "IAM", "Domain Restricted Sharing", "Security"]
+        "tags": [
+          "Organization Policies",
+          "IAM",
+          "Domain Restricted Sharing",
+          "Security"
+        ]
       },
       {
         "id": "q-gcppca-s57-004",
@@ -104,14 +119,19 @@
         ],
         "explanation": {
           "general explanation": "Google Cloud Privileged Access Manager (PAM) is the native managed service for Just-In-Time (JIT) access. It allows you to define 'entitlements' (specific roles) that users can request. You can configure these requests to require manual peer approvals, and you can enforce strict time boundaries (e.g., 4 hours). Once approved, PAM grants the role via IAM Conditions and automatically revokes it when the timer expires, perfectly fulfilling the CISO's requirements.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Use IAM Conditions. Have an admin manually edit the IAM policy to add the user with a `request.time` condition expiring in 4 hours.": "While IAM conditions support time bounds, this relies on a highly privileged human administrator manually editing IAM policies during a high-stress incident, which is slow, prone to error, and lacks an automated peer-approval workflow.",
             "Write a Cloud Function that grants the IAM role, sleeps for 4 hours, and then revokes the role. Expose this function via a web portal for peer approval.": "A Cloud Function sleeping for 4 hours will timeout (max execution time is 60 minutes for 2nd gen, 9 mins for 1st gen). Building a custom JIT system is immense technical debt compared to using native PAM.",
             "Assign the `roles/cloudsql.admin` role to a dedicated Google Group. During an incident, the peer approves adding the admin's email to the Google Group, and manually removes them 4 hours later.": "Manual removal is prone to human error, often resulting in permanent standing privileges ('privilege creep'). It fails the 'automatically expire' requirement."
           }
         },
         "difficulty": "Medium",
-        "tags": ["Privileged Access Manager", "Just-in-Time Access", "IAM", "Security"]
+        "tags": [
+          "Privileged Access Manager",
+          "Just-in-Time Access",
+          "IAM",
+          "Security"
+        ]
       },
       {
         "id": "q-gcppca-s57-005",
@@ -131,14 +151,19 @@
         ],
         "explanation": {
           "general explanation": "Authorized Views are the canonical BigQuery security pattern for sharing specific subsets of data without granting access to underlying base tables. You create a view in a new dataset that queries the anonymized data from the base dataset. You 'authorize' the view to read from the base dataset. Finally, you grant the researchers `dataViewer` access *only* to the dataset containing the view. They can query the view, but they cannot query the base dataset or the PII tables directly.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Place the anonymized data and the PII data in separate Datasets. Grant the researchers `roles/bigquery.dataViewer` only on the anonymized Dataset.": "The prompt states the anonymized and PII data are currently 'in the same dataset'. While separating them physically is an option, Authorized Views (or column-level security) are the standard way to restrict access within shared or complex base structures without duplicating/moving the physical tables.",
             "Grant the researchers `roles/bigquery.dataViewer` at the Dataset level, but use Cloud Data Loss Prevention (DLP) to dynamically mask the PII tables when the researchers query them.": "DLP does not dynamically mask BigQuery data at read-time in this manner. Granting Dataset-level `dataViewer` gives them raw access to the PII tables.",
             "Apply BigQuery Row-Level Security policies to the PII tables, configuring the policy to drop rows if the principal matches the external researchers' Google Group.": "Row-Level security restricts *rows*. The researchers shouldn't have access to the PII *tables* at all. An Authorized View (or Column-Level Security via Policy Tags) is the correct control."
           }
         },
         "difficulty": "Hard",
-        "tags": ["EHR Healthcare", "BigQuery", "Authorized Views", "IAM"]
+        "tags": [
+          "EHR Healthcare",
+          "BigQuery",
+          "Authorized Views",
+          "IAM"
+        ]
       },
       {
         "id": "q-gcppca-s57-006",
@@ -160,14 +185,20 @@
         ],
         "explanation": {
           "general explanation": "To integrate on-premises AD with Google Cloud securely, a two-pronged approach is standard. 1) Provisioning: Google Cloud Directory Sync (GCDS) reads the AD LDAP structure and provisions users and syncs AD groups to Cloud Identity Google Groups. If a user is removed from an AD group, GCDS removes them from the Google Group, updating IAM automatically. 2) Authentication: To ensure passwords are never stored in Google and termination is instantly enforced at login, you configure Cloud Identity to use a SAML/OIDC Identity Provider (like ADFS or Azure AD) as a Third-Party IdP. When users log into GCP, they are redirected to your on-prem IdP to authenticate.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Enable Password Sync in GCDS to securely hash and transfer the AD passwords to Cloud Identity, ensuring SSO works without ADFS.": "Password Sync stores the passwords in Google, directly violating the CISO mandate ('User passwords must never be synchronized to Google's servers').",
             "Map the on-premises Active Directory groups directly in the GCP IAM console without using Cloud Identity groups.": "GCP IAM cannot read on-premises AD groups directly. You must sync them to Cloud Identity (Google Workspace) groups first, and then apply IAM policies to those Google Groups.",
             "Use Workload Identity Federation to issue short-lived Google access tokens directly to the human employees upon AD authentication.": "Workload Identity Federation is for non-human workloads (applications, services) running outside GCP. Human workforce authentication relies on Workforce Identity Federation or Cloud Identity SSO."
           }
         },
         "difficulty": "Medium",
-        "tags": ["Cloud Identity", "Active Directory", "GCDS", "SSO", "IAM"]
+        "tags": [
+          "Cloud Identity",
+          "Active Directory",
+          "GCDS",
+          "SSO",
+          "IAM"
+        ]
       },
       {
         "id": "q-gcppca-s57-007",
@@ -187,14 +218,19 @@
         ],
         "explanation": {
           "general explanation": "The attacker has extracted the OAuth access token (or the ability to generate them) for the default service account. Because the IAM binding exists in Project B, the token allows access to Project B. By removing the IAM binding directly on the dataset in Project B, the stolen token instantly loses authorization to view the data. This neutralizes the threat to the data without touching the infrastructure in Project A, satisfying the constraint of not causing an outage for other services in Project A that might be relying on that default service account.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Delete `web-server-01` in `Project A`.": "If the attacker exfiltrated the token, deleting the VM does not invalidate the token immediately. The token remains valid until it expires (typically up to 1 hour).",
             "Disable the default Compute Engine service account in `Project A`.": "Disabling the default service account will break every other VM or service in Project A that is using it, violating the constraint 'without causing an outage for other services in Project A'.",
             "Create a VPC Service Controls perimeter around `Project A`.": "VPC SC takes time to deploy and test. It might block the attacker if configured with an ingress rule, but removing the IAM binding is the immediate, surgical, and definitive way to revoke authorization."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Security", "IAM", "Incident Response", "Least Privilege"]
+        "tags": [
+          "Security",
+          "IAM",
+          "Incident Response",
+          "Least Privilege"
+        ]
       },
       {
         "id": "q-gcppca-s57-008",
@@ -214,14 +250,19 @@
         ],
         "explanation": {
           "general explanation": "Wait, let me fix the correct answer output mapping. The intended answer is: 'Configure Workload Identity Federation. Create a pool and an OIDC provider mapped to the internal PKI. The tractors exchange their locally signed JWTs for short-lived Google Cloud access tokens to call the Pub/Sub API directly.' Workload Identity Federation (WIF) is the standard for authenticating workloads outside GCP. Because the tractors can generate JWTs signed by a trusted internal PKI (acting as an OIDC provider), WIF can validate those JWTs and exchange them for short-lived GCP tokens. This completely eliminates static credentials on the edge devices.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Create a dedicated Google Service Account for each tractor. Download the JSON keys and securely inject them into the tractor's TEE during manufacturing.": "Storing 500,000 static JSON keys is a massive operational and security burden (key rotation, revocation). The prompt explicitly asks to eliminate long-lived credentials.",
             "Deploy an API Gateway that accepts the TEE-signed JWTs, validates the signature against the public key, and publishes the message to Pub/Sub on the tractor's behalf.": "While architecturally possible, building a custom gateway to reinvent token exchange and validation introduces unnecessary compute latency, cost, and maintenance overhead when native IAM WIF handles this seamlessly.",
             "Use Cloud Identity to create an email address for each tractor. Configure the tractor to perform an OAuth2 flow to retrieve a refresh token for Pub/Sub.": "Cloud Identity is for human users. Refresh tokens are long-lived credentials, which the prompt seeks to avoid."
           }
         },
         "difficulty": "Hard",
-        "tags": ["TerramEarth", "Workload Identity Federation", "IoT", "Authentication"]
+        "tags": [
+          "TerramEarth",
+          "Workload Identity Federation",
+          "IoT",
+          "Authentication"
+        ]
       },
       {
         "id": "q-gcppca-s57-009",
@@ -241,14 +282,19 @@
         ],
         "explanation": {
           "general explanation": "The `roles/editor` basic (primitive) role is extremely broad. It includes the ability to create, modify, and delete most resources in a project. Crucially, the Editor role on a project includes permissions that allow a user to attach service accounts to resources (like deploying a Compute Engine VM or Cloud Function) and run code as that service account. Because they can deploy code running as `game-backend-sa`, they effectively possess indirect impersonation capabilities, allowing them to bypass their own lack of direct Spanner permissions and use the service account to alter the database.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "The data engineer can delete the `game-backend-sa` service account, but they cannot use it to access Spanner.": "They CAN use it (via deploying compute resources attached to it) to access Spanner.",
             "The data engineer cannot interact with the service account directly, but they can view the service account's private JSON keys in Cloud IAM.": "GCP does not store the private keys for retrieval. Once a key is generated and downloaded, it cannot be 'viewed' again in the console.",
             "The data engineer can assign `roles/owner` to the `game-backend-sa` service account, elevating its privileges.": "The `roles/editor` role does not include the `resourcemanager.projects.setIamPolicy` permission. Only an Owner (or IAM Admin) can modify IAM policies to grant `roles/owner` to a service account."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Mountkirk Games", "IAM", "Primitive Roles", "Service Account Impersonation"]
+        "tags": [
+          "Mountkirk Games",
+          "IAM",
+          "Primitive Roles",
+          "Service Account Impersonation"
+        ]
       },
       {
         "id": "q-gcppca-s57-010",
@@ -268,14 +314,19 @@
         ],
         "explanation": {
           "general explanation": "In Google Cloud IAM, policy evaluation relies on the principle that a Deny rule always overrides an Allow rule. If a user is granted access via an Allow policy (e.g., at the bucket level), but an IAM Deny policy exists anywhere in the hierarchy (e.g., at the Org level) that matches the user and the permission, the final evaluation is DENY. This makes IAM Deny policies a powerful guardrail mechanism to ensure security invariants are never broken.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "The download succeeds because Allow policies applied at a lower resource hierarchy level (the bucket) override Deny policies applied at a higher level (the Organization).": "This is false. Deny policies are evaluated first and override all Allow policies, overriding the standard 'additive' nature of Allow policies.",
             "The download succeeds because Google Groups are immune to `allPrincipals` deny rules to prevent unintended organizational lockouts.": "Google Groups are absolutely affected by `allPrincipals` in a Deny policy.",
             "The download fails because the user lacks the `roles/storage.objectAdmin` role, which is required to bypass a Deny policy.": "No IAM role, not even `roles/owner` or `roles/storage.objectAdmin`, can bypass an explicit IAM Deny policy. You must either be excluded from the Deny policy's principal list or the Deny policy must be removed."
           }
         },
         "difficulty": "Medium",
-        "tags": ["IAM", "Deny Policies", "Security", "Policy Evaluation"]
+        "tags": [
+          "IAM",
+          "Deny Policies",
+          "Security",
+          "Policy Evaluation"
+        ]
       },
       {
         "id": "q-gcppca-s57-011",
@@ -297,14 +348,19 @@
         ],
         "explanation": {
           "general explanation": "To achieve strict separation of duties using Custom IAM roles, you apply the principle of least privilege. The Data Engineering team gets a custom role applied at the project (or dataset) level that includes only BigQuery administration permissions and omits project deletion. The Infrastructure team gets a custom role applied at the Folder (or Organization/Project) level that grants project management permissions but completely omits BigQuery data viewing permissions.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Apply a Deny policy to the Data Engineering team to explicitly deny `resourcemanager.projects.delete` on the Project.": "While a Deny policy works, it is overly complex if you simply omit the permission from their custom Allow role in the first place. You only need a Deny policy if they are inheriting a broader role (like Editor) from higher up.",
             "Apply `roles/owner` to the Infrastructure team at the Project level, as it is required to manage project settings, but use VPC Service Controls to block their access to BigQuery.": "The `roles/owner` role grants access to all data in all services. VPC SC is a network perimeter, not an authorization control; an Owner could simply modify the perimeter. This violates least privilege.",
             "Grant the Data Engineering team the `roles/editor` primitive role, but restrict it using IAM Conditions based on the resource type `bigquery.googleapis.com/Dataset`.": "Using primitive roles (Editor) is an anti-pattern for separation of duties. IAM Conditions on primitive roles are complex to maintain and risk accidental privilege escalation."
           }
         },
         "difficulty": "Medium",
-        "tags": ["IAM", "Custom Roles", "Separation of Duties", "Least Privilege"]
+        "tags": [
+          "IAM",
+          "Custom Roles",
+          "Separation of Duties",
+          "Least Privilege"
+        ]
       },
       {
         "id": "q-gcppca-s57-012",
@@ -324,14 +380,19 @@
         ],
         "explanation": {
           "general explanation": "Identity-Aware Proxy (IAP) separates authentication from authorization. While Google handles the authentication (verifying who the user is), IAP relies on Cloud IAM for authorization (verifying what the user is allowed to access). To access a web application protected by IAP, the user's identity must be granted the `roles/iap.httpsResourceAccessor` role. If they authenticate successfully but lack this role, IAP returns a 403 Forbidden error.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "The Compute Engine default service account lacks the `roles/iam.serviceAccountTokenCreator` role to validate the contractor's OAuth token.": "IAP validates the JWT token at the Google Edge, not using the VM's service account.",
             "The contractor's IP address has not been added to the IAM Allow policy attached to the Compute Engine instance.": "IAM Allow policies do not evaluate IP addresses directly without IAM Conditions, and IAP authorization is done at the IAP resource level, not the VM network level.",
             "The OAuth consent screen in GCP is set to 'Internal', which automatically blocks users outside your Cloud Identity domain.": "If the consent screen is set to Internal, an external user would be blocked during the OAuth authentication phase (they wouldn't get a 403 from IAP, they would get an auth error from Google Accounts before reaching IAP)."
           }
         },
         "difficulty": "Easy",
-        "tags": ["Identity-Aware Proxy", "IAM", "Authentication", "Authorization"]
+        "tags": [
+          "Identity-Aware Proxy",
+          "IAM",
+          "Authentication",
+          "Authorization"
+        ]
       },
       {
         "id": "q-gcppca-s57-013",
@@ -346,17 +407,24 @@
           "Security Command Center (SCC) Event Threat Detection",
           "VPC Service Controls"
         ],
-        "correctAnswers": ["IAM Recommender"],
+        "correctAnswers": [
+          "IAM Recommender"
+        ],
         "explanation": {
           "general explanation": "The IAM Recommender automatically analyzes Cloud Audit Logs over the past 90 days to compare the permissions granted to a principal against the permissions they actually used. It uses machine learning to generate actionable recommendations to right-size access (e.g., suggesting a custom role or a lesser predefined role), perfectly addressing the problem of privilege creep and enforcing least privilege continuously.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Cloud Asset Inventory": "Cloud Asset Inventory provides a snapshot of current IAM policies and resources (what access exists). It does not analyze historical usage or provide right-sizing recommendations.",
             "Security Command Center (SCC) Event Threat Detection": "Event Threat Detection looks for malicious activity (e.g., brute force attacks, cryptomining) in logs. It does not perform IAM right-sizing.",
             "VPC Service Controls": "VPC Service Controls establishes a network perimeter to prevent data exfiltration. It has nothing to do with analyzing or right-sizing IAM permissions based on usage."
           }
         },
         "difficulty": "Easy",
-        "tags": ["IAM Recommender", "Least Privilege", "Security", "Governance"]
+        "tags": [
+          "IAM Recommender",
+          "Least Privilege",
+          "Security",
+          "Governance"
+        ]
       },
       {
         "id": "q-gcppca-s57-014",
@@ -376,14 +444,19 @@
         ],
         "explanation": {
           "general explanation": "Organization Policies are inherited down the resource hierarchy (Org -> Folder -> Project). However, they can be overridden at a lower level if necessary (and if the user has the `orgpolicy.policyAdmin` role). To accommodate a strict exception for a legacy app, the best practice is to keep the strict rule at the Org level (protecting the rest of the company) and explicitly override the policy on the specific Project (Project X) to allow key creation. Once the key is created, the exception can ideally be removed or scoped via tags.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Temporarily disable the Organization Policy at the root, create the key in `Project X`, and re-enable the policy.": "Disabling the policy at the root opens a vulnerability window for the entire organization. It is a poor security practice compared to a scoped override.",
             "Create the service account key using the `gcloud` CLI with the `--bypass-org-policy` flag, as Project Owners can override constraints locally.": "There is no `--bypass-org-policy` flag. Org policies cannot be bypassed dynamically by commands; they must be altered in the policy engine by an Org Policy Admin.",
             "Generate a Cloud Identity user account for the vendor and configure it with an App Password instead of a service account key.": "App Passwords are for human email/workspace clients, not for programmatic GCP API authentication (like Pub/Sub). Human accounts should not be used for workload integrations."
           }
         },
         "difficulty": "Medium",
-        "tags": ["Organization Policies", "IAM", "Service Account Keys", "Governance"]
+        "tags": [
+          "Organization Policies",
+          "IAM",
+          "Service Account Keys",
+          "Governance"
+        ]
       },
       {
         "id": "q-gcppca-s57-015",
@@ -405,14 +478,19 @@
         ],
         "explanation": {
           "general explanation": "To set up Workload Identity Federation (WIF) from AWS to GCP: 1) You create a Workload Identity Pool and configure an AWS provider. This establishes trust with AWS and maps AWS attributes (like the AWS IAM role ARN) to GCP principal strings. 2) You create a Google Service Account with the actual permissions needed (e.g., Artifact Registry Writer). 3) You bind the mapped external identity (from the pool) to the Google Service Account by granting it the `roles/iam.workloadIdentityUser` role. The external AWS workload can now impersonate the GCP Service Account to write the images without JSON keys.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Create an OAuth 2.0 Client ID in the GCP console and share the client secret with the vendor to authenticate their CI/CD pipeline.": "OAuth Client IDs are for user-facing applications requiring user consent (e.g., 'Log in with Google'), not for server-to-server workload federation.",
             "Grant the external vendor's AWS IAM Role the `roles/iam.serviceAccountTokenCreator` role directly on the Google Service Account.": "You cannot directly grant GCP roles to an AWS IAM ARN. You must map it through the Workload Identity Pool and use `roles/iam.workloadIdentityUser`.",
             "Store a Google Service Account JSON key in the AWS Secrets Manager for the vendor's pipeline to retrieve.": "This is the exact legacy anti-pattern that Workload Identity Federation is designed to eliminate."
           }
         },
         "difficulty": "Medium",
-        "tags": ["Workload Identity Federation", "IAM", "Multi-Cloud", "Artifact Registry"]
+        "tags": [
+          "Workload Identity Federation",
+          "IAM",
+          "Multi-Cloud",
+          "Artifact Registry"
+        ]
       },
       {
         "id": "q-gcppca-s57-016",
@@ -432,14 +510,19 @@
         ],
         "explanation": {
           "general explanation": "Separation of Duties (SoD) requires that no single individual has total control over a critical process. In Cloud KMS, this means separating the *management* of keys from the *usage* of keys. The `roles/cloudkms.admin` role allows Alice to create, destroy, and rotate keys, but crucially, it does *not* grant the `cloudkms.cryptoKeyVersions.useToEncrypt` or `useToDecrypt` permissions. Bob receives `roles/cloudkms.cryptoKeyEncrypterDecrypter`, which allows his application to use the keys, but he cannot create or destroy them. This perfectly isolates the privileges.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Grant Alice `roles/cloudkms.cryptoKeyEncrypterDecrypter`. Grant Bob `roles/cloudkms.admin`.": "This reverses the roles. The Security Admin (Alice) should manage keys, and the Developer (Bob) should use them.",
             "Grant Alice `roles/cloudkms.admin`. Grant Bob `roles/cloudkms.admin`.": "If both have admin, Bob can manipulate the keys his application uses, and neither can actually encrypt/decrypt data, failing both requirements.",
             "Grant Alice `roles/owner` on the project. Grant Bob `roles/editor` on the project.": "Primitive roles (`owner/editor`) grant massive, broad permissions that violate least privilege and Separation of Duties entirely."
           }
         },
         "difficulty": "Easy",
-        "tags": ["Cloud KMS", "Separation of Duties", "IAM", "Security"]
+        "tags": [
+          "Cloud KMS",
+          "Separation of Duties",
+          "IAM",
+          "Security"
+        ]
       },
       {
         "id": "q-gcppca-s57-017",
@@ -459,14 +542,19 @@
         ],
         "explanation": {
           "general explanation": "In Google Cloud IAM, identities (like Users or Groups) are tracked by a unique internal ID, not just the email address string. If a user or group is deleted in Cloud Identity/Workspace and then recreated with the *exact same email address*, the new entity receives a completely new unique ID. The existing IAM bindings in GCP still point to the old, deleted unique ID. Therefore, despite the email looking identical in the console, the 'new' user does not actually possess the permissions, resulting in a 403 error.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "The bucket is configured with Uniform Bucket-Level Access, which overrides all Project-level IAM roles, forcing the engineer to be explicitly added to the bucket's local ACLs.": "Uniform Bucket-Level Access actually *disables* local ACLs and forces reliance on IAM. Project-level IAM roles (like `storage.admin`) still apply perfectly well to buckets with UBLA.",
             "The engineer is executing the API request from an IP address that falls outside the allowed subnet range defined in the Project's VPC Firewall rules.": "VPC Firewall rules control network traffic to VMs/instances, not to Google APIs like Cloud Storage. (VPC Service Controls could block API access, but the error would be an explicit VPC SC violation, not a standard IAM 403).",
             "Cloud Storage buckets cannot be deleted by users with `roles/storage.admin`; this action is restricted exclusively to `roles/owner` to prevent accidental data loss.": "The `roles/storage.admin` role explicitly contains the `storage.buckets.delete` permission."
           }
         },
         "difficulty": "Hard",
-        "tags": ["IAM", "Troubleshooting", "Cloud Identity", "Cloud Storage"]
+        "tags": [
+          "IAM",
+          "Troubleshooting",
+          "Cloud Identity",
+          "Cloud Storage"
+        ]
       },
       {
         "id": "q-gcppca-s57-018",
@@ -486,14 +574,19 @@
         ],
         "explanation": {
           "general explanation": "Securing a Cloud Run service involves two layers: Network Ingress and IAM. Setting Ingress to 'Internal' ensures the service cannot be reached from the public internet (network security). For authorization, Cloud Run natively integrates with IAM. By removing `allUsers` (which makes it public) and explicitly granting the `roles/run.invoker` role only to the Service Accounts of the approved microservices, you enforce strict, identity-based, zero-trust authentication natively at the Google edge before the request even reaches your container.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Set the service's Ingress setting to 'All'. Assign `roles/run.invoker` to `allAuthenticatedUsers` so that any service within your GCP organization can call it securely.": "`allAuthenticatedUsers` means *any* user with a valid Google account globally, not just your organization. This is a massive security leak.",
             "Deploy the service to a Shared VPC. Use VPC Firewall rules to block all traffic on port 443 except from the IP addresses of the authorized calling microservices.": "Cloud Run scales dynamically and IPs change. VPC Firewalls do not protect the Cloud Run service URL directly; Cloud Run relies on IAM for access control, not traditional IP-based firewalls.",
             "Require the calling microservices to pass a static API key in the HTTP header, and validate the key in the Cloud Run application code.": "Static API keys are an insecure, legacy pattern (easily leaked, hard to rotate). Using native IAM OIDC tokens via the `run.invoker` role is the cloud-native, secure standard."
           }
         },
         "difficulty": "Easy",
-        "tags": ["Cloud Run", "IAM", "Service-to-Service Authentication", "Security"]
+        "tags": [
+          "Cloud Run",
+          "IAM",
+          "Service-to-Service Authentication",
+          "Security"
+        ]
       },
       {
         "id": "q-gcppca-s57-019",
@@ -513,14 +606,19 @@
         ],
         "explanation": {
           "general explanation": "The requirement has two parts: specific permissions and time boundaries. The `roles/storage.objectCreator` role allows users to upload (create) objects, but does not allow them to view, overwrite, or delete existing objects, satisfying the least privilege requirement. IAM Conditions allow you to attach logical rules (written in CEL) to IAM bindings. By adding a time-based condition (e.g., checking `request.time`), you enforce that the role is only active during specific business hours on weekdays.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Create Signed URLs for each freelancer via a cron job every morning at 9:00 AM, valid for 8 hours, granting PUT access. Do not grant them any IAM roles.": "While Signed URLs work for single uploads, issuing them daily for massive raw video uploads (which likely require multipart uploads or CLI tools) is operationally complex and brittle compared to native IAM conditions.",
             "Grant the freelancers `roles/storage.objectAdmin` on the bucket. Configure a Bucket Lock with a 1-day retention period to prevent deletion, and use Cloud Functions to disable their accounts after 5:00 PM.": "`storage.objectAdmin` grants read and overwrite access, which violates the strict requirement that they cannot read or overwrite files. Disabling accounts via scripts is an anti-pattern.",
             "Grant the freelancers `roles/storage.objectViewer` and `roles/storage.objectCreator` on the project. Use VPC Service Controls to restrict their IP addresses outside of business hours.": "Granting roles at the Project level is too broad. Granting `objectViewer` violates the constraint that they cannot read files. VPC SC is for API perimeters, not time-based IAM role toggling."
           }
         },
         "difficulty": "Medium",
-        "tags": ["Helicopter Racing League", "IAM Conditions", "Cloud Storage", "Least Privilege"]
+        "tags": [
+          "Helicopter Racing League",
+          "IAM Conditions",
+          "Cloud Storage",
+          "Least Privilege"
+        ]
       },
       {
         "id": "q-gcppca-s57-020",
@@ -542,14 +640,19 @@
         ],
         "explanation": {
           "general explanation": "To use OS Login to SSH into a Compute Engine instance that runs as a service account, a user needs two specific permissions. 1) They need the `roles/compute.osLogin` (or `osAdminLogin`) role to actually authenticate and log into the OS. 2) Because the instance is acting as the `df-worker` service account, logging into that instance effectively gives the user access to that service account's permissions. Therefore, GCP requires the user to also hold the `roles/iam.serviceAccountUser` role on that specific service account to authorize this indirect impersonation.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "roles/compute.instanceAdmin.v1 on the Project.": "This is a broad administrative role that grants full control over instances. It violates the least privilege requirement.",
             "roles/iam.serviceAccountTokenCreator on `df-worker@my-project.iam.gserviceaccount.com`.": "This role allows a user to generate OAuth tokens for the service account directly via the API (direct impersonation). It is not required simply to SSH into an instance running as that service account (which is indirect impersonation).",
             "roles/iap.tunnelResourceAccessor on the Project.": "While IAP TCP forwarding is a great way to SSH securely, it only allows the network tunnel. It does not grant OS-level login rights or satisfy the Service Account User requirement for instances running as a custom SA."
           }
         },
         "difficulty": "Hard",
-        "tags": ["IAM", "Compute Engine", "OS Login", "Service Account Impersonation"]
+        "tags": [
+          "IAM",
+          "Compute Engine",
+          "OS Login",
+          "Service Account Impersonation"
+        ]
       },
       {
         "id": "q-gcppca-s57-021",
@@ -569,14 +672,19 @@
         ],
         "explanation": {
           "general explanation": "When you enable Uniform Bucket-Level Access (UBLA), Cloud Storage completely ignores all legacy ACLs. The public access that was previously granted via an ACL is instantly revoked, causing the 403 errors. To restore public access under UBLA, you must use standard Cloud IAM. Granting the `roles/storage.objectViewer` role to the special principal `allUsers` on the bucket explicitly allows anonymous internet users to view (download) the objects, restoring the public website functionality securely via centralized IAM.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Revert the bucket back to Fine-Grained Access Control, as UBLA explicitly prohibits public access.": "UBLA does not prohibit public access; it simply requires that public access be granted via IAM (`allUsers`) rather than legacy ACLs. Reverting violates the security mandate.",
             "Generate a Signed URL with a 10-year expiration date and update the DNS records to point to it.": "Signed URLs expire (maximum 7 days for V4 signatures if using Service Account credentials). They are for temporary, specific access, not for hosting a permanent public website.",
             "Grant the `roles/storage.objectViewer` role to `allAuthenticatedUsers` at the bucket level.": "`allAuthenticatedUsers` only grants access to anyone globally who is logged into a Google account. It does not grant anonymous public access, so unauthenticated web traffic will still fail."
           }
         },
         "difficulty": "Easy",
-        "tags": ["Cloud Storage", "IAM", "Uniform Bucket-Level Access", "Public Access"]
+        "tags": [
+          "Cloud Storage",
+          "IAM",
+          "Uniform Bucket-Level Access",
+          "Public Access"
+        ]
       },
       {
         "id": "q-gcppca-s57-022",
@@ -596,14 +704,19 @@
         ],
         "explanation": {
           "general explanation": "To enforce device posture (health checks, corporate ownership) before granting access to Google Cloud APIs, you must combine Access Context Manager (part of BeyondCorp Enterprise) with Cloud IAM. Endpoint Verification extensions on the laptops report their health to Google Workspace. You create an Access Level in Access Context Manager demanding this healthy posture. Finally, using IAM Conditions, you bind this Access Level to the developers' IAM roles (e.g., Editor). If a developer logs in from an unmanaged or unhealthy personal device, the IAM condition evaluates to false, and their access is denied.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Deploy Identity-Aware Proxy (IAP) in front of the GCP Console. Require developers to tunnel through IAP to authenticate their devices.": "IAP protects specific web applications deployed on GCP (like internal HTTP apps). It is not deployed 'in front of' the global GCP Console or general API endpoints.",
             "Configure an Organization Policy to restrict API access based on the MAC addresses of the corporate laptops.": "Organization Policies cannot filter based on MAC addresses. MAC addresses are layer 2 constructs and do not cross the internet to Google's APIs.",
             "Use Google Cloud Directory Sync (GCDS) to sync the laptop inventory from Active Directory to Cloud Identity, assigning an IAM Service Account to each laptop.": "GCDS syncs human user accounts and groups, not physical hardware inventory. Service Accounts are for workloads, not physical laptops."
           }
         },
         "difficulty": "Medium",
-        "tags": ["BeyondCorp", "IAM Conditions", "Access Context Manager", "Zero Trust"]
+        "tags": [
+          "BeyondCorp",
+          "IAM Conditions",
+          "Access Context Manager",
+          "Zero Trust"
+        ]
       },
       {
         "id": "q-gcppca-s57-023",
@@ -623,14 +736,19 @@
         ],
         "explanation": {
           "general explanation": "When establishing trust between two different Google Cloud Organizations, you do not need Workload Identity Federation or Service Account Keys. Because both entities are native to Google Cloud, IAM can natively cross organization boundaries. The vendor provides the email address of the service account their application runs under. You simply add that service account email to your dataset's IAM policy with the `dataViewer` role. The vendor's application authenticates using its own native attached identity, completely securely.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Create a Google Service Account in your project. Grant it `roles/bigquery.dataViewer`. Send the JSON key to the vendor.": "Generating and sending static JSON keys is a major security anti-pattern and violates modern keyless access best practices.",
             "Use Workload Identity Federation. Create a pool and an OIDC provider, mapping the vendor's Google Cloud Organization ID to a service account in your project.": "WIF is designed for non-GCP workloads (AWS, Azure, On-Prem) authenticating to GCP. It is unnecessary overhead for GCP-to-GCP cross-organization authentication.",
             "Configure a VPC Peering connection between your project and the vendor's project to allow private network querying of BigQuery.": "BigQuery is a managed API accessed globally. VPC Peering handles private IP traffic for VMs/internal networks; it does not dictate API-level IAM authorization for BigQuery."
           }
         },
         "difficulty": "Medium",
-        "tags": ["IAM", "Cross-Organization", "BigQuery", "Security"]
+        "tags": [
+          "IAM",
+          "Cross-Organization",
+          "BigQuery",
+          "Security"
+        ]
       },
       {
         "id": "q-gcppca-s57-024",
@@ -650,14 +768,19 @@
         ],
         "explanation": {
           "general explanation": "Google strongly recommends specific best practices for Super Administrator accounts to prevent catastrophic lockouts. You should always have more than one Super Admin account (but no more than a few) to eliminate single points of failure. These accounts should be dedicated 'break-glass' accounts, not used for daily email/work. Backup codes must be printed and stored in a physically secure location (a safe). If one admin loses their hardware key, the other can log in, or the backup codes can be retrieved from the safe.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Disable 2-Step Verification for all Super Admin accounts to ensure they can always recover access via an SMS password reset.": "Disabling 2FA on Super Admin accounts is a massive, catastrophic security violation. They must be protected by strong hardware keys.",
             "Assign the Super Admin role to a generic Google Group (e.g., `admins@company.com`) so any member of the IT department can access the console.": "You cannot assign the Super Admin role to a Google Group. It must be assigned to individual user accounts to maintain an exact audit trail.",
             "Use a third-party Identity Provider (IdP) for SSO. If the Google account is locked, the IdP can force a password reset via SAML attributes.": "Super Admins are actually advised to bypass SSO for their specific admin login (or use a dedicated non-SSO domain) specifically so that an outage in the third-party IdP doesn't lock them out of Google Cloud."
           }
         },
         "difficulty": "Easy",
-        "tags": ["Cloud Identity", "Super Admin", "Breakglass", "Security"]
+        "tags": [
+          "Cloud Identity",
+          "Super Admin",
+          "Breakglass",
+          "Security"
+        ]
       },
       {
         "id": "q-gcppca-s57-025",
@@ -679,14 +802,19 @@
         ],
         "explanation": {
           "general explanation": "Deploying a VM into a Shared VPC requires permissions in two different projects. First, the developer needs permission to actually create the compute instance; this is done via `compute.instanceAdmin.v1` in their own Service project. Second, to attach the VM's network interface to the centrally managed subnet, they need permission to 'use' that network. This is granted by the `compute.networkUser` role in the Host project (specifically targeted to `subnet-a` to enforce least privilege).",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "The `roles/compute.networkAdmin` role in the Host project.": "Network Admin grants the ability to create, modify, and delete subnets and firewalls. Developers should never have this role in a Shared VPC architecture.",
             "The `roles/compute.securityAdmin` role on `subnet-a` in the Host project.": "Security Admin is used to manage firewall rules and SSL certificates, not to simply attach a VM to a subnet.",
             "The `roles/resourcemanager.projectIamAdmin` role in the Service project.": "This role allows managing IAM policies. It does not grant the ability to create Compute Engine instances or use networks."
           }
         },
         "difficulty": "Medium",
-        "tags": ["Shared VPC", "IAM", "Compute Engine", "Networking"]
+        "tags": [
+          "Shared VPC",
+          "IAM",
+          "Compute Engine",
+          "Networking"
+        ]
       },
       {
         "id": "q-gcppca-s57-026",
@@ -706,14 +834,19 @@
         ],
         "explanation": {
           "general explanation": "When overriding the default Compute Engine service account for Dataflow workers, the custom service account needs specific permissions to interact with the Dataflow service itself, not just the source (Pub/Sub) and sink (BigQuery) data systems. The `roles/dataflow.worker` role grants the worker VMs the necessary permissions to request work, log errors, and report metrics back to the Dataflow control plane. Without it, the pipeline cannot function.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "The user submitting the Dataflow job must be granted `roles/iam.serviceAccountTokenCreator` on the custom service account.": "The user submitting the job needs `roles/iam.serviceAccountUser` to attach the custom SA to the job, not Token Creator.",
             "The custom service account must be granted `roles/pubsub.publisher` because Dataflow implicitly creates a Dead Letter Queue topic when reading streams.": "Dataflow does not implicitly create Pub/Sub Dead Letter Queues unless explicitly coded to do so. Publisher is not required for a simple read operation.",
             "The default Compute Engine service account must be granted `roles/iam.serviceAccountUser` on the custom service account.": "The default compute service account does not need access to the custom service account. The human user (or CI/CD pipeline) launching the job needs the `serviceAccountUser` role."
           }
         },
         "difficulty": "Medium",
-        "tags": ["Cloud Dataflow", "IAM", "Service Accounts", "Least Privilege"]
+        "tags": [
+          "Cloud Dataflow",
+          "IAM",
+          "Service Accounts",
+          "Least Privilege"
+        ]
       },
       {
         "id": "q-gcppca-s57-027",
@@ -733,14 +866,19 @@
         ],
         "explanation": {
           "general explanation": "To attach a service account to a compute resource (like Cloud Run or Compute Engine), the user must have the `roles/iam.serviceAccountUser` role on that specific service account. If you grant this role at the Project level, the developer can attach *any* service account in the project. By granting `roles/iam.serviceAccountUser` only on the specific `app-runner` service account resource itself, you restrict them to only being able to impersonate/attach that single identity. If they try to deploy a Cloud Run service using the default service account, the deployment will fail with a permission error.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Apply an IAM Deny policy on the project that denies `roles/run.admin` if the resource being deployed does not use the `app-runner` service account.": "IAM Deny policies cannot evaluate the service account attached to a Cloud Run deployment via native IAM conditions easily. ServiceAccountUser targeting is the native, simpler way.",
             "Delete the default compute service account and all other service accounts in the project so `app-runner` is the only one physically available.": "Deleting default service accounts is often an anti-pattern as it can break backend Google APIs, and it doesn't prevent a developer from creating a new service account if they have permissions.",
             "Create a custom role for the developers that removes the `iam.serviceAccounts.actAs` permission entirely, forcing Cloud Run to default to `app-runner`.": "If you remove `actAs` entirely, the developer cannot deploy Cloud Run at all, because they need the `actAs` permission to attach *any* service account, including `app-runner`."
           }
         },
         "difficulty": "Hard",
-        "tags": ["IAM", "Cloud Run", "Service Account User", "Least Privilege"]
+        "tags": [
+          "IAM",
+          "Cloud Run",
+          "Service Account User",
+          "Least Privilege"
+        ]
       },
       {
         "id": "q-gcppca-s57-028",
@@ -760,14 +898,19 @@
         ],
         "explanation": {
           "general explanation": "The Policy Troubleshooter works by evaluating IAM policies. If a role is granted to a Google Group, the Troubleshooter must call the Google Workspace/Cloud Identity Directory API to check if Alice is a member of that group. If the admin running the tool lacks the `groups.read` permission in Workspace (e.g., they are a GCP admin but not a Workspace admin), the tool cannot determine her membership. Because it can neither confirm nor deny her presence in the group, it accurately returns the status 'Unknown'.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "When the administrator running the Policy Troubleshooter lacks the `roles/iam.securityReviewer` or `roles/resourcemanager.projectIamAdmin` role on the project.": "If the admin lacks permission to view the IAM policy entirely, the tool will return an error or 'Unknown' for the *entire* policy, not specifically a nuanced identity resolution.",
             "When an IAM Deny policy is applied at the Organization level, but the Policy Troubleshooter is only analyzing the Project level.": "Policy Troubleshooter evaluates the full resource hierarchy, including inherited policies and Deny policies. It wouldn't return 'Unknown'; it would return 'Denied'.",
             "When the dataset is protected by VPC Service Controls, as the Policy Troubleshooter cannot evaluate network perimeters.": "VPC Service Controls block network access, not IAM access. If VPC SC blocks the call, the IAM evaluation is still 'Granted', but the API call itself is rejected by the perimeter. Troubleshooter specifically analyzes IAM."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Policy Troubleshooter", "IAM", "Troubleshooting", "Google Groups"]
+        "tags": [
+          "Policy Troubleshooter",
+          "IAM",
+          "Troubleshooting",
+          "Google Groups"
+        ]
       },
       {
         "id": "q-gcppca-s57-029",
@@ -787,14 +930,19 @@
         ],
         "explanation": {
           "general explanation": "Workforce Identity Federation (which is distinct from Workload Identity Federation) allows you to use an external Identity Provider (like Azure AD or Okta) to authenticate *human users* directly into Google Cloud. Crucially, it does not require syncing users to Cloud Identity/Google Workspace via GCDS (no shadow accounts). Employees log in to the GCP Console or CLI, are redirected to Azure AD, authenticate, and are granted access based on IAM policies tied to their federated identities.",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "Workload Identity Federation. Configure Azure AD as the provider. Employees assume a Google Service Account via the CLI.": "Workload Identity Federation is for non-human workloads (applications, VMs). It is not designed or supported for granting humans interactive access to the GCP Console.",
             "SAML 2.0 Single Sign-On (SSO). Configure Google Cloud Identity to use Azure AD as the SAML provider, disabling automatic user provisioning.": "Standard SAML SSO in Cloud Identity *requires* the user to exist in Cloud Identity (a shadow account provisioned manually or via GCDS) before the SAML flow can succeed. Workforce Identity Federation bypasses this requirement.",
             "Cloud Identity-Aware Proxy (IAP). Configure IAP to trust the Azure AD OAuth endpoints for external user access.": "IAP controls access to specific web applications hosted on GCP, not access to the GCP Console itself or raw API access via the `gcloud` CLI."
           }
         },
         "difficulty": "Medium",
-        "tags": ["Workforce Identity Federation", "IAM", "Azure AD", "Security"]
+        "tags": [
+          "Workforce Identity Federation",
+          "IAM",
+          "Azure AD",
+          "Security"
+        ]
       },
       {
         "id": "q-gcppca-s57-030",
@@ -816,14 +964,19 @@
         ],
         "explanation": {
           "general explanation": "Deploying an event-driven Cloud Function (2nd gen) triggered by Pub/Sub requires two distinct authorization actions by the developer. 1) They are deploying a compute resource (the Function) that will run as a service account. Therefore, the developer must have `roles/iam.serviceAccountUser` on that runtime service account to attach it. 2) They are configuring a Pub/Sub trigger, which under the hood creates a Pub/Sub Subscription attached to the topic and sets the push endpoint to the Function. To create a subscription on a topic, the developer needs `roles/pubsub.editor` (or specifically `pubsub.subscriptions.create` and `pubsub.topics.attachSubscription`).",
-          "Why other options are wrong": {
+          "why other options are wrong": {
             "roles/eventarc.admin on the GCP Project.": "While Eventarc routes events, standard Pub/Sub triggers for Cloud Functions natively manage the subscription without requiring the broad Eventarc Admin role for the developer.",
             "roles/pubsub.publisher on the target Pub/Sub topic.": "Publisher allows writing messages to the topic. The developer is creating a trigger (subscription) to *read* from it, not publish to it. (The publisher role is for the upstream system generating events).",
             "roles/run.invoker on the Cloud Function.": "The `run.invoker` role is required for the *Pub/Sub service identity* (the trigger) to invoke the function, not for the developer who is deploying the infrastructure."
           }
         },
         "difficulty": "Hard",
-        "tags": ["Cloud Functions", "Pub/Sub", "IAM", "Least Privilege"]
+        "tags": [
+          "Cloud Functions",
+          "Pub/Sub",
+          "IAM",
+          "Least Privilege"
+        ]
       }
     ]
   }
