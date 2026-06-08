@@ -37,6 +37,7 @@ export default function ExplanationDisplay({
   let parsed: {
     'general explanation'?: string;
     'why other options are wrong'?: Record<string, string>;
+    'Why other options are wrong'?: Record<string, string>;
   } | null = null;
 
   try {
@@ -50,7 +51,8 @@ export default function ExplanationDisplay({
 
   if (parsed) {
     const generalExplanation = parsed['general explanation'] ?? '';
-    const wrongOptions = parsed['why other options are wrong'] ?? {};
+    // Support both lowercase and capitalized variations for backward compatibility
+    const wrongOptions = parsed['why other options are wrong'] ?? parsed['Why other options are wrong'] ?? {};
     const wrongEntries = Object.entries(wrongOptions);
 
     return (

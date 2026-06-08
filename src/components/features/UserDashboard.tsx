@@ -126,11 +126,11 @@ export default function UserDashboard({
   const [examToStart, setExamToStart] = useState<any>(null);
   const [loadingExams, setLoadingExams] = useState(false);
 
-  // Filter state
-  const [examTypeFilter, setExamTypeFilter] = useState<'mock' | 'practice' | 'topic' | 'custom'>(
-    'mock',
+  // Filter state - Default to showing all types and difficulties
+  const [examTypeFilter, setExamTypeFilter] = useState<'mock' | 'practice' | 'topic' | 'custom' | 'all'>(
+    'all',
   );
-  const [difficultyFilter, setDifficultyFilter] = useState<Difficulty>('Easy');
+  const [difficultyFilter, setDifficultyFilter] = useState<Difficulty | 'all'>('all');
 
   // Session config modal state -- only mock/practice; topic & custom have their own flows
   type TestType = 'mock' | 'practice';
@@ -302,30 +302,53 @@ export default function UserDashboard({
 
   const certHistoryBase = selectedCertForExams
     ? history.filter(
-        (h: any) =>
-          (h.resolvedCertId && h.resolvedCertId === certId) ||
-          (h.certificationId && h.certificationId === certId) ||
-          (h.examConfigurationId && certExamIds.has(h.examConfigurationId)),
+        (h: any) => {
+          const matchesCertId = (h.resolvedCertId && h.resolvedCertId === certId) ||
+                               (h.certificationId && h.certificationId === certId) ||
+                               (h.examConfigurationId && certExamIds.has(h.examConfigurationId));
+          
+          // Temporary debug logging - remove after testing
+          if (!matchesCertId) {
+            console.info('[DEBUG] Session filtered out:', {
+              sessionName: h.sessionName,
+              certId: certId,
+              resolvedCertId: h.resolvedCertId, 
+              certificationId: h.certificationId,
+              examConfigurationId: h.examConfigurationId
+            });
+          }
+          
+          return matchesCertId;
+        }
       )
     : [];
+
+  console.info('[DEBUG] History filtering:', {
+    totalSessions: history.length,
+    selectedCert: selectedCertForExams?.title,
+    certId: certId,
+    afterCertFilter: certHistoryBase.length
+  });
 
   // Apply filters
   const certHistoryDisplay = certHistoryBase.filter((h: any) => {
     const examType = getExamType(h);
     const difficulty = getDifficulty(h);
 
-    console.warn('Session:', h.sessionName);
-    console.warn('  - difficulty field from API:', h.difficulty);
-    console.warn('  - getDifficulty result:', difficulty);
-    console.warn('  - isPracticeMode:', h.isPracticeMode);
-    console.warn('  - getExamType result:', examType);
-    console.warn('  - Filters: examType=' + examTypeFilter + ', difficulty=' + difficultyFilter);
-    console.warn('  - Matches exam type?', examType === examTypeFilter);
-    console.warn('  - Matches difficulty?', difficulty === difficultyFilter);
-
-    if (examType !== examTypeFilter) return false;
-    if (difficulty !== difficultyFilter) return false;
+    // Apply exam type filter (skip if "all" selected)
+    if (examTypeFilter !== 'all' && examType !== examTypeFilter) return false;
+    
+    // Apply difficulty filter (skip if "all" selected)
+    if (difficultyFilter !== 'all' && difficulty !== difficultyFilter) return false;
+    
     return true;
+  });
+
+  console.info('[DEBUG] Final result:', {
+    afterCertFilter: certHistoryBase.length,
+    examTypeFilter,
+    difficultyFilter,
+    finalDisplay: certHistoryDisplay.length
   });
 
   const certStats = {
@@ -595,6 +618,7 @@ export default function UserDashboard({
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {[
+                    { value: 'all', label: 'All Types' },
                     { value: 'mock', label: 'Mock Test' },
                     { value: 'practice', label: 'Practice' },
                     { value: 'topic', label: 'Topic Quiz' },
@@ -622,6 +646,7 @@ export default function UserDashboard({
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {[
+                    { value: 'all', label: 'All Levels' },
                     { value: 'Easy', label: 'Easy' },
                     { value: 'Medium', label: 'Medium' },
                     { value: 'Hard', label: 'Hard' },
