@@ -158,9 +158,6 @@ describe('Feature: question-history-tracking, Property 15: Active Questions Only
     return id;
   }
 
-  function deactivateQuestion(questionId: string): void {
-    testDb.prepare('UPDATE questions SET isActive = 0 WHERE id = ?').run(questionId);
-  }
 
   it('Property 15: For any certification with both active and inactive questions, statistics should only consider active questions', () => {
     fc.assert(
@@ -452,7 +449,7 @@ describe('Feature: question-history-tracking, Property 16: History Retention for
     return id;
   }
 
-  function deactivateQuestion(questionId: string): void {
+  function _deactivateQuestion(questionId: string): void {
     testDb.prepare('UPDATE questions SET isActive = 0 WHERE id = ?').run(questionId);
   }
 
@@ -492,7 +489,7 @@ describe('Feature: question-history-tracking, Property 16: History Retention for
           // Deactivate some questions
           const questionsToDeactivateIds = questionIds.slice(0, questionsToDeactivate);
           for (const questionId of questionsToDeactivateIds) {
-            deactivateQuestion(questionId);
+            _deactivateQuestion(questionId);
           }
 
           // Assert: History records should still exist for deactivated questions
@@ -570,7 +567,7 @@ describe('Feature: question-history-tracking, Property 16: History Retention for
           // Deactivate some questions
           const questionsToToggleIds = questionIds.slice(0, questionsToToggle);
           for (const questionId of questionsToToggleIds) {
-            deactivateQuestion(questionId);
+            _deactivateQuestion(questionId);
           }
 
           // Verify history count unchanged after deactivation
@@ -643,7 +640,7 @@ describe('Feature: question-history-tracking, Property 16: History Retention for
 
           // Deactivate all questions
           for (const questionId of questionIds) {
-            deactivateQuestion(questionId);
+            _deactivateQuestion(questionId);
           }
 
           // Assert: History records should still exist

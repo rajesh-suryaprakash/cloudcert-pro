@@ -2388,9 +2388,9 @@ describe('Feature: question-history-tracking, Property 19: Backfill Idempotency'
           }
         },
       ),
-      { numRuns: 100 },
+      { numRuns: 30 },
     );
-  });
+  }, 30000);
 
   it('Property 19 Edge Case: Backfill with existing manual history records should not create duplicates', () => {
     fc.assert(

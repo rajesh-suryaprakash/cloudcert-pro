@@ -11,7 +11,7 @@
  * Task: 7. Checkpoint - Verify backend services
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { db } from '../db/connection';
 import { AnalyticsService } from './AnalyticsService';
 import { BenchmarkService } from './BenchmarkService';
@@ -52,6 +52,10 @@ describe('Backend Services Verification', () => {
     userId = user.id;
     certificationId = cert.id;
     sessionId = session?.id || '';
+  });
+
+  beforeEach(() => {
+    cacheService = new CacheService(300);
   });
 
   describe('AnalyticsService', () => {
@@ -229,7 +233,9 @@ describe('Backend Services Verification', () => {
       expect(typeof benchmarkId).toBe('string');
 
       // Verify record was inserted
-      const record = db.prepare('SELECT * FROM benchmark_users WHERE id = ?').get(benchmarkId);
+      const record = db
+        .prepare('SELECT * FROM benchmark_users WHERE userId = ? AND certificationId = ?')
+        .get(userId, certificationId);
 
       expect(record).toBeDefined();
     });

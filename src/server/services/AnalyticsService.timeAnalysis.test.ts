@@ -19,7 +19,6 @@ import { v4 as uuidv4 } from 'uuid';
 describe('AnalyticsService - Time Analysis', () => {
   let testDb: Database.Database;
   let analyticsService: AnalyticsService;
-  let dbModuleSpy: any;
 
   beforeEach(async () => {
     // Create in-memory database for testing
@@ -27,7 +26,7 @@ describe('AnalyticsService - Time Analysis', () => {
 
     // Mock the db module to use our test database
     const dbModule = await import('../db/connection');
-    dbModuleSpy = vi.spyOn(dbModule, 'db', 'get').mockReturnValue(testDb as any);
+    vi.spyOn(dbModule, 'db', 'get').mockReturnValue(testDb as any);
 
     // Create minimal schema needed for time analysis
     testDb.exec(`

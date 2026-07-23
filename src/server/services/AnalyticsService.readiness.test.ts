@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+﻿import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as fc from 'fast-check';
 import Database from 'better-sqlite3';
 import { AnalyticsService } from './AnalyticsService';
@@ -292,14 +292,15 @@ describe('AnalyticsService - Property 3: Readiness score bounds and null handlin
             expect(readinessScore).toBeNull();
           } else {
             expect(readinessScore).not.toBeNull();
-            expect(readinessScore!.overallScore).toBeGreaterThanOrEqual(0);
-            expect(readinessScore!.overallScore).toBeLessThanOrEqual(100);
+            if (!readinessScore) return;
+            expect(readinessScore.overallScore).toBeGreaterThanOrEqual(0);
+            expect(readinessScore.overallScore).toBeLessThanOrEqual(100);
 
             // Also verify component scores are within bounds
-            expect(readinessScore!.consistencyScore).toBeGreaterThanOrEqual(0);
-            expect(readinessScore!.consistencyScore).toBeLessThanOrEqual(100);
-            expect(readinessScore!.pacingScore).toBeGreaterThanOrEqual(0);
-            expect(readinessScore!.pacingScore).toBeLessThanOrEqual(100);
+            expect(readinessScore.consistencyScore).toBeGreaterThanOrEqual(0);
+            expect(readinessScore.consistencyScore).toBeLessThanOrEqual(100);
+            expect(readinessScore.pacingScore).toBeGreaterThanOrEqual(0);
+            expect(readinessScore.pacingScore).toBeLessThanOrEqual(100);
           }
 
           // Cleanup: Clear database for next iteration

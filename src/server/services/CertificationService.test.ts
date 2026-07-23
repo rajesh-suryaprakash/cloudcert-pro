@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+﻿import { describe, it, expect, beforeEach } from 'vitest';
 import Database from 'better-sqlite3';
 import * as fc from 'fast-check';
 import { CertificationRepository } from '../repositories/CertificationRepository';
@@ -372,8 +372,9 @@ describe('CertificationService — unit methods', () => {
 
     const stored = unitRepo.findUnitById(unitId);
     expect(stored).toBeDefined();
-    expect(stored!.title).toBe('Unit Alpha');
-    expect(stored!.subTopicId).toBe(subtopicId);
+    if (!stored) return;
+    expect(stored.title).toBe('Unit Alpha');
+    expect(stored.subTopicId).toBe(subtopicId);
   });
 
   it('createUnit throws NotFoundError when subtopicId does not exist', () => {
@@ -393,9 +394,9 @@ describe('CertificationService — unit methods', () => {
     });
 
     const stored = unitRepo.findUnitById(unitId);
-    expect(stored!.description).toBe('A detailed description');
-    expect(stored!.orderIndex).toBe(5);
-    expect(stored!.isActive).toBe(0); // SQLite stores booleans as integers
+    expect(stored.description).toBe('A detailed description');
+    expect(stored.orderIndex).toBe(5);
+    expect(stored.isActive).toBe(0); // SQLite stores booleans as integers
   });
 
   // ── updateUnit ─────────────────────────────────────────────────────────────
@@ -407,7 +408,7 @@ describe('CertificationService — unit methods', () => {
     service.updateUnit(unitId, { title: 'Updated Title' });
 
     const stored = unitRepo.findUnitById(unitId);
-    expect(stored!.title).toBe('Updated Title');
+    expect(stored.title).toBe('Updated Title');
   });
 
   it('updateUnit throws NotFoundError when unit ID does not exist', () => {
@@ -429,9 +430,9 @@ describe('CertificationService — unit methods', () => {
     service.updateUnit(unitId, { orderIndex: 10 });
 
     const stored = unitRepo.findUnitById(unitId);
-    expect(stored!.title).toBe('Stable Title');
-    expect(stored!.description).toBe('Stable Description');
-    expect(stored!.orderIndex).toBe(10);
+    expect(stored.title).toBe('Stable Title');
+    expect(stored.description).toBe('Stable Description');
+    expect(stored.orderIndex).toBe(10);
   });
 
   // ── deleteUnit ─────────────────────────────────────────────────────────────

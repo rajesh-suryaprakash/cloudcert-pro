@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+﻿import { describe, it, expect, beforeEach } from 'vitest';
 import Database from 'better-sqlite3';
 import { UnitService } from './UnitService';
 import { UnitRepository } from '../repositories/UnitRepository';
@@ -150,9 +150,10 @@ describe('UnitService', () => {
 
       const found = unitRepo.findUnitById(id);
       expect(found).toBeDefined();
-      expect(found!.title).toBe('Delegated Unit');
-      expect(found!.subTopicId).toBe(subTopicId);
-      expect(found!.orderIndex).toBe(2);
+      if (!found) return;
+      expect(found.title).toBe('Delegated Unit');
+      expect(found.subTopicId).toBe(subTopicId);
+      expect(found.orderIndex).toBe(2);
     });
 
     it('passes optional fields through to the repository', () => {
@@ -165,9 +166,10 @@ describe('UnitService', () => {
 
       const found = unitRepo.findUnitById(id);
       expect(found).toBeDefined();
-      expect(found!.description).toBe('A detailed description');
-      expect(found!.orderIndex).toBe(5);
-      expect(found!.isActive).toBe(0);
+      if (!found) return;
+      expect(found.description).toBe('A detailed description');
+      expect(found.orderIndex).toBe(5);
+      expect(found.isActive).toBe(0);
     });
   });
 
@@ -196,7 +198,8 @@ describe('UnitService', () => {
 
       const found = unitRepo.findUnitById(id);
       expect(found).toBeDefined();
-      expect(found!.title).toBe('Updated Title');
+      if (!found) return;
+      expect(found.title).toBe('Updated Title');
     });
 
     it('delegates to unitRepo.updateUnit and persists partial changes', () => {
@@ -211,11 +214,12 @@ describe('UnitService', () => {
 
       const found = unitRepo.findUnitById(id);
       expect(found).toBeDefined();
+      if (!found) return;
       // Updated field
-      expect(found!.orderIndex).toBe(10);
+      expect(found.orderIndex).toBe(10);
       // Unchanged fields preserved
-      expect(found!.title).toBe('Original');
-      expect(found!.description).toBe('Original desc');
+      expect(found.title).toBe('Original');
+      expect(found.description).toBe('Original desc');
     });
   });
 

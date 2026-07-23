@@ -12,7 +12,6 @@ import { v4 as uuidv4 } from 'uuid';
 describe('AnalyticsService - Property Tests', () => {
   let testDb: Database.Database;
   let analyticsService: AnalyticsService;
-  let originalDb: any;
 
   beforeEach(async () => {
     // Create in-memory database for testing
@@ -20,7 +19,6 @@ describe('AnalyticsService - Property Tests', () => {
 
     // Mock the db module to use our test database
     const dbModule = await import('../db/connection');
-    originalDb = dbModule.db;
 
     // Replace the db export with our test database
     vi.spyOn(dbModule, 'db', 'get').mockReturnValue(testDb as any);
