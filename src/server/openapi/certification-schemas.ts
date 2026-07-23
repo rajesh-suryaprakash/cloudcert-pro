@@ -201,6 +201,86 @@ export const UnseenQuestionsQuerySchema = z
     description: 'Query parameters for unseen questions endpoint',
   });
 
+// ── Topic Weights Schemas ────────────────────────────────────────────────────
+
+export const TopicWeightsResponseSchema = z
+  .object({
+    certificationId: z.string().uuid().describe('Certification ID'),
+    topics: z
+      .array(
+        z.object({
+          id: z.string().uuid().describe('Topic ID'),
+          certificationId: z.string().uuid().describe('Certification ID'),
+          title: z.string().describe('Topic title'),
+          description: z.string().nullable().describe('Topic description'),
+          weightPercentage: z.number().nullable().describe('Topic weight percentage (0-100)'),
+          orderIndex: z.number().int().describe('Order index'),
+          isActive: z.boolean().describe('Whether topic is active'),
+          createdAt: z.string().datetime().describe('Created timestamp'),
+          updatedAt: z.string().datetime().describe('Updated timestamp'),
+        }),
+      )
+      .describe('Array of topics with their weights'),
+    totalWeight: z.number().describe('Sum of all topic weights'),
+  })
+  .openapi({
+    description: 'Topic weights for a certification',
+  });
+
+export const UpdateTopicWeightsRequestSchema = z
+  .object({
+    topics: z
+      .array(
+        z.object({
+          id: z.string().uuid().describe('Topic ID'),
+          weightPercentage: z.number().min(0).max(100).describe('New weight percentage'),
+        }),
+      )
+      .describe('Array of topics to update'),
+  })
+  .openapi({
+    description: 'Update topic weights request',
+  });
+
+export const EffectiveTopicWeightsResponseSchema = z
+  .object({
+    effectiveWeights: z
+      .record(z.string().uuid(), z.number())
+      .describe('Map of topicId to percentage weight (0-100)'),
+  })
+  .openapi({
+    description: 'Effective topic weights for an exam',
+  });
+
+// ── Question Selection Schemas ───────────────────────────────────────────────
+
+export const SelectQuestionsRequestSchema = z
+  .object({
+    scope: z
+      .enum(['certification', 'topic', 'subtopic', 'subtopics', 'unit', 'units'])
+      .describe('Selection scope'),
+    scopeId: z
+      .union([z.string().uuid(), z.array(z.string().uuid())])
+      .describe('Scope ID or array of scope IDs'),
+    strategy: z
+      .enum(['random', 'difficulty_balanced', 'topic_based'])
+      .optional()
+      .describe('Selection strategy'),
+    totalQuestions: z.number().int().min(1).describe('Number of questions to select'),
+    difficulty: z
+      .enum(['Easy', 'Medium', 'Hard'])
+      .nullable()
+      .optional()
+      .describe('Optional difficulty filter'),
+    topicWeights: z
+      .record(z.string().uuid(), z.number())
+      .optional()
+      .describe('Optional topic weights for topic_based strategy'),
+  })
+  .openapi({
+    description: 'Request body to select questions',
+  });
+
 // Register all certification schemas
 registry.register('CreateCertificationRequest', CreateCertificationRequestSchema);
 registry.register('UpdateCertificationRequest', UpdateCertificationRequestSchema);
@@ -212,3 +292,7 @@ registry.register('QuestionHistoryStatsResponse', QuestionHistoryStatsResponseSc
 registry.register('QuestionHistoryResetResponse', QuestionHistoryResetResponseSchema);
 registry.register('UnseenQuestionsCountResponse', UnseenQuestionsCountResponseSchema);
 registry.register('UnseenQuestionsQuery', UnseenQuestionsQuerySchema);
+registry.register('TopicWeightsResponse', TopicWeightsResponseSchema);
+registry.register('UpdateTopicWeightsRequest', UpdateTopicWeightsRequestSchema);
+registry.register('EffectiveTopicWeightsResponse', EffectiveTopicWeightsResponseSchema);
+registry.register('SelectQuestionsRequest', SelectQuestionsRequestSchema);

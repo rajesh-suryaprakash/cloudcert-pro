@@ -415,6 +415,46 @@ export const AttemptsListResponseSchema = z
     ],
   });
 
+// ── Pause Exam Response Schema ───────────────────────────────────────────────
+
+/**
+ * Pause exam response schema
+ */
+export const PauseExamResponseSchema = z
+  .object({
+    ok: z.boolean().describe('Whether the operation was successful'),
+    status: z.enum(['paused']).describe('New session status'),
+  })
+  .openapi({
+    description: 'Pause exam response',
+    example: {
+      ok: true,
+      status: 'paused',
+    },
+  });
+
+// ── Resume Exam Response Schema ──────────────────────────────────────────────
+
+/**
+ * Resume exam response schema
+ */
+export const ResumeExamResponseSchema = z
+  .object({
+    ok: z.boolean().describe('Whether the operation was successful'),
+    status: z.enum(['in_progress']).describe('New session status'),
+    autoSubmitAt: z.string().datetime().describe('Updated ISO 8601 timestamp for auto-submission'),
+    timeLeftSeconds: z.number().int().min(0).describe('Remaining seconds left in the exam'),
+  })
+  .openapi({
+    description: 'Resume exam response',
+    example: {
+      ok: true,
+      status: 'in_progress',
+      autoSubmitAt: '2024-01-01T12:30:00Z',
+      timeLeftSeconds: 1800,
+    },
+  });
+
 // Register all exam schemas
 registry.register('CreateExamSessionRequest', CreateExamSessionRequestSchema);
 registry.register('CreateExamSessionResponse', CreateExamSessionResponseSchema);
@@ -429,3 +469,5 @@ registry.register('SessionIdParam', SessionIdParamSchema);
 registry.register('QuestionsList', QuestionsListResponseSchema);
 registry.register('AbandonExamResponse', AbandonExamResponseSchema);
 registry.register('AttemptsList', AttemptsListResponseSchema);
+registry.register('PauseExamResponse', PauseExamResponseSchema);
+registry.register('ResumeExamResponse', ResumeExamResponseSchema);

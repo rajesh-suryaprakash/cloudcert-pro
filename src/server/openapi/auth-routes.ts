@@ -146,6 +146,42 @@ export function registerAuthRoutes(): void {
     },
   });
 
+  // POST /api/auth/refresh
+  registerPath({
+    method: 'post',
+    path: '/api/auth/refresh',
+    summary: 'Rotate authentication tokens',
+    description: 'Exchange a valid refresh token cookie to rotate both access and refresh tokens.',
+    tags: ['Authentication'],
+    security: [{ cookieAuth: [] }],
+    responses: {
+      200: {
+        description: 'Tokens rotated successfully',
+        content: {
+          'application/json': {
+            schema: AuthResponseSchema,
+          },
+        },
+      },
+      401: {
+        description: 'Failed to rotate tokens - refresh token is invalid, expired or revoked',
+        content: {
+          'application/json': {
+            schema: UnauthorizedErrorResponseSchema,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: ErrorResponseSchema,
+          },
+        },
+      },
+    },
+  });
+
   // POST /api/auth/forgot
   registerPath({
     method: 'post',

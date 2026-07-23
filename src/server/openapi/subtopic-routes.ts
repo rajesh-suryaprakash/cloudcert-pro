@@ -383,4 +383,135 @@ export function registerSubtopicRoutes(): void {
       },
     },
   });
+
+  // PUT /api/topics/:topicId/subtopics/:id
+  registerPath({
+    method: 'put',
+    path: '/api/topics/{topicId}/subtopics/{id}',
+    summary: 'Update subtopic under topic',
+    description: 'Update an existing subtopic. Requires admin authentication.',
+    tags: ['Subtopics'],
+    security: [{ cookieAuth: [] }],
+    request: {
+      params: z.object({
+        topicId: z.string().describe('Topic ID'),
+        id: z.string().describe('Subtopic ID'),
+      }),
+      body: {
+        content: {
+          'application/json': {
+            schema: UpdateSubtopicRequestSchema,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Subtopic updated successfully',
+        content: {
+          'application/json': {
+            schema: SuccessResponseSchema,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error - invalid input data',
+        content: {
+          'application/json': {
+            schema: ValidationErrorResponseSchema,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required - no valid session',
+        content: {
+          'application/json': {
+            schema: UnauthorizedErrorResponseSchema,
+          },
+        },
+      },
+      403: {
+        description: 'Forbidden - admin access required',
+        content: {
+          'application/json': {
+            schema: ErrorResponseSchema,
+          },
+        },
+      },
+      404: {
+        description: 'Subtopic not found',
+        content: {
+          'application/json': {
+            schema: ErrorResponseSchema,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: ErrorResponseSchema,
+          },
+        },
+      },
+    },
+  });
+
+  // DELETE /api/topics/:topicId/subtopics/:id
+  registerPath({
+    method: 'delete',
+    path: '/api/topics/{topicId}/subtopics/{id}',
+    summary: 'Delete subtopic under topic',
+    description: 'Delete an existing subtopic. Requires admin authentication.',
+    tags: ['Subtopics'],
+    security: [{ cookieAuth: [] }],
+    request: {
+      params: z.object({
+        topicId: z.string().describe('Topic ID'),
+        id: z.string().describe('Subtopic ID'),
+      }),
+    },
+    responses: {
+      200: {
+        description: 'Subtopic deleted successfully',
+        content: {
+          'application/json': {
+            schema: SuccessResponseSchema,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required - no valid session',
+        content: {
+          'application/json': {
+            schema: UnauthorizedErrorResponseSchema,
+          },
+        },
+      },
+      403: {
+        description: 'Forbidden - admin access required',
+        content: {
+          'application/json': {
+            schema: ErrorResponseSchema,
+          },
+        },
+      },
+      404: {
+        description: 'Subtopic not found',
+        content: {
+          'application/json': {
+            schema: ErrorResponseSchema,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: ErrorResponseSchema,
+          },
+        },
+      },
+    },
+  });
 }

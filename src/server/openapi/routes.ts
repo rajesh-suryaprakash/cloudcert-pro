@@ -42,7 +42,7 @@ async function getCachedOpenAPIDocument() {
  * Returns the cached OpenAPI 3.0 specification as JSON
  * Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 6.1, 6.2, 6.3, 6.4, 6.5
  */
-async function serveOpenAPISpec(req: Request, res: Response): Promise<void> {
+async function serveOpenAPISpec(_req: Request, res: Response): Promise<void> {
   try {
     const { jsonString, jsonBuffer } = await getCachedOpenAPIDocument();
 

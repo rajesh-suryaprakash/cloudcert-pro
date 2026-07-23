@@ -13,6 +13,8 @@ import {
   QuestionsListResponseSchema,
   AbandonExamResponseSchema,
   AttemptsListResponseSchema,
+  PauseExamResponseSchema,
+  ResumeExamResponseSchema,
 } from './exam-schemas.js';
 import {
   ErrorResponseSchema,
@@ -545,6 +547,142 @@ export function registerExamRoutes(): void {
         content: {
           'application/json': {
             schema: UnauthorizedErrorResponseSchema,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: ErrorResponseSchema,
+          },
+        },
+      },
+    },
+  });
+
+  // POST /api/exam-sessions/:id/pause
+  registerPath({
+    method: 'post',
+    path: '/api/exam-sessions/{id}/pause',
+    summary: 'Pause an in-progress exam session',
+    description:
+      'Pauses an in-progress exam session, locking answers and freezing remaining time. Enforces limits (max 3 pauses, max 30min duration). Requires authentication.',
+    tags: ['Exams'],
+    security: [{ cookieAuth: [] }],
+    request: {
+      params: ExamSessionIdParamSchema,
+    },
+    responses: {
+      200: {
+        description: 'Exam session paused successfully',
+        content: {
+          'application/json': {
+            schema: PauseExamResponseSchema,
+          },
+        },
+      },
+      400: {
+        description: 'Bad request - e.g. practice mode session or already paused',
+        content: {
+          'application/json': {
+            schema: ErrorResponseSchema,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required - no valid session',
+        content: {
+          'application/json': {
+            schema: UnauthorizedErrorResponseSchema,
+          },
+        },
+      },
+      403: {
+        description: 'Forbidden - session does not belong to user or pause limits exceeded',
+        content: {
+          'application/json': {
+            schema: ErrorResponseSchema,
+          },
+        },
+      },
+      404: {
+        description: 'Exam session not found',
+        content: {
+          'application/json': {
+            schema: ErrorResponseSchema,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: ErrorResponseSchema,
+          },
+        },
+      },
+    },
+  });
+
+  // POST /api/exam-sessions/:id/resume
+  registerPath({
+    method: 'post',
+    path: '/api/exam-sessions/{id}/resume',
+    summary: 'Resume a paused exam session',
+    description:
+      'Resumes a paused exam session, shifting the auto-submit deadline by the duration of the pause. Requires authentication.',
+    tags: ['Exams'],
+    security: [{ cookieAuth: [] }],
+    request: {
+      params: ExamSessionIdParamSchema,
+    },
+    responses: {
+      200: {
+        description: 'Exam session resumed successfully',
+        content: {
+          'application/json': {
+            schema: ResumeExamResponseSchema,
+          },
+        },
+      },
+      400: {
+        description: 'Bad request - session is not paused',
+        content: {
+          'application/json': {
+            schema: ErrorResponseSchema,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required - no valid session',
+        content: {
+          'application/json': {
+            schema: UnauthorizedErrorResponseSchema,
+          },
+        },
+      },
+      403: {
+        description: 'Forbidden - session does not belong to user',
+        content: {
+          'application/json': {
+            schema: ErrorResponseSchema,
+          },
+        },
+      },
+      404: {
+        description: 'Exam session not found',
+        content: {
+          'application/json': {
+            schema: ErrorResponseSchema,
+          },
+        },
+      },
+      409: {
+        description: 'Conflict - failed to resume session',
+        content: {
+          'application/json': {
+            schema: ErrorResponseSchema,
           },
         },
       },

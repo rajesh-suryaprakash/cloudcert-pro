@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import * as fc from 'fast-check';
-import express, { type Router } from 'express';
+import { type Router } from 'express';
 import { getDocument } from './registry.js';
 import authRoutes from '../routes/auth.js';
 import certificationRoutes from '../routes/certifications.js';
@@ -126,7 +126,7 @@ describe('Property 9: Route Coverage Completeness', () => {
       const methods = ['get', 'post', 'put', 'delete', 'patch', 'options', 'head'];
 
       for (const method of methods) {
-        if (pathItem[method]) {
+        if ((pathItem as any)[method]) {
           routes.push({
             method: method.toUpperCase(),
             path,
@@ -185,7 +185,7 @@ describe('Property 9: Route Coverage Completeness', () => {
     }
 
     if (missingRoutes.length > 0) {
-      console.log('Missing certification routes:', missingRoutes);
+      console.warn('Missing certification routes:', missingRoutes);
     }
 
     expect(missingRoutes.length).toBe(0);
@@ -218,7 +218,7 @@ describe('Property 9: Route Coverage Completeness', () => {
     }
 
     if (missingRoutes.length > 0) {
-      console.log('Missing exam routes:', missingRoutes);
+      console.warn('Missing exam routes:', missingRoutes);
     }
 
     expect(missingRoutes.length).toBe(0);
@@ -258,7 +258,7 @@ describe('Property 9: Route Coverage Completeness', () => {
     }
 
     if (missingRoutes.length > 0) {
-      console.log('Missing achievement routes:', missingRoutes);
+      console.warn('Missing achievement routes:', missingRoutes);
     }
 
     expect(missingRoutes.length).toBe(0);

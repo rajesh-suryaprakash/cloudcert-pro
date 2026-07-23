@@ -54,7 +54,7 @@ describe('Property 20: Response Time Performance', () => {
 
     // Mount OpenAPI JSON endpoint FIRST (before Swagger UI)
     // Use cached JSON string to ensure fast response times
-    app.get('/api-docs/openapi.json', async (req, res) => {
+    app.get('/api-docs/openapi.json', async (_req, res) => {
       try {
         // Set Content-Type to exactly "application/json" without charset
         res.writeHead(200, {
@@ -82,7 +82,7 @@ describe('Property 20: Response Time Performance', () => {
         // Warm up the cache by making a request to the endpoint
         try {
           await fetch(`http://localhost:${PORT}/api-docs/openapi.json`);
-        } catch (error) {
+        } catch (_error) {
           // Ignore warmup errors
         }
         resolve();

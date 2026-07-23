@@ -1,4 +1,5 @@
 import { registerPath } from './registry.js';
+import { z } from 'zod';
 import {
   CreateTopicRequestSchema,
   UpdateTopicRequestSchema,
@@ -215,6 +216,137 @@ export function registerTopicRoutes(): void {
     security: [{ cookieAuth: [] }],
     request: {
       params: TopicIdParamSchema,
+    },
+    responses: {
+      200: {
+        description: 'Topic deleted successfully',
+        content: {
+          'application/json': {
+            schema: SuccessResponseSchema,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required - no valid session',
+        content: {
+          'application/json': {
+            schema: UnauthorizedErrorResponseSchema,
+          },
+        },
+      },
+      403: {
+        description: 'Forbidden - admin access required',
+        content: {
+          'application/json': {
+            schema: ErrorResponseSchema,
+          },
+        },
+      },
+      404: {
+        description: 'Topic not found',
+        content: {
+          'application/json': {
+            schema: ErrorResponseSchema,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: ErrorResponseSchema,
+          },
+        },
+      },
+    },
+  });
+
+  // PUT /api/certifications/:certificationId/topics/:id
+  registerPath({
+    method: 'put',
+    path: '/api/certifications/{certificationId}/topics/{id}',
+    summary: 'Update topic by certification',
+    description: 'Update an existing topic. Requires admin authentication.',
+    tags: ['Topics'],
+    security: [{ cookieAuth: [] }],
+    request: {
+      params: z.object({
+        certificationId: z.string().uuid().describe('Certification ID'),
+        id: z.string().uuid().describe('Topic ID'),
+      }),
+      body: {
+        content: {
+          'application/json': {
+            schema: UpdateTopicRequestSchema,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Topic updated successfully',
+        content: {
+          'application/json': {
+            schema: SuccessResponseSchema,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error - invalid input data',
+        content: {
+          'application/json': {
+            schema: ValidationErrorResponseSchema,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required - no valid session',
+        content: {
+          'application/json': {
+            schema: UnauthorizedErrorResponseSchema,
+          },
+        },
+      },
+      403: {
+        description: 'Forbidden - admin access required',
+        content: {
+          'application/json': {
+            schema: ErrorResponseSchema,
+          },
+        },
+      },
+      404: {
+        description: 'Topic not found',
+        content: {
+          'application/json': {
+            schema: ErrorResponseSchema,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: ErrorResponseSchema,
+          },
+        },
+      },
+    },
+  });
+
+  // DELETE /api/certifications/:certificationId/topics/:id
+  registerPath({
+    method: 'delete',
+    path: '/api/certifications/{certificationId}/topics/{id}',
+    summary: 'Delete topic by certification',
+    description: 'Delete an existing topic. Requires admin authentication.',
+    tags: ['Topics'],
+    security: [{ cookieAuth: [] }],
+    request: {
+      params: z.object({
+        certificationId: z.string().uuid().describe('Certification ID'),
+        id: z.string().uuid().describe('Topic ID'),
+      }),
     },
     responses: {
       200: {

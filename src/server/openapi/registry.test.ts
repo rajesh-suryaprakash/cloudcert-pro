@@ -94,7 +94,7 @@ describe('Property 8: OpenAPI Document Validity', () => {
           const document = getDocument();
 
           // Validate against OpenAPI 3.0 specification
-          const result = await validator.validate(document);
+          const result = await validator.validate(document as any);
 
           // Assert document is valid
           expect(result.valid).toBe(true);
@@ -125,7 +125,7 @@ describe('Property 8: OpenAPI Document Validity', () => {
     // Test with minimal configuration (no additional schemas or routes)
     const document = getDocument();
 
-    const result = await validator.validate(document);
+    const result = await validator.validate(document as any);
 
     expect(result.valid).toBe(true);
     if (!result.valid) {
@@ -226,7 +226,7 @@ describe('Property 8: OpenAPI Document Validity', () => {
     });
 
     const document = getDocument();
-    const result = await validator.validate(document);
+    const result = await validator.validate(document as any);
 
     expect(result.valid).toBe(true);
     if (!result.valid) {
@@ -280,7 +280,7 @@ describe('Property 2: Schema Component Registration and Retrieval', () => {
           }
 
           // Generate document
-          const document = getDocument();
+          const document = getDocument() as any;
 
           // Assert all components are in components.schemas
           expect(document.components).toBeDefined();
@@ -340,6 +340,7 @@ describe('Property 2: Schema Component Registration and Retrieval', () => {
             summary: `Test route for ${config.componentName}`,
             description: `Route using ${config.componentName} schema`,
             tags: ['Authentication'],
+            operationId,
             request:
               config.method !== 'get'
                 ? {
@@ -365,7 +366,7 @@ describe('Property 2: Schema Component Registration and Retrieval', () => {
           });
 
           // Generate document
-          const document = getDocument();
+          const document = getDocument() as any;
 
           // Assert component is registered
           expect(document.components.schemas).toHaveProperty(config.componentName);
@@ -432,10 +433,10 @@ describe('Property 2: Schema Component Registration and Retrieval', () => {
       registerComponent(testCase.name, testCase.schema);
     }
 
-    const document = getDocument();
+    const document = getDocument() as any;
 
     for (const testCase of testCases) {
-      const registeredSchema = document.components.schemas[testCase.name];
+      const registeredSchema = document.components.schemas[testCase.name] as any;
 
       expect(registeredSchema).toBeDefined();
       expect(registeredSchema.type).toBe(testCase.expectedType);
@@ -514,7 +515,7 @@ describe('Property 4: Operation ID Uniqueness', () => {
             }
 
             // Generate OpenAPI document
-            const document = getDocument();
+            const document = getDocument() as any;
 
             // Extract all operation IDs from the document
             const operationIds: string[] = [];
@@ -706,7 +707,7 @@ describe('Property 4: Operation ID Uniqueness', () => {
     }
 
     // Generate document
-    const document = getDocument();
+    const document = getDocument() as any;
 
     // Extract all operation IDs from ALL paths in the document
     const allOperationIds: string[] = [];

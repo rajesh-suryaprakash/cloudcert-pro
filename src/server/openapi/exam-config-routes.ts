@@ -207,4 +207,138 @@ export function registerExamConfigRoutes(): void {
       },
     },
   });
+
+  // PATCH /api/exams/{id}
+  registerPath({
+    method: 'patch',
+    path: '/api/exams/{id}',
+    summary: 'Partially update an exam configuration',
+    description:
+      'Partially update an existing exam configuration. Requires authentication and admin role.',
+    tags: ['Exams'],
+    security: [{ cookieAuth: [] }],
+    request: {
+      params: ExamConfigIdParamSchema,
+      body: {
+        content: {
+          'application/json': {
+            schema: UpdateExamConfigRequestSchema.partial(),
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Exam configuration updated successfully',
+        content: {
+          'application/json': {
+            schema: SuccessResponseSchema,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error - invalid input data or exam ID format',
+        content: {
+          'application/json': {
+            schema: ValidationErrorResponseSchema,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required - no valid session',
+        content: {
+          'application/json': {
+            schema: UnauthorizedErrorResponseSchema,
+          },
+        },
+      },
+      403: {
+        description: 'Forbidden - admin role required',
+        content: {
+          'application/json': {
+            schema: ForbiddenErrorResponseSchema,
+          },
+        },
+      },
+      404: {
+        description: 'Exam configuration not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorResponseSchema,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: ErrorResponseSchema,
+          },
+        },
+      },
+    },
+  });
+
+  // DELETE /api/exams/{id}
+  registerPath({
+    method: 'delete',
+    path: '/api/exams/{id}',
+    summary: 'Delete an exam configuration',
+    description: 'Delete an existing exam configuration. Requires authentication and admin role.',
+    tags: ['Exams'],
+    security: [{ cookieAuth: [] }],
+    request: {
+      params: ExamConfigIdParamSchema,
+    },
+    responses: {
+      200: {
+        description: 'Exam configuration deleted successfully',
+        content: {
+          'application/json': {
+            schema: SuccessResponseSchema,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error - invalid exam ID format',
+        content: {
+          'application/json': {
+            schema: ValidationErrorResponseSchema,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required - no valid session',
+        content: {
+          'application/json': {
+            schema: UnauthorizedErrorResponseSchema,
+          },
+        },
+      },
+      403: {
+        description: 'Forbidden - admin role required',
+        content: {
+          'application/json': {
+            schema: ForbiddenErrorResponseSchema,
+          },
+        },
+      },
+      404: {
+        description: 'Exam configuration not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorResponseSchema,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: ErrorResponseSchema,
+          },
+        },
+      },
+    },
+  });
 }
