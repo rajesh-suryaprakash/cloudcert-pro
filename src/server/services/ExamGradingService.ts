@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import type { ExamSessionRow, ExamAnswerRow, QuestionRow } from '../db-types';
 import {
   computeConfidenceMatrix,
@@ -61,21 +60,23 @@ export class ExamGradingService {
         unansweredCount++;
       } else {
         userAnswer = JSON.parse(answer.userAnswer);
-        const correctAnswers = JSON.parse(question!.correctAnswers);
+        if (question) {
+          const correctAnswers = JSON.parse(question.correctAnswers);
 
-        if (question!.questionType === 'multiple') {
-          isCorrect =
-            Array.isArray(userAnswer) &&
-            userAnswer.length === correctAnswers.length &&
-            (userAnswer as string[]).every((ans: string) => correctAnswers.includes(ans));
-        } else {
-          // correctAnswers is always a parsed array (e.g. ["Compute Engine"])
-          const expected = Array.isArray(correctAnswers) ? correctAnswers[0] : correctAnswers;
-          isCorrect = userAnswer === expected;
+          if (question.questionType === 'multiple') {
+            isCorrect =
+              Array.isArray(userAnswer) &&
+              userAnswer.length === correctAnswers.length &&
+              (userAnswer as string[]).every((ans: string) => correctAnswers.includes(ans));
+          } else {
+            // correctAnswers is always a parsed array (e.g. ["Compute Engine"])
+            const expected = Array.isArray(correctAnswers) ? correctAnswers[0] : correctAnswers;
+            isCorrect = userAnswer === expected;
+          }
+
+          if (isCorrect) correctCount++;
+          else incorrectCount++;
         }
-
-        if (isCorrect) correctCount++;
-        else incorrectCount++;
       }
 
       answersForMatrix.push({

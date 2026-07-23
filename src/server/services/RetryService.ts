@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
-import { db } from '../db/connection';
+import type { Database } from 'better-sqlite3';
+import { db as defaultDb } from '../db/connection';
 import { NotFoundError, ValidationError } from '../errors';
 
 /**
@@ -14,12 +15,17 @@ export interface RetrySessionResult {
 }
 
 export class RetryService {
+  private db: Database;
+
+  constructor(db?: Database) {
+    this.db = db ?? defaultDb;
+  }
   /**
    * Get incorrect answers from a completed exam session
    * Requirement 14.3: Filter to only incorrect answers
    */
   getIncorrectAnswers(sessionId: string): string[] {
-    const incorrectAnswers = db
+    const incorrectAnswers = this.db
       .prepare(
         `
         SELECT DISTINCT ea.questionId
@@ -60,24 +66,26 @@ export class RetryService {
     const startTime = new Date().toISOString();
     const autoSubmitAt = new Date(Date.now() + 120 * 60 * 1000).toISOString(); // 2 hours default
 
-    db.prepare(
-      `
+    this.db
+      .prepare(
+        `
       INSERT INTO exam_sessions (
         id, userId, certificationId, sessionName, questions, 
         totalQuestions, isPracticeMode, autoSubmitAt, startTime, status
       )
       VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, 'in_progress')
     `,
-    ).run(
-      newSessionId,
-      userId,
-      certificationId,
-      'Retry Missed Questions',
-      JSON.stringify(questionIds),
-      questionIds.length,
-      autoSubmitAt,
-      startTime,
-    );
+      )
+      .run(
+        newSessionId,
+        userId,
+        certificationId,
+        'Retry Missed Questions',
+        JSON.stringify(questionIds),
+        questionIds.length,
+        autoSubmitAt,
+        startTime,
+      );
 
     return newSessionId;
   }
@@ -94,7 +102,7 @@ export class RetryService {
     certificationId: string;
     questions: string;
   } {
-    const session = db
+    const session = this.db
       .prepare(
         'SELECT id, status, certificationId, questions FROM exam_sessions WHERE id = ? AND userId = ? LIMIT 1',
       )

@@ -6,6 +6,7 @@ export interface SelectionConfig {
   strategy: SelectionStrategy;
   totalQuestions: number;
   topicWeights?: Record<string, number>;
+  seenQuestionIds?: Set<string>;
 }
 
 /** Fisher-Yates shuffle (in-place, returns array) */
@@ -15,6 +16,32 @@ function shuffle<T>(arr: T[]): T[] {
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
+}
+
+/** 
+ * Selects questions prioritizing unseen ones if seenIds is provided.
+ * Fills any remaining quota with seen questions.
+ */
+function selectWithPriority(
+  pool: QuestionRow[],
+  total: number,
+  seenIds?: Set<string>,
+): QuestionRow[] {
+  if (pool.length === 0 || total <= 0) return [];
+  if (seenIds && seenIds.size > 0) {
+    const unseen = pool.filter((q) => !seenIds.has(q.id));
+    const seen = pool.filter((q) => seenIds.has(q.id));
+
+    const selectedUnseen = shuffle([...unseen]).slice(0, total);
+    if (selectedUnseen.length < total) {
+      const remainingSlots = total - selectedUnseen.length;
+      const selectedSeen = shuffle([...seen]).slice(0, remainingSlots);
+      // Combine and shuffle again so seen questions aren't always at the end
+      return shuffle([...selectedUnseen, ...selectedSeen]);
+    }
+    return selectedUnseen;
+  }
+  return shuffle([...pool]).slice(0, Math.min(total, pool.length));
 }
 
 /**
@@ -80,12 +107,19 @@ export function largestRemainder(
   return allocations;
 }
 
-export function selectRandom(pool: QuestionRow[], total: number): QuestionRow[] {
-  if (pool.length === 0 || total <= 0) return [];
-  return shuffle([...pool]).slice(0, Math.min(total, pool.length));
+export function selectRandom(
+  pool: QuestionRow[],
+  total: number,
+  seenIds?: Set<string>,
+): QuestionRow[] {
+  return selectWithPriority(pool, total, seenIds);
 }
 
-export function selectDifficultyBalanced(pool: QuestionRow[], total: number): QuestionRow[] {
+export function selectDifficultyBalanced(
+  pool: QuestionRow[],
+  total: number,
+  seenIds?: Set<string>,
+): QuestionRow[] {
   if (pool.length === 0 || total <= 0) return [];
 
   const tiers = ['Easy', 'Medium', 'Hard'];
@@ -94,18 +128,19 @@ export function selectDifficultyBalanced(pool: QuestionRow[], total: number): Qu
 
   const allocations = largestRemainder(groups, Math.min(total, pool.length));
 
-  return tiers.flatMap((_, i) => shuffle([...grouped[i]]).slice(0, allocations[i]));
+  return tiers.flatMap((_, i) => selectWithPriority([...grouped[i]], allocations[i], seenIds));
 }
 
 export function selectTopicBased(
   pool: QuestionRow[],
   total: number,
   topicWeights: Record<string, number>,
+  seenIds?: Set<string>,
 ): QuestionRow[] {
   if (pool.length === 0 || total <= 0) return [];
 
   const topicIds = Object.keys(topicWeights).filter((id) => (topicWeights[id] ?? 0) > 0);
-  if (topicIds.length === 0) return selectRandom(pool, total);
+  if (topicIds.length === 0) return selectRandom(pool, total, seenIds);
 
   // Only consider topics that actually have questions in the pool
   const grouped = topicIds.map((id) => ({
@@ -119,14 +154,14 @@ export function selectTopicBased(
   const groups = active.map((g) => ({ weight: g.weight, available: g.questions.length }));
   const allocations = largestRemainder(groups, Math.min(total, pool.length));
 
-  return active.flatMap((g, i) => shuffle([...g.questions]).slice(0, allocations[i]));
+  return active.flatMap((g, i) => selectWithPriority([...g.questions], allocations[i], seenIds));
 }
 
 export function selectQuestions(pool: QuestionRow[], config: SelectionConfig): QuestionRow[] {
-  const { strategy, totalQuestions, topicWeights } = config;
+  const { strategy, totalQuestions, topicWeights, seenQuestionIds } = config;
 
   if (strategy === 'difficulty_balanced') {
-    return selectDifficultyBalanced(pool, totalQuestions);
+    return selectDifficultyBalanced(pool, totalQuestions, seenQuestionIds);
   }
 
   if (strategy === 'topic_based') {
@@ -134,9 +169,9 @@ export function selectQuestions(pool: QuestionRow[], config: SelectionConfig): Q
     if (topicWeights && Object.keys(topicWeights).length > 0) {
       weights = topicWeights;
     }
-    return selectTopicBased(pool, totalQuestions, weights);
+    return selectTopicBased(pool, totalQuestions, weights, seenQuestionIds);
   }
 
   // default: random
-  return selectRandom(pool, totalQuestions);
+  return selectRandom(pool, totalQuestions, seenQuestionIds);
 }

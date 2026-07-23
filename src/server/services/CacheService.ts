@@ -13,15 +13,17 @@ interface CacheEntry<T> {
 export class CacheService {
   private cache: Map<string, CacheEntry<unknown>>;
   private readonly defaultTTL: number;
+  private readonly maxEntries: number;
 
-  constructor(defaultTTLSeconds: number = 300) {
+  constructor(defaultTTLSeconds: number = 300, maxEntries: number = 1000) {
     this.cache = new Map();
     this.defaultTTL = defaultTTLSeconds;
+    this.maxEntries = maxEntries;
   }
 
   /**
    * Retrieve a value from cache
-   * Automatically removes expired entries
+   * Automatically removes expired entries and updates LRU position
    * @returns The cached value or null if not found or expired
    */
   get<T>(key: string): T | null {
@@ -37,11 +39,16 @@ export class CacheService {
       return null;
     }
 
+    // Update LRU position by deleting and re-setting
+    this.cache.delete(key);
+    this.cache.set(key, entry);
+
     return entry.value;
   }
 
   /**
    * Store a value in cache with TTL
+   * Enforces LRU eviction and memory pressure checks
    * @param key Cache key
    * @param value Value to cache
    * @param ttlSeconds Time to live in seconds (defaults to 300)
@@ -49,6 +56,30 @@ export class CacheService {
   set<T>(key: string, value: T, ttlSeconds?: number): void {
     const ttl = ttlSeconds ?? this.defaultTTL;
     const expiresAt = Date.now() + ttl * 1000;
+
+    // LRU eviction if cache size exceeds limit
+    if (this.cache.has(key)) {
+      this.cache.delete(key);
+    } else if (this.cache.size >= this.maxEntries) {
+      const lruKey = this.cache.keys().next().value;
+      if (lruKey !== undefined) {
+        this.cache.delete(lruKey);
+      }
+    }
+
+    // Memory pressure pruning: if heap usage exceeds 1.5 GB, prune 25% of oldest entries
+    try {
+      const memory = process.memoryUsage();
+      if (memory.heapUsed > 1.5 * 1024 * 1024 * 1024) {
+        const pruneCount = Math.floor(this.cache.size * 0.25);
+        const keys = Array.from(this.cache.keys());
+        for (let i = 0; i < pruneCount; i++) {
+          this.cache.delete(keys[i]);
+        }
+      }
+    } catch {
+      // Fallback if process.memoryUsage is not available (e.g. browser context)
+    }
 
     this.cache.set(key, {
       value,
