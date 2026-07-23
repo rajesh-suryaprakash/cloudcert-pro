@@ -5,7 +5,7 @@ import { nowIso } from '../utils/time';
 
 export interface CreateQuestionDto {
   topicId: string;
-  subTopicId: string | null;
+  subTopicId?: string | null;
   unitId?: string | null;
   questionText: string;
   questionType?: string;
@@ -74,10 +74,26 @@ export class QuestionRepository {
       .all(certificationId, difficulty) as QuestionRow[];
   }
 
-  findByTopicId(topicId: string): QuestionRow[] {
-    return this.db
-      .prepare('SELECT * FROM questions WHERE topicId = ?')
-      .all(topicId) as QuestionRow[];
+  findByTopicId(topicId: string, limit?: number, offset?: number): QuestionRow[] {
+    let query = 'SELECT * FROM questions WHERE topicId = ?';
+    const args: (string | number)[] = [topicId];
+    
+    if (limit !== undefined && limit !== null) {
+      query += ' LIMIT ?';
+      args.push(limit);
+    }
+    if (offset !== undefined && offset !== null) {
+      query += ' OFFSET ?';
+      args.push(offset);
+    }
+    return this.db.prepare(query).all(...args) as QuestionRow[];
+  }
+
+  countByTopicId(topicId: string): number {
+    const row = this.db
+      .prepare('SELECT COUNT(*) as count FROM questions WHERE topicId = ?')
+      .get(topicId) as { count: number };
+    return row.count;
   }
 
   findBySubTopicId(subTopicId: string): QuestionRow[] {

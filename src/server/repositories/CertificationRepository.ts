@@ -77,8 +77,24 @@ export class CertificationRepository {
 
   // ── Certifications ──────────────────────────────────────────────────────────
 
-  findAll(): CertificationRow[] {
-    return this.db.prepare('SELECT * FROM certifications').all() as CertificationRow[];
+  findAll(limit?: number, offset?: number): CertificationRow[] {
+    let query = 'SELECT * FROM certifications';
+    const args: (string | number)[] = [];
+    const safeLimit = Math.min(limit ?? 50, 100);
+    query += ' LIMIT ?';
+    args.push(safeLimit);
+    if (offset !== undefined && offset !== null) {
+      query += ' OFFSET ?';
+      args.push(offset);
+    }
+    return this.db.prepare(query).all(...args) as CertificationRow[];
+  }
+
+  countAll(): number {
+    const row = this.db.prepare('SELECT COUNT(*) as count FROM certifications').get() as {
+      count: number;
+    };
+    return row.count;
   }
 
   findByTitleAndLevel(
