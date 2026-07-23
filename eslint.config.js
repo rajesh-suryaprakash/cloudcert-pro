@@ -3,11 +3,13 @@ import tsPlugin from '@typescript-eslint/eslint-plugin';
 import reactPlugin from 'eslint-plugin-react';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import prettierConfig from 'eslint-config-prettier';
+import securityPlugin from 'eslint-plugin-security';
 
 export default [
   {
     ignores: ['dist/**', 'node_modules/**', '*.config.js'],
   },
+  securityPlugin.configs.recommended,
   {
     files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
@@ -26,9 +28,15 @@ export default [
     rules: {
       // ── TypeScript ────────────────────────────────────────────────────────
       '@typescript-eslint/no-unused-vars': [
-        'warn',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
       ],
+      'no-unreachable': 'error',
+      'no-unused-expressions': ['error', { allowShortCircuit: true, allowTernary: true }],
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/consistent-type-imports': ['warn', { prefer: 'type-imports' }],
       '@typescript-eslint/no-non-null-assertion': 'warn', // flag ! assertions
@@ -54,6 +62,13 @@ export default [
     },
     settings: {
       react: { version: 'detect' },
+    },
+  },
+  {
+    files: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', '**/*.spec.tsx'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
     },
   },
   // Disable any ESLint rules that conflict with Prettier (must be last)

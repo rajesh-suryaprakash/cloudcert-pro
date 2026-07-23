@@ -4,8 +4,8 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   test: {
-    testTimeout: 120000,
-    hookTimeout: 30000,
+    testTimeout: 10000,
+    hookTimeout: 10000,
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/test/setup.ts',

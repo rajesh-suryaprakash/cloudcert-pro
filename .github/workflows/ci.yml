@@ -1,4 +1,4 @@
-name: Cloudcert Pro CI Pipeline
+ name: Cloudcert Pro CI Pipeline
 
 on:
   push:
@@ -46,6 +46,13 @@ jobs:
 
       - name: Format check
         run: npm run format:check
+
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/node@806282731eb3de02ad548f45a06f33bd035e97d1
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
 
   # ── Job 2: Tests + Coverage ────────────────────────────────────────────────
   # Vitest suite with coverage enforcement (≥80% threshold configured in vitest.config.ts).
@@ -482,3 +489,77 @@ jobs:
           echo "::error::ZAP Baseline Scan found HIGH risk findings."
           echo "::error::Review the ZAP HTML report artifact and remediate before merging."
           exit 1
+
+  # ── Job 9: Dead Code Analysis ─────────────────────────────────────────────
+  # Detects unused files, exports, types, and npm dependencies using knip and
+  # depcheck. Runs in parallel with quality and test for fast feedback.
+  #
+  # knip: Statically traces all entry points (src/main.tsx, server.ts, etc.)
+  #   and reports any file, export, or type that is never reached. Configured
+  #   via knip.json at the repository root. Fails the job (exit 1) on findings.
+  #
+  # depcheck: Reports npm packages declared in package.json that are not
+  #   imported anywhere in source. Runs with continue-on-error so it surfaces
+  #   findings as warnings without blocking the pipeline on day 1.
+  #
+  # Both tools upload JSON reports as downloadable artifacts so developers
+  # can triage findings without digging through raw logs.
+  dead-code:
+    name: Dead Code Analysis (knip · depcheck)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run knip (unused files · exports · types)
+        # knip traces all entry points defined in knip.json and reports anything
+        # that is never reached. --reporter json writes machine-readable output
+        # that is uploaded as an artifact below.
+        # Exit code 1 = findings present → job (and PR check) fails.
+        id: knip
+        run: |
+          mkdir -p dead-code-reports
+          npx knip --reporter json 2>&1 | tee dead-code-reports/knip-report.json || true
+          npx knip --reporter compact
+        continue-on-error: false
+
+      - name: Run depcheck (unused npm packages)
+        # depcheck scans source files and reports packages declared in
+        # package.json that are never imported. Runs as informational only
+        # (continue-on-error: true) so transitive or tooling-only packages
+        # don't break the pipeline — review the artifact and triage manually.
+        id: depcheck
+        continue-on-error: true
+        run: |
+          mkdir -p dead-code-reports
+          npx depcheck --json 2>&1 | tee dead-code-reports/depcheck-report.json || true
+          echo "--- depcheck summary ---"
+          npx depcheck
+
+      - name: Annotate depcheck findings
+        # Surface depcheck findings as a workflow warning so they appear in
+        # the Actions summary even though the step doesn't fail the job.
+        if: steps.depcheck.outcome == 'failure'
+        run: |
+          echo "::warning::depcheck found unused npm packages. Review dead-code-reports/depcheck-report.json artifact and consider removing them."
+
+      - name: Upload dead code reports
+        # Always upload reports — even when knip finds nothing — so the artifact
+        # is consistently present for auditing and trend comparison across runs.
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: dead-code-reports-${{ github.sha }}
+          path: dead-code-reports/
+          retention-days: ${{ github.ref == 'refs/heads/main' && 30 || 7 }}

@@ -132,16 +132,17 @@ COPY --chown=appuser:appgroup tsconfig.json ./
 # Mount a named volume here so data persists across container restarts:
 #   docker run -v cloudcert-data:/app/data cloudcert-pro:latest
 #
-# NOTE: The connection module currently hardcodes 'cloudcert.db' in the CWD.
-# Set DB_PATH or update connection.ts to point to /app/data/cloudcert.db
-# before deploying to production with a persistent volume.
+# NOTE: The database file lives at /app/data/cloudcert.db inside the container.
+# The connection module respects the DB_PATH environment variable set below.
 VOLUME ["/app/data"]
 
 # ── Runtime configuration ─────────────────────────────────────────────────────
 # Guide §2.6.5: ENV is image configuration — set before USER switch.
 # Never set secrets here; inject JWT_SECRET and RESET_TOKEN_SECRET at runtime.
 ENV NODE_ENV=production \
-    PORT=3000
+    PORT=3000 \
+    DB_PATH=/app/data/cloudcert.db
+
 
 # ── Switch to non-root user ───────────────────────────────────────────────────
 # Guide §1.5, §2.6.5: USER set after all root operations are complete.
