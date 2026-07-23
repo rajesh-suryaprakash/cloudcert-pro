@@ -25,6 +25,7 @@ export const loginSchema = z.object({
   password: z
     .string()
     .min(8, 'Password must be at least 8 characters')
+    .max(72, 'Password must not exceed 72 characters')
     .regex(/\d/, 'Password must contain at least one number'),
 });
 
@@ -34,6 +35,7 @@ export const registerSchema = z.object({
   password: z
     .string()
     .min(8, 'Password must be at least 8 characters')
+    .max(72, 'Password must not exceed 72 characters')
     .regex(/\d/, 'Password must contain at least one number'),
 });
 
@@ -70,8 +72,9 @@ export const createExamConfigSchema = z.object({
     .optional()
     .default('random'),
   topicWeights: z.record(z.number()).optional().default({}),
-  isActive: z.boolean().optional().default(true),
 });
+
+export const patchExamConfigSchema = createExamConfigSchema.partial();
 
 export const submitAnswerSchema = z.object({
   questionId: z.string().uuid('questionId must be a valid UUID'),
@@ -112,6 +115,7 @@ export const resetPasswordSchema = z.object({
   password: z
     .string()
     .min(8, 'Password must be at least 8 characters')
+    .max(72, 'Password must not exceed 72 characters')
     .regex(/\d/, 'Password must contain at least one number'),
 });
 
@@ -135,4 +139,82 @@ export const updateTopicSchema = z.object({
     .min(0, 'weightPercentage must be at least 0')
     .max(100, 'weightPercentage must be at most 100')
     .optional(),
+});
+
+// ── Schemas added to cover previously-unvalidated mutation routes ─────────────
+
+/** PUT /certifications/:id */
+export const updateCertificationSchema = z.object({
+  title: z
+    .string()
+    .min(5, 'title must be at least 5 characters')
+    .max(255, 'title must be at most 255 characters')
+    .optional(),
+  vendor: z.string().min(1, 'vendor is required').max(100).optional(),
+  description: z.string().max(2000).optional(),
+  isActive: z.boolean().optional(),
+});
+
+/** POST /certifications/:certificationId/topics */
+export const createTopicSchema = z.object({
+  title: z
+    .string()
+    .min(2, 'title must be at least 2 characters')
+    .max(255, 'title must be at most 255 characters'),
+  description: z.string().max(1000).optional(),
+  orderIndex: z.number().int().min(0).optional().default(0),
+  isActive: z.boolean().optional().default(true),
+  docUrl: z
+    .string()
+    .startsWith('https://', 'docUrl must start with https://')
+    .nullable()
+    .optional(),
+  weightPercentage: z
+    .number()
+    .min(0, 'weightPercentage must be at least 0')
+    .max(100, 'weightPercentage must be at most 100')
+    .optional(),
+});
+
+/** POST /topics/:topicId/subtopics */
+export const createSubTopicSchema = z.object({
+  title: z
+    .string()
+    .min(2, 'title must be at least 2 characters')
+    .max(255, 'title must be at most 255 characters'),
+  description: z.string().max(1000).optional(),
+  orderIndex: z.number().int().min(0).optional().default(0),
+  isActive: z.boolean().optional().default(true),
+});
+
+/** PUT /subtopics/:id */
+export const updateSubTopicSchema = z.object({
+  title: z
+    .string()
+    .min(2, 'title must be at least 2 characters')
+    .max(255, 'title must be at most 255 characters')
+    .optional(),
+  description: z.string().max(1000).optional(),
+  orderIndex: z.number().int().min(0).optional(),
+  isActive: z.boolean().optional(),
+});
+
+/** POST /questions and PUT /questions/:id */
+export const questionSchema = z.object({
+  topicId: z.string().uuid('topicId must be a valid UUID'),
+  subTopicId: z.string().uuid('subTopicId must be a valid UUID').nullable().optional(),
+  unitId: z.string().uuid('unitId must be a valid UUID').nullable().optional(),
+  questionText: z.string().min(10, 'questionText must be at least 10 characters').max(5000),
+  questionType: z.enum(['single', 'multiple'], {
+    message: 'questionType must be single or multiple',
+  }),
+  options: z.array(z.string().min(1)).min(2, 'at least 2 options required').max(10),
+  correctAnswers: z.array(z.string().min(1)).min(1, 'at least 1 correct answer required'),
+  explanation: z.string().max(5000).optional().nullable(),
+  difficulty: z.enum(['Easy', 'Medium', 'Hard'], {
+    message: 'difficulty must be Easy, Medium, or Hard',
+  }),
+  tags: z.array(z.string()).optional().default([]),
+  points: z.number().int().min(1).max(100).optional().default(1),
+  isActive: z.boolean().optional().default(true),
 });

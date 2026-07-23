@@ -28,12 +28,34 @@ const getPort = (): number => {
   return p;
 };
 
+const getMaxPauseCount = (): number => {
+  const count = Number(process.env.MAX_PAUSE_COUNT ?? 3);
+  if (isNaN(count) || count < 0) {
+    return 3;
+  }
+  return count;
+};
+
+const getMaxTotalPauseMs = (): number => {
+  const ms = Number(process.env.MAX_TOTAL_PAUSE_MS ?? 30 * 60 * 1000);
+  if (isNaN(ms) || ms < 0) {
+    return 30 * 60 * 1000;
+  }
+  return ms;
+};
+
 export const config = {
   get jwtSecret(): string {
     return getJwtSecret();
   },
   get resetTokenSecret(): string {
     return getResetTokenSecret();
+  },
+  get maxPauseCount(): number {
+    return getMaxPauseCount();
+  },
+  get maxTotalPauseMs(): number {
+    return getMaxTotalPauseMs();
   },
   nodeEnv: process.env.NODE_ENV ?? 'development',
   port: getPort(),
