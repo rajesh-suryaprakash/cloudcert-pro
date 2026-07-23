@@ -1,4 +1,4 @@
-// Feature: units-config, Property 4: Unit CRUD round-trip
+﻿// Feature: units-config, Property 4: Unit CRUD round-trip
 // Feature: units-config, Property 5: Unit update partial-field invariant
 // Feature: units-config, Property 6: Unit delete removes record
 // Feature: units-config, Property 7: findUnitsBySubTopic returns units in ascending orderIndex order
@@ -226,13 +226,15 @@ describe('UnitRepository property tests', () => {
         // Read back the stored baseline (use the DB-stored values as the
         // authoritative "before" state, including any defaults applied by the
         // repository, e.g. isActive stored as 0/1 integer).
-        const before = repo.findUnitById(id)!;
+        const before = repo.findUnitById(id);
+        if (!before) return false;
 
         // Apply the partial update
-        repo.updateUnit(id, partialDto, before);
+        repo.updateUnit(id, partialDto as any, before);
 
         // Read the record after the update
-        const after = repo.findUnitById(id)!;
+        const after = repo.findUnitById(id);
+        // Note: null check follows below
 
         db.close();
 

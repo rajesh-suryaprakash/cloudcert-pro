@@ -155,12 +155,13 @@ describe('UnitRepository', () => {
       const unit = repo.findUnitById(id);
 
       expect(unit).toBeDefined();
-      expect(unit!.id).toBe(id);
-      expect(unit!.subTopicId).toBe(subTopicId);
-      expect(unit!.title).toBe('My Unit');
-      expect(unit!.description).toBe('Desc');
-      expect(unit!.orderIndex).toBe(5);
-      expect(unit!.isActive).toBe(1);
+      if (!unit) return;
+      expect(unit.id).toBe(id);
+      expect(unit.subTopicId).toBe(subTopicId);
+      expect(unit.title).toBe('My Unit');
+      expect(unit.description).toBe('Desc');
+      expect(unit.orderIndex).toBe(5);
+      expect(unit.isActive).toBe(1);
     });
 
     // Requirement 4.2: returns undefined for unknown ID
@@ -195,39 +196,48 @@ describe('UnitRepository', () => {
       const unit = repo.findUnitById(id);
 
       expect(unit).toBeDefined();
-      expect(unit!.subTopicId).toBe(subTopicId);
-      expect(unit!.title).toBe('Full Unit');
-      expect(unit!.description).toBe('A description');
-      expect(unit!.orderIndex).toBe(7);
-      expect(unit!.isActive).toBe(1);
+      if (!unit) return;
+      expect(unit.subTopicId).toBe(subTopicId);
+      expect(unit.title).toBe('Full Unit');
+      expect(unit.description).toBe('A description');
+      expect(unit.orderIndex).toBe(7);
+      expect(unit.isActive).toBe(1);
     });
 
     it('defaults orderIndex to 0 when not provided', () => {
       const id = repo.createUnit({ subTopicId, title: 'Default Order' });
       const unit = repo.findUnitById(id);
 
-      expect(unit!.orderIndex).toBe(0);
+      expect(unit).toBeDefined();
+      if (!unit) return;
+      expect(unit.orderIndex).toBe(0);
     });
 
     it('defaults isActive to 1 (true) when not provided', () => {
       const id = repo.createUnit({ subTopicId, title: 'Default Active' });
       const unit = repo.findUnitById(id);
 
-      expect(unit!.isActive).toBe(1);
+      expect(unit).toBeDefined();
+      if (!unit) return;
+      expect(unit.isActive).toBe(1);
     });
 
     it('stores isActive as 0 when isActive: false is provided', () => {
       const id = repo.createUnit({ subTopicId, title: 'Inactive Unit', isActive: false });
       const unit = repo.findUnitById(id);
 
-      expect(unit!.isActive).toBe(0);
+      expect(unit).toBeDefined();
+      if (!unit) return;
+      expect(unit.isActive).toBe(0);
     });
 
     it('stores null description when description is not provided', () => {
       const id = repo.createUnit({ subTopicId, title: 'No Desc' });
       const unit = repo.findUnitById(id);
 
-      expect(unit!.description).toBeNull();
+      expect(unit).toBeDefined();
+      if (!unit) return;
+      expect(unit.description).toBeNull();
     });
 
     // Requirement 1.2 / design: UNIQUE constraint on (subTopicId, title) — repository throws on duplicate
@@ -266,14 +276,14 @@ describe('UnitRepository', () => {
         orderIndex: 1,
         isActive: true,
       });
-      original = repo.findUnitById(unitId)!;
+      original = repo.findUnitById(unitId) ?? (() => { throw new Error(`Unit not found`); })();
     });
 
     // Requirement 4.4: updates only provided fields, leaves other fields unchanged
     it('updates only the title when only title is provided', () => {
       repo.updateUnit(unitId, { title: 'Updated Title' }, original);
 
-      const updated = repo.findUnitById(unitId)!;
+      const updated = repo.findUnitById(unitId) ?? (() => { throw new Error(`Unit not found`); })();
       expect(updated.title).toBe('Updated Title');
       expect(updated.description).toBe('Original Desc');
       expect(updated.orderIndex).toBe(1);
@@ -283,7 +293,7 @@ describe('UnitRepository', () => {
     it('updates only the description when only description is provided', () => {
       repo.updateUnit(unitId, { description: 'New Desc' }, original);
 
-      const updated = repo.findUnitById(unitId)!;
+      const updated = repo.findUnitById(unitId) ?? (() => { throw new Error(`Unit not found`); })();
       expect(updated.description).toBe('New Desc');
       expect(updated.title).toBe('Original Title');
       expect(updated.orderIndex).toBe(1);
@@ -292,7 +302,7 @@ describe('UnitRepository', () => {
     it('updates only the orderIndex when only orderIndex is provided', () => {
       repo.updateUnit(unitId, { orderIndex: 99 }, original);
 
-      const updated = repo.findUnitById(unitId)!;
+      const updated = repo.findUnitById(unitId) ?? (() => { throw new Error(`Unit not found`); })();
       expect(updated.orderIndex).toBe(99);
       expect(updated.title).toBe('Original Title');
       expect(updated.description).toBe('Original Desc');
@@ -301,7 +311,7 @@ describe('UnitRepository', () => {
     it('updates only isActive when only isActive is provided', () => {
       repo.updateUnit(unitId, { isActive: false }, original);
 
-      const updated = repo.findUnitById(unitId)!;
+      const updated = repo.findUnitById(unitId) ?? (() => { throw new Error(`Unit not found`); })();
       expect(updated.isActive).toBe(0);
       expect(updated.title).toBe('Original Title');
     });
@@ -309,7 +319,7 @@ describe('UnitRepository', () => {
     it('updates multiple fields at once', () => {
       repo.updateUnit(unitId, { title: 'Multi Update', orderIndex: 42 }, original);
 
-      const updated = repo.findUnitById(unitId)!;
+      const updated = repo.findUnitById(unitId) ?? (() => { throw new Error(`Unit not found`); })();
       expect(updated.title).toBe('Multi Update');
       expect(updated.orderIndex).toBe(42);
       expect(updated.description).toBe('Original Desc');
@@ -319,7 +329,7 @@ describe('UnitRepository', () => {
       // When description is not in the DTO, it should remain unchanged
       repo.updateUnit(unitId, { title: 'No Desc Change' }, original);
 
-      const updated = repo.findUnitById(unitId)!;
+      const updated = repo.findUnitById(unitId) ?? (() => { throw new Error(`Unit not found`); })();
       expect(updated.description).toBe('Original Desc');
     });
   });
