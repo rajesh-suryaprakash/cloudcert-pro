@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import express, { type Request, type Response, type NextFunction } from 'express';
 import crypto from 'crypto';
 import { db } from '../db/connection';
-import { authenticate } from '../middleware/auth';
+import { authenticate, requireUser } from '../middleware/auth';
 import { updateUserStreak, checkAchievements } from '../services/achievements';
 import { SrsService } from '../services/srs';
 import { ExamSessionRepository } from '../repositories/ExamSessionRepository';
@@ -19,8 +18,11 @@ import {
 import { nowIso, nowMs } from '../utils/time';
 import { NotFoundError, ValidationError } from '../errors';
 import { validate, submitAnswerSchema, createSessionSchema } from '../middleware/validate';
+import { questionRowsToQuestions } from '../utils/questionTransforms';
 import { cacheService } from '../services/CacheService';
 import { selectQuestions, type SelectionConfig } from '../services/QuestionSelector';
+import { logger } from '../logger';
+import { shuffleQuestions } from '../utils/questionShuffle';
 
 export type { ConfidenceMatrix, AnswerForMatrix };
 export { computeConfidenceMatrix };
@@ -58,55 +60,71 @@ export function computePercentileRank(priorScores: number[], targetScore: number
 
 // Exam Sessions
 router.get('/exam-sessions', authenticate, (req: Request, res: Response) => {
-  const sessions = sessionRepo.findByUser(req.user!.id);
+  const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
+  const offset = req.query.offset ? parseInt(req.query.offset as string, 10) : undefined;
+  const userId = requireUser(req).id;
 
-  // Enhance each session with actual difficulty based on questions
-  const enhancedSessions = sessions.map((s) => {
-    const questionIds = JSON.parse(s.questions);
+  const sessions = sessionRepo.findByUser(userId, limit, offset);
+  const total = sessionRepo.countByUser(userId);
+  res.setHeader('X-Total-Count', total);
 
-    // Query the actual difficulties of questions in this session
-    if (questionIds.length > 0) {
-      const placeholders = questionIds.map(() => '?').join(',');
-      const difficultyQuery = `
-        SELECT DISTINCT difficulty
-        FROM questions
-        WHERE id IN (${placeholders})
-      `;
-      const difficulties = db.prepare(difficultyQuery).all(...questionIds) as Array<{
-        difficulty: string;
-      }>;
+  const parsedSessions = sessions.map((s) => ({
+    ...s,
+    parsedQuestions: JSON.parse(s.questions) as string[],
+  }));
 
-      // Determine session difficulty
-      let sessionDifficulty: string;
-      if (difficulties.length === 1) {
-        // All questions have the same difficulty
-        sessionDifficulty = difficulties[0].difficulty;
-      } else if (difficulties.length > 1) {
-        // Mixed difficulties
-        sessionDifficulty = 'Mixed';
-      } else {
-        // No questions found (shouldn't happen)
-        sessionDifficulty = 'Mixed';
-      }
+  const allQuestionIds = parsedSessions.flatMap((s) => s.parsedQuestions);
 
-      return { ...s, questions: questionIds, difficulty: sessionDifficulty };
+  // Build a questionId → difficulty lookup map from a single DB query
+  const difficultyMap = new Map<string, string>();
+  if (allQuestionIds.length > 0) {
+    const placeholders = allQuestionIds.map(() => '?').join(',');
+    const rows = db
+      .prepare(`SELECT id, difficulty FROM questions WHERE id IN (${placeholders})`)
+      .all(...allQuestionIds) as Array<{ id: string; difficulty: string }>;
+    for (const row of rows) {
+      difficultyMap.set(row.id, row.difficulty);
     }
+  }
 
-    return { ...s, questions: questionIds, difficulty: 'Mixed' };
+  const enhancedSessions = parsedSessions.map((s) => {
+    const { parsedQuestions, ...sessionData } = s;
+    const uniqueDifficulties = new Set(
+      parsedQuestions.map((id) => difficultyMap.get(id)).filter(Boolean),
+    );
+    const sessionDifficulty = uniqueDifficulties.size === 1 ? [...uniqueDifficulties][0] : 'Mixed';
+
+    return { ...sessionData, questions: parsedQuestions, difficulty: sessionDifficulty };
   });
 
   res.json(enhancedSessions);
 });
 
 router.get('/exam-sessions/:id', authenticate, (req: Request, res: Response) => {
-  const session = sessionRepo.findById(req.params.id, req.user!.id);
+  const session = sessionRepo.findById(req.params.id, requireUser(req).id);
   if (!session) return res.status(404).json({ error: 'Session not found' });
 
   const answers = answerRepo.findBySession(req.params.id);
+
+  // Compute remaining seconds so the client can restore the countdown after a
+  // refresh (or if the session is paused and reopened).
+  let timeLeftSeconds: number | null = null;
+  if (session.status === 'in_progress') {
+    const deadline = new Date(session.autoSubmitAt).getTime();
+    timeLeftSeconds = Math.max(0, Math.floor((deadline - Date.now()) / 1000));
+  } else if (session.status === 'paused' && session.pausedAt) {
+    // While paused the deadline is NOT ticking — return how many seconds were
+    // left at the moment the session was paused.
+    const deadline = new Date(session.autoSubmitAt).getTime();
+    const pausedAtMs = new Date(session.pausedAt).getTime();
+    timeLeftSeconds = Math.max(0, Math.floor((deadline - pausedAtMs) / 1000));
+  }
+
   res.json({
     ...session,
     questions: JSON.parse(session.questions),
     answers: answers.map((a) => ({ ...a, userAnswer: JSON.parse(a.userAnswer || 'null') })),
+    timeLeftSeconds,
   });
 });
 
@@ -168,9 +186,10 @@ router.post(
 
       const autoSubmitAt = computeAutoSubmitAt(startMs, durationMinutes);
 
+      const currentUser = requireUser(req);
       sessionRepo.create({
         id,
-        userId: req.user!.id,
+        userId: currentUser.id,
         examConfigurationId: examConfigurationId ?? null,
         certificationId: resolvedCertificationId,
         sessionName: sessionName ?? null,
@@ -188,14 +207,14 @@ router.post(
         // Record history if we have a certification ID
         if (resolvedCertificationId) {
           questionHistoryService.recordQuestionsSeen(
-            req.user!.id,
+            currentUser.id,
             resolvedCertificationId,
             questions,
           );
         }
       } catch (historyError) {
         // Log error but don't block session creation
-        console.error('Failed to record question history:', historyError);
+        logger.error({ err: historyError }, 'Failed to record question history');
       }
 
       res.json({ id, examConfigurationId, questions, status: 'in_progress', autoSubmitAt });
@@ -212,18 +231,11 @@ router.post(
   (req: Request, res: Response, next: NextFunction) => {
     try {
       // Verify the session belongs to the authenticated user before writing
-      const session = sessionRepo.findById(req.params.id, req.user!.id);
+      const session = sessionRepo.findById(req.params.id, requireUser(req).id);
       if (!session) return next(new NotFoundError('Session not found'));
 
       const { questionId, userAnswer, markedForReview, confidenceLevel, answerOrder, timeSpent } =
         req.body;
-
-      console.warn('[DEBUG] Saving answer with confidence:', {
-        questionId,
-        confidenceLevel,
-        markedForReview,
-        answerOrder,
-      });
 
       const id = answerRepo.upsert({
         examSessionId: req.params.id,
@@ -283,7 +295,7 @@ router.get('/exams/:id/questions', authenticate, (req, res) => {
         topicWeights = parsed;
       }
     } catch {
-      console.warn('[QuestionSelector] Failed to parse topicWeights, will derive from topics');
+      logger.warn('[QuestionSelector] Failed to parse topicWeights, will derive from topics');
     }
   }
 
@@ -311,34 +323,40 @@ router.get('/exams/:id/questions', authenticate, (req, res) => {
     topicWeights,
   };
 
+  const user = req.user;
+  if (user?.id) {
+    const ids = questionHistoryService.getSeenQuestionIds(user.id, config.certificationId);
+    if (ids.length > 0) {
+      selectionConfig.seenQuestionIds = new Set(ids);
+    }
+  }
+
   const selected = selectQuestions(pool, selectionConfig);
 
-  res.json(
-    selected.map((q) => ({
-      ...q,
-      options: JSON.parse(q.options),
-      correctAnswers: JSON.parse(q.correctAnswers),
-      tags: JSON.parse(q.tags || '[]'),
-    })),
-  );
+  // Parse and convert to Question format
+  const questions = questionRowsToQuestions(selected);
+
+  // Apply immutable shuffle to eliminate 88% index-0 bias
+  const shuffled = shuffleQuestions(questions);
+
+  res.json(shuffled);
 });
 
 // Fetch questions by session (for historical review of custom/topic quizzes)
 router.get('/exam-sessions/:id/questions', authenticate, (req: Request, res: Response) => {
-  const session = sessionRepo.findById(req.params.id, req.user!.id);
+  const session = sessionRepo.findById(req.params.id, requireUser(req).id);
   if (!session) return res.status(404).json({ error: 'Session not found' });
 
   const questionIds: string[] = JSON.parse(session.questions);
   const questions = questionRepo.findByIds(questionIds);
 
-  res.json(
-    questions.map((q) => ({
-      ...q,
-      options: JSON.parse(q.options),
-      correctAnswers: JSON.parse(q.correctAnswers),
-      tags: JSON.parse(q.tags || '[]'),
-    })),
-  );
+  // Parse and convert to Question format
+  const parsedQuestions = questionRowsToQuestions(questions);
+
+  // Apply immutable shuffle for historical review consistency
+  const shuffled = shuffleQuestions(parsedQuestions);
+
+  res.json(shuffled);
 });
 
 // Submit Exam
@@ -346,9 +364,10 @@ router.post(
   ['/exam-sessions/:id/submit', '/exams/:id/submit'],
   authenticate,
   (req: Request, res: Response) => {
-    const session = sessionRepo.findById(req.params.id, req.user!.id);
+    const currentUser = requireUser(req);
+    const session = sessionRepo.findById(req.params.id, currentUser.id);
     if (!session) return res.status(404).json({ error: 'Session not found' });
-    if (session.status !== 'in_progress')
+    if (session.status !== 'in_progress' && session.status !== 'paused')
       return res.status(400).json({ error: 'Session already submitted' });
 
     const nowMs_ = nowMs();
@@ -371,18 +390,23 @@ router.post(
       const answer = answers.find((a) => a.questionId === detail.questionId);
       if (answer) answerRepo.markCorrect(answer.id, detail.isCorrect);
       if (detail.userAnswer !== null)
-        srsService.updateQuestionReview(req.user!.id, detail.questionId, detail.isCorrect ? 5 : 1);
+        srsService.updateQuestionReview(
+          currentUser.id,
+          detail.questionId,
+          detail.isCorrect ? 5 : 1,
+        );
     }
 
-    const timeTaken = Math.floor((nowMs_ - new Date(session.startTime).getTime()) / 1000);
+    const wallMs = nowMs_ - new Date(session.startTime).getTime();
+    const timeTaken = Math.max(0, Math.floor((wallMs - (session.accumulatedPausedMs ?? 0)) / 1000));
     sessionRepo.complete(req.params.id, { ...result, endTime, timeTaken });
-    userRepo.updateXp(req.user!.id, result.xpAwarded);
-    updateUserStreak(req.user!.id);
-    checkAchievements(req.user!.id, 'exam', 1, { score: result.score });
-    checkAchievements(req.user!.id, 'score', result.score, { score: result.score });
+    userRepo.updateXp(currentUser.id, result.xpAwarded);
+    updateUserStreak(currentUser.id);
+    checkAchievements(currentUser.id, 'exam', 1, { score: result.score });
+    checkAchievements(currentUser.id, 'score', result.score, { score: result.score });
 
     // Invalidate dashboard metrics cache for this user
-    cacheService.invalidateUser(req.user!.id);
+    cacheService.invalidateUser(currentUser.id);
 
     let percentileRank: number | null = null;
     if (session.examConfigurationId) {
@@ -399,16 +423,59 @@ router.post(
 
 // Abandon Exam
 router.post('/exam-sessions/:id/abandon', authenticate, (req: Request, res: Response) => {
-  const session = sessionRepo.findById(req.params.id, req.user!.id);
+  const session = sessionRepo.findById(req.params.id, requireUser(req).id);
   if (!session) return res.status(404).json({ error: 'Session not found' });
-  if (session.status !== 'in_progress') return res.json({ ok: true }); // already done
+  if (session.status !== 'in_progress' && session.status !== 'paused')
+    return res.json({ ok: true }); // already done
   sessionRepo.abandon(req.params.id);
   res.json({ ok: true });
 });
 
+// Pause Exam
+router.post('/exam-sessions/:id/pause', authenticate, (req: Request, res: Response) => {
+  const session = sessionRepo.findById(req.params.id, requireUser(req).id);
+  if (!session) return res.status(404).json({ error: 'Session not found' });
+
+  if (session.isPracticeMode) {
+    return res.status(400).json({ error: 'Practice mode sessions cannot be paused' });
+  }
+  if (session.status === 'paused') {
+    return res.status(400).json({ error: 'Session is already paused' });
+  }
+  if (session.status !== 'in_progress') {
+    return res
+      .status(400)
+      .json({ error: `Cannot pause a session with status '${session.status}'` });
+  }
+
+  // pause() now enforces limits (MAX_PAUSE_COUNT=3, MAX_TOTAL_PAUSE_MS=30min)
+  const pauseResult = sessionRepo.pause(req.params.id);
+  if (!pauseResult.ok) {
+    // 403 Forbidden — policy limit exceeded, not a server error
+    return res.status(403).json({ error: (pauseResult as { reason: string }).reason });
+  }
+
+  res.json({ ok: true, status: 'paused' });
+});
+
+// Resume Exam
+router.post('/exam-sessions/:id/resume', authenticate, (req: Request, res: Response) => {
+  const session = sessionRepo.findById(req.params.id, requireUser(req).id);
+  if (!session) return res.status(404).json({ error: 'Session not found' });
+
+  if (session.status !== 'paused') {
+    return res.status(400).json({ error: `Session is not paused (status: '${session.status}')` });
+  }
+
+  const result = sessionRepo.resume(req.params.id);
+  if (!result) return res.status(409).json({ error: 'Failed to resume session' });
+
+  res.json({ ok: true, status: 'in_progress', ...result });
+});
+
 // Backward compatibility for attempts
 router.get('/attempts', authenticate, (req: Request, res: Response) => {
-  const sessions = sessionRepo.findByUser(req.user!.id);
+  const sessions = sessionRepo.findByUser(requireUser(req).id);
   res.json(
     sessions.map((s) => ({
       ...s,

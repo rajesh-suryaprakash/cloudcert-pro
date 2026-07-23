@@ -7,6 +7,7 @@ import { UnitRepository } from '../repositories/UnitRepository';
 import { CertificationService } from '../services/CertificationService';
 import { UnitService } from '../services/UnitService';
 import { NotFoundError } from '../errors';
+import { questionRowsToQuestions } from '../utils/questionTransforms';
 
 const router = express.Router();
 const certRepo = new CertificationRepository(db);
@@ -139,15 +140,7 @@ router.get(
         throw new NotFoundError('Unit not found');
       }
       const questions = questionRepo.findByUnitId(unitId);
-      res.json(
-        questions.map((q) => ({
-          ...q,
-          options: JSON.parse(q.options),
-          correctAnswers: JSON.parse(q.correctAnswers),
-          tags: JSON.parse(q.tags || '[]'),
-          isActive: Boolean(q.isActive),
-        })),
-      );
+      res.json(questionRowsToQuestions(questions));
     } catch (err) {
       next(err);
     }

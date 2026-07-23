@@ -1,14 +1,19 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import express, { type Request, type Response } from 'express';
 import { db } from '../db/connection';
-import { authenticate } from '../middleware/auth';
+import { authenticate, requireUser } from '../middleware/auth';
 
 const router = express.Router();
 
-router.get('/', authenticate, (req, res) => {
+router.get('/', authenticate, (_req, res) => {
   const achievements = db.prepare('SELECT * FROM achievements WHERE isActive = 1').all();
   res.json(achievements);
 });
+
+interface UserAchievementRow {
+  isCompleted: number;
+  notified: number;
+  [key: string]: unknown;
+}
 
 router.get('/user', authenticate, (req: Request, res: Response) => {
   const userAchievements = db
@@ -21,9 +26,9 @@ router.get('/user', authenticate, (req: Request, res: Response) => {
     ORDER BY ua.completedAt DESC, ua.updatedAt DESC
   `,
     )
-    .all(req.user!.id);
+    .all(requireUser(req).id);
   res.json(
-    userAchievements.map((ua: Record<string, unknown>) => ({
+    (userAchievements as UserAchievementRow[]).map((ua) => ({
       ...ua,
       isCompleted: ua.isCompleted === 1,
       notified: ua.notified === 1,

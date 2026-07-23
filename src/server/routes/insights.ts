@@ -34,7 +34,7 @@ router.get(
 
       // Extract filter parameters
       const examType = (req.query.examType as string) || 'mock';
-      const difficulty = (req.query.difficulty as string) || 'Easy';
+      const difficulty = (req.query.difficulty as string) || 'Mixed';
 
       // Build filter options
       const filterOptions = {

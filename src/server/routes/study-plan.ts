@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import crypto from 'crypto';
 import express, { type Request, type Response } from 'express';
 import { db } from '../db/connection';
-import { authenticate } from '../middleware/auth';
+import { authenticate, requireUser } from '../middleware/auth';
 import type { ExamSessionRow } from '../db-types';
 
 const router = express.Router();
@@ -56,24 +55,6 @@ export function computeWeakTopics(
     .slice(0, 3);
 }
 
-/**
- * Renders the list of study plan task rows for a set of weak topics.
- * Returns an array of task descriptors: one per task type per topic.
- * Requirements: 1.1, 2.1, 3.3, 3.4
- */
-export function renderStudyPlanTasks(
-  weakTopics: WeakTopic[],
-): Array<{ topicId: string; taskType: TaskType }> {
-  const tasks: Array<{ topicId: string; taskType: TaskType }> = [];
-  for (const topic of weakTopics) {
-    tasks.push({ topicId: topic.topicId, taskType: 'review_wrong_answers' });
-    tasks.push({ topicId: topic.topicId, taskType: 'practice_quiz' });
-    if (topic.docUrl !== null) {
-      tasks.push({ topicId: topic.topicId, taskType: 'read_docs' });
-    }
-  }
-  return tasks;
-}
 
 /**
  * GET /api/exam-sessions/:id/study-plan
@@ -93,7 +74,7 @@ router.get('/exam-sessions/:id/study-plan', authenticate, (req: Request, res: Re
   }
 
   // Requirement 5.3: enforce ownership
-  if (!isSessionOwner(session.userId, req.user!.id)) {
+  if (!isSessionOwner(session.userId, requireUser(req).id)) {
     return res.status(403).json({ error: 'Forbidden' });
   }
 
@@ -119,7 +100,7 @@ router.get('/exam-sessions/:id/study-plan', authenticate, (req: Request, res: Re
     WHERE sessionId = ? AND userId = ?
   `,
     )
-    .all(sessionId, req.user!.id) as Array<{ topicId: string; taskType: TaskType }>;
+    .all(sessionId, requireUser(req).id) as Array<{ topicId: string; taskType: TaskType }>;
 
   const completions: StudyPlanCompletion[] = completionRows.map((r) => ({
     topicId: r.topicId,
@@ -194,7 +175,7 @@ router.post('/study-plan-completions', authenticate, (req: Request, res: Respons
   if (!session) {
     return res.status(404).json({ error: 'Session not found' });
   }
-  if (!isSessionOwner(session.userId, req.user!.id)) {
+  if (!isSessionOwner(session.userId, requireUser(req).id)) {
     return res.status(403).json({ error: 'Forbidden' });
   }
 
@@ -208,12 +189,13 @@ router.post('/study-plan-completions', authenticate, (req: Request, res: Respons
 
   const id = crypto.randomUUID();
   const completedAt = new Date().toISOString();
+  const currentUser = requireUser(req);
 
   // INSERT OR IGNORE enforces idempotence via the UNIQUE constraint
   db.prepare(
     `INSERT OR IGNORE INTO study_plan_completions (id, userId, sessionId, topicId, taskType, completedAt)
      VALUES (?, ?, ?, ?, ?, ?)`,
-  ).run(id, req.user!.id, sessionId, topicId, taskType, completedAt);
+  ).run(id, currentUser.id, sessionId, topicId, taskType, completedAt);
 
   // Fetch the actual record (may have been inserted previously)
   const record = db
@@ -222,7 +204,7 @@ router.post('/study-plan-completions', authenticate, (req: Request, res: Respons
        FROM study_plan_completions
        WHERE userId = ? AND sessionId = ? AND topicId = ? AND taskType = ?`,
     )
-    .get(req.user!.id, sessionId, topicId, taskType) as {
+    .get(currentUser.id, sessionId, topicId, taskType) as {
     id: string;
     userId: string;
     sessionId: string;
@@ -249,7 +231,7 @@ router.get('/study-plan-completions/:sessionId', authenticate, (req: Request, re
   if (!session) {
     return res.status(404).json({ error: 'Session not found' });
   }
-  if (!isSessionOwner(session.userId, req.user!.id)) {
+  if (!isSessionOwner(session.userId, requireUser(req).id)) {
     return res.status(403).json({ error: 'Forbidden' });
   }
 
@@ -259,7 +241,7 @@ router.get('/study-plan-completions/:sessionId', authenticate, (req: Request, re
          FROM study_plan_completions
          WHERE sessionId = ? AND userId = ?`,
     )
-    .all(sessionId, req.user!.id) as Array<{ topicId: string; taskType: TaskType }>;
+    .all(sessionId, requireUser(req).id) as Array<{ topicId: string; taskType: TaskType }>;
 
   return res.json({ completions });
 });
