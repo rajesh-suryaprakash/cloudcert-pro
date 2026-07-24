@@ -429,6 +429,9 @@ npm test
 # Run tests with coverage (fails if any metric drops below 80%)
 npm run test:coverage
 
+# Run tests and generate JUnit, JSON, and HTML reports in test-results/
+npm run test:report
+
 # Run a specific test file
 npx vitest run src/server/services/AnalyticsService.test.ts
 
@@ -436,20 +439,16 @@ npx vitest run src/server/services/AnalyticsService.test.ts
 npx vitest
 ```
 
-### Coverage Requirements
+### Coverage & Test Reports
 
-All four coverage axes are gated at **≥ 80%** in CI. The pipeline will fail if any threshold is breached.
+* **Coverage Reports**: Available locally in the `coverage/` directory after running `npm run test:coverage`. The pipeline will fail in CI if any coverage metric falls below the gated thresholds:
+  * **Lines**: ≥ 80%
+  * **Functions**: ≥ 80%
+  * **Branches**: ≥ 80%
+  * **Statements**: ≥ 80%
+* **Test Suite Reports**: Generated inside the `test-results/` directory after running `npm run test:report`. This includes `junit.xml` (for CI integration), `results.json` (for programmatic parsing), and `index.html` (interactive local dashboard).
 
-| Metric     | Threshold |
-| ---------- | --------- |
-| Lines      | ≥ 80%     |
-| Functions  | ≥ 80%     |
-| Branches   | ≥ 80%     |
-| Statements | ≥ 80%     |
-
-Coverage reports are uploaded as CI artifacts (30-day retention on `main`, 7 days for PRs) and are available in `coverage/` locally after running `npm run test:coverage`.
-
-### Code Quality Gates
+### Code Quality & Dead Code Gates
 
 ```bash
 # TypeScript strict type checking
@@ -460,9 +459,18 @@ npm run lint
 
 # Prettier format check
 npm run format:check
+
+# Dead code scanning (unused files, exports, and types via Knip)
+npm run dead-code
+
+# Auto-fix unused exports/types
+npm run dead-code:fix
+
+# Check for unused or missing packages/dependencies
+npm run deps:check
 ```
 
-All three checks run in parallel in CI and **block merges** if they fail.
+All standard quality checks run in parallel in CI and **block merges** if they fail.
 
 ---
 
