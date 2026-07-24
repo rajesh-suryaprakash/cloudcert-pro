@@ -92,14 +92,17 @@ describe('Property 14: Navigation Context Round-Trip', () => {
         const decoded = decodeNavigationContext(params);
 
         expect(decoded).not.toBeNull();
-        expect(decoded!.currentId).toBe(context.currentId);
-        expect(decoded!.ids).toEqual(context.ids);
+        if (!decoded) return;
+        expect(decoded.currentId).toBe(context.currentId);
+        expect(decoded.ids).toEqual(context.ids);
 
         // Filters round-trip: if original had filters, decoded should have equivalent filters
         if (context.filters && Object.keys(context.filters).length > 0) {
-          expect(decoded!.filters).toBeDefined();
+          expect(decoded.filters).toBeDefined();
+          const decodedFilters = decoded.filters;
+          if (!decodedFilters) return;
           for (const [key, value] of Object.entries(context.filters)) {
-            expect(decoded!.filters![key]).toBe(value);
+            expect(decodedFilters[key]).toBe(value);
           }
         }
       }),
@@ -114,8 +117,9 @@ describe('Property 14: Navigation Context Round-Trip', () => {
         const decoded = decodeNavigationContext(params);
 
         expect(decoded).not.toBeNull();
+        if (!decoded) return;
         // Order must be preserved
-        expect(decoded!.ids).toEqual(context.ids);
+        expect(decoded.ids).toEqual(context.ids);
       }),
       { numRuns: 100 },
     );
@@ -136,9 +140,10 @@ describe('Property 14: Navigation Context Round-Trip', () => {
           const decoded = decodeNavigationContext(params);
 
           expect(decoded).not.toBeNull();
+        if (!decoded) return;
           // No filters should be present (or empty)
           const hasFilters =
-            decoded!.filters !== undefined && Object.keys(decoded!.filters).length > 0;
+            decoded.filters !== undefined && Object.keys(decoded.filters).length > 0;
           expect(hasFilters).toBe(false);
         },
       ),
@@ -157,22 +162,23 @@ describe('Property 23: URL Navigation Context Serialization', () => {
   it('any navigation context is serializable to URL query parameters', () => {
     fc.assert(
       fc.property(arbitraryNavigationContext(), (context) => {
-        // Should not throw
-        let params: URLSearchParams;
+        // Should not throw, and must return a URLSearchParams
+        let encodedParams: URLSearchParams | undefined;
         expect(() => {
-          params = encodeNavigationContext(context, 'http://localhost/admin');
+          encodedParams = encodeNavigationContext(context, 'http://localhost/admin');
         }).not.toThrow();
 
         // Result must be a URLSearchParams instance
-        expect(params!).toBeInstanceOf(URLSearchParams);
+        expect(encodedParams).toBeInstanceOf(URLSearchParams);
+        if (!encodedParams) return;
 
         // Must always contain 'navRef' — sessionStorage is the unconditional primary store
-        const hasNavRef = params!.has('navRef');
+        const hasNavRef = encodedParams.has('navRef');
         expect(hasNavRef).toBe(true);
 
         // Must always contain 'current'
-        expect(params!.has('current')).toBe(true);
-        expect(params!.get('current')).toBe(context.currentId);
+        expect(encodedParams.has('current')).toBe(true);
+        expect(encodedParams.get('current')).toBe(context.currentId);
       }),
       { numRuns: 100 },
     );
@@ -186,12 +192,13 @@ describe('Property 23: URL Navigation Context Serialization', () => {
 
         // Decoding must succeed (not return null)
         expect(decoded).not.toBeNull();
+        if (!decoded) return;
 
         // Decoded context must have at least one ID
-        expect(decoded!.ids.length).toBeGreaterThan(0);
+        expect(decoded.ids.length).toBeGreaterThan(0);
 
         // currentId must be a non-empty string
-        expect(decoded!.currentId).toBeTruthy();
+        expect(decoded.currentId).toBeTruthy();
       }),
       { numRuns: 100 },
     );

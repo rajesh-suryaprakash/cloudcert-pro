@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Performance Tests for Navigation Utilities
  * Feature: admin-detail-navigation
  * Requirements: 5.2
@@ -96,8 +96,9 @@ describe('Context encoding speed', () => {
 
     const metrics = getPerformanceMetrics();
     expect(metrics).not.toBeNull();
-    expect(metrics!.encodingTime).toBeGreaterThanOrEqual(0);
-    expect(metrics!.encodingTime).toBeLessThan(50);
+    if (!metrics) return;
+    expect(metrics.encodingTime).toBeGreaterThanOrEqual(0);
+    expect(metrics.encodingTime).toBeLessThan(50);
   });
 
   it('correctly reports sessionStorage usage in metrics for large contexts', () => {
@@ -106,7 +107,8 @@ describe('Context encoding speed', () => {
 
     const metrics = getPerformanceMetrics();
     expect(metrics).not.toBeNull();
-    expect(metrics!.usedSessionStorage).toBe(true);
+    if (!metrics) return;
+    expect(metrics.usedSessionStorage).toBe(true);
   });
 
   it('correctly reports sessionStorage usage for small contexts (always uses sessionStorage)', () => {
@@ -115,7 +117,8 @@ describe('Context encoding speed', () => {
 
     const metrics = getPerformanceMetrics();
     expect(metrics).not.toBeNull();
-    expect(metrics!.usedSessionStorage).toBe(true);
+    if (!metrics) return;
+    expect(metrics.usedSessionStorage).toBe(true);
   });
 });
 
@@ -209,10 +212,11 @@ describe('URL length management', () => {
     const decoded = decodeNavigationContext(params);
 
     expect(decoded).not.toBeNull();
-    expect(decoded!.ids).toHaveLength(250);
-    expect(decoded!.ids[0]).toBe(context.ids[0]);
-    expect(decoded!.currentId).toBe(context.currentId);
-    expect(decoded!.filters?.search).toBe('aws');
+    if (!decoded) return;
+    expect(decoded.ids).toHaveLength(250);
+    expect(decoded.ids[0]).toBe(context.ids[0]);
+    expect(decoded.currentId).toBe(context.currentId);
+    expect(decoded.filters?.search).toBe('aws');
   });
 
   it('records URL length in performance metrics', () => {
@@ -222,7 +226,8 @@ describe('URL length management', () => {
 
     const metrics = getPerformanceMetrics();
     expect(metrics).not.toBeNull();
-    expect(metrics!.urlLength).toBeGreaterThan(0);
+    if (!metrics) return;
+    expect(metrics.urlLength).toBeGreaterThan(0);
   });
 });
 

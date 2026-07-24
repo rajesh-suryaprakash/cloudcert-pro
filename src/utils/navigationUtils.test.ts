@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Unit tests for URL encoding/decoding edge cases in navigationUtils.
  * Requirements: 4.4, 7.5
  */
@@ -33,8 +33,9 @@ describe('Special characters in IDs', () => {
     const decoded = decodeNavigationContext(params);
 
     expect(decoded).not.toBeNull();
-    expect(decoded!.ids).toContain('id with spaces');
-    expect(decoded!.currentId).toBe('id with spaces');
+    if (!decoded) return;
+    expect(decoded.ids).toContain('id with spaces');
+    expect(decoded.currentId).toBe('id with spaces');
   });
 
   it('handles IDs with forward slashes', () => {
@@ -46,8 +47,9 @@ describe('Special characters in IDs', () => {
     const decoded = decodeNavigationContext(params);
 
     expect(decoded).not.toBeNull();
-    expect(decoded!.ids).toContain('org/repo/id');
-    expect(decoded!.currentId).toBe('org/repo/id');
+    if (!decoded) return;
+    expect(decoded.ids).toContain('org/repo/id');
+    expect(decoded.currentId).toBe('org/repo/id');
   });
 
   it('handles IDs with ampersands', () => {
@@ -59,8 +61,9 @@ describe('Special characters in IDs', () => {
     const decoded = decodeNavigationContext(params);
 
     expect(decoded).not.toBeNull();
-    expect(decoded!.ids).toContain('id&with&ampersands');
-    expect(decoded!.currentId).toBe('id&with&ampersands');
+    if (!decoded) return;
+    expect(decoded.ids).toContain('id&with&ampersands');
+    expect(decoded.currentId).toBe('id&with&ampersands');
   });
 
   it('handles IDs with equals signs', () => {
@@ -72,8 +75,9 @@ describe('Special characters in IDs', () => {
     const decoded = decodeNavigationContext(params);
 
     expect(decoded).not.toBeNull();
-    expect(decoded!.ids).toContain('id=value');
-    expect(decoded!.currentId).toBe('id=value');
+    if (!decoded) return;
+    expect(decoded.ids).toContain('id=value');
+    expect(decoded.currentId).toBe('id=value');
   });
 
   it('handles IDs with hash characters', () => {
@@ -85,8 +89,9 @@ describe('Special characters in IDs', () => {
     const decoded = decodeNavigationContext(params);
 
     expect(decoded).not.toBeNull();
-    expect(decoded!.ids).toContain('id#fragment');
-    expect(decoded!.currentId).toBe('id#fragment');
+    if (!decoded) return;
+    expect(decoded.ids).toContain('id#fragment');
+    expect(decoded.currentId).toBe('id#fragment');
   });
 
   it('handles IDs with question marks', () => {
@@ -98,8 +103,9 @@ describe('Special characters in IDs', () => {
     const decoded = decodeNavigationContext(params);
 
     expect(decoded).not.toBeNull();
-    expect(decoded!.ids).toContain('id?query=1');
-    expect(decoded!.currentId).toBe('id?query=1');
+    if (!decoded) return;
+    expect(decoded.ids).toContain('id?query=1');
+    expect(decoded.currentId).toBe('id?query=1');
   });
 
   it('handles IDs with unicode characters', () => {
@@ -111,8 +117,9 @@ describe('Special characters in IDs', () => {
     const decoded = decodeNavigationContext(params);
 
     expect(decoded).not.toBeNull();
-    expect(decoded!.ids).toContain('id-\u4e2d\u6587');
-    expect(decoded!.currentId).toBe('id-\u4e2d\u6587');
+    if (!decoded) return;
+    expect(decoded.ids).toContain('id-\u4e2d\u6587');
+    expect(decoded.currentId).toBe('id-\u4e2d\u6587');
   });
 
   it('handles IDs with percent signs', () => {
@@ -124,8 +131,9 @@ describe('Special characters in IDs', () => {
     const decoded = decodeNavigationContext(params);
 
     expect(decoded).not.toBeNull();
-    expect(decoded!.ids).toContain('id%20encoded');
-    expect(decoded!.currentId).toBe('id%20encoded');
+    if (!decoded) return;
+    expect(decoded.ids).toContain('id%20encoded');
+    expect(decoded.currentId).toBe('id%20encoded');
   });
 
   it('handles IDs with plus signs', () => {
@@ -137,8 +145,9 @@ describe('Special characters in IDs', () => {
     const decoded = decodeNavigationContext(params);
 
     expect(decoded).not.toBeNull();
-    expect(decoded!.ids).toContain('id+plus');
-    expect(decoded!.currentId).toBe('id+plus');
+    if (!decoded) return;
+    expect(decoded.ids).toContain('id+plus');
+    expect(decoded.currentId).toBe('id+plus');
   });
 
   it('handles a single ID with many special characters combined', () => {
@@ -151,8 +160,9 @@ describe('Special characters in IDs', () => {
     const decoded = decodeNavigationContext(params);
 
     expect(decoded).not.toBeNull();
-    expect(decoded!.currentId).toBe(complexId);
-    expect(decoded!.ids).toContain(complexId);
+    if (!decoded) return;
+    expect(decoded.currentId).toBe(complexId);
+    expect(decoded.ids).toContain(complexId);
   });
 
   it('handles filter values with special characters', () => {
@@ -165,8 +175,9 @@ describe('Special characters in IDs', () => {
     const decoded = decodeNavigationContext(params);
 
     expect(decoded).not.toBeNull();
-    expect(decoded!.filters?.search).toBe('AWS & GCP');
-    expect(decoded!.filters?.vendor).toBe('Amazon/Google');
+    if (!decoded) return;
+    expect(decoded.filters?.search).toBe('AWS & GCP');
+    expect(decoded.filters?.vendor).toBe('Amazon/Google');
   });
 });
 
@@ -214,7 +225,8 @@ describe('Empty contexts', () => {
     const decoded = decodeNavigationContext(params);
 
     expect(decoded).not.toBeNull();
-    const hasFilters = decoded!.filters !== undefined && Object.keys(decoded!.filters).length > 0;
+    if (!decoded) return;
+    const hasFilters = decoded.filters !== undefined && Object.keys(decoded.filters).length > 0;
     expect(hasFilters).toBe(false);
   });
 
@@ -228,7 +240,8 @@ describe('Empty contexts', () => {
     const decoded = decodeNavigationContext(params);
 
     expect(decoded).not.toBeNull();
-    const hasFilters = decoded!.filters !== undefined && Object.keys(decoded!.filters).length > 0;
+    if (!decoded) return;
+    const hasFilters = decoded.filters !== undefined && Object.keys(decoded.filters).length > 0;
     expect(hasFilters).toBe(false);
   });
 
@@ -241,8 +254,9 @@ describe('Empty contexts', () => {
     const decoded = decodeNavigationContext(params);
 
     expect(decoded).not.toBeNull();
-    expect(decoded!.ids).toEqual(['only-id']);
-    expect(decoded!.currentId).toBe('only-id');
+    if (!decoded) return;
+    expect(decoded.ids).toEqual(['only-id']);
+    expect(decoded.currentId).toBe('only-id');
   });
 });
 
@@ -287,8 +301,9 @@ describe('Contexts stored via sessionStorage', () => {
     const decoded = decodeNavigationContext(params);
 
     expect(decoded).not.toBeNull();
-    expect(decoded!.ids).toEqual(context.ids);
-    expect(decoded!.currentId).toBe(context.currentId);
+    if (!decoded) return;
+    expect(decoded.ids).toEqual(context.ids);
+    expect(decoded.currentId).toBe(context.currentId);
   });
 
   it('returns null when navRef points to missing sessionStorage entry', () => {
@@ -363,8 +378,9 @@ describe('Contexts stored via sessionStorage', () => {
 
     const decoded = decodeNavigationContext(params);
     expect(decoded).not.toBeNull();
-    expect(decoded!.filters?.search).toBe('aws');
-    expect(decoded!.filters?.vendor).toBe('Amazon');
+    if (!decoded) return;
+    expect(decoded.filters?.search).toBe('aws');
+    expect(decoded.filters?.vendor).toBe('Amazon');
   });
 });
 
@@ -403,8 +419,9 @@ describe('Malformed URL parameters', () => {
 
     // Should succeed but only include non-empty IDs
     expect(decoded).not.toBeNull();
-    expect(decoded!.ids).toEqual(['id-1', 'id-3']);
-    expect(decoded!.ids).not.toContain('');
+    if (!decoded) return;
+    expect(decoded.ids).toEqual(['id-1', 'id-3']);
+    expect(decoded.ids).not.toContain('');
   });
 
   it('handles ids with only one valid entry among empty segments', () => {
@@ -412,7 +429,8 @@ describe('Malformed URL parameters', () => {
     const decoded = decodeNavigationContext(params);
 
     expect(decoded).not.toBeNull();
-    expect(decoded!.ids).toEqual(['valid-id']);
+    if (!decoded) return;
+    expect(decoded.ids).toEqual(['valid-id']);
   });
 
   it('ignores unrecognized query parameters gracefully', () => {
@@ -425,8 +443,9 @@ describe('Malformed URL parameters', () => {
     const decoded = decodeNavigationContext(params);
 
     expect(decoded).not.toBeNull();
-    expect(decoded!.ids).toEqual(['id-1', 'id-2']);
-    expect(decoded!.currentId).toBe('id-1');
+    if (!decoded) return;
+    expect(decoded.ids).toEqual(['id-1', 'id-2']);
+    expect(decoded.currentId).toBe('id-1');
   });
 
   it('does not include non-nav prefixed params as filters', () => {
@@ -439,9 +458,10 @@ describe('Malformed URL parameters', () => {
     const decoded = decodeNavigationContext(params);
 
     expect(decoded).not.toBeNull();
-    expect(decoded!.filters?.search).toBe('should-be-filter');
+    if (!decoded) return;
+    expect(decoded.filters?.search).toBe('should-be-filter');
     // 'search' without nav prefix should not appear in filters
-    expect(decoded!.filters?.['search']).not.toBe('should-not-be-filter');
+    expect(decoded.filters?.['search']).not.toBe('should-not-be-filter');
   });
 
   it('handles navRef with corrupted sessionStorage JSON gracefully', () => {

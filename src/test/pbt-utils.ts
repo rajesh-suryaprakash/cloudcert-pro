@@ -12,19 +12,7 @@ import * as fc from 'fast-check';
 
 // ---------------------------------------------------------------------------
 // Entity types
-// ---------------------------------------------------------------------------
 
-export type EntityType = 'certifications' | 'exams' | 'topics' | 'subtopics' | 'questions';
-
-// ---------------------------------------------------------------------------
-// Navigation context types (mirrors useAdminNavigation interfaces)
-// ---------------------------------------------------------------------------
-
-export interface NavigationContext {
-  ids: string[];
-  currentId: string;
-  filters?: Record<string, string>;
-}
 
 // ---------------------------------------------------------------------------
 // Generator: arbitraryRecordId
@@ -45,19 +33,6 @@ export function arbitraryRecordId(): fc.Arbitrary<string> {
 }
 
 // ---------------------------------------------------------------------------
-// Generator: arbitraryEntityType
-// ---------------------------------------------------------------------------
-
-/**
- * Generates one of the five admin entity types.
- *
- * **Validates: All properties**
- */
-export function arbitraryEntityType(): fc.Arbitrary<EntityType> {
-  return fc.constantFrom<EntityType>('certifications', 'exams', 'topics', 'subtopics', 'questions');
-}
-
-// ---------------------------------------------------------------------------
 // Generator: arbitraryFilterState
 // ---------------------------------------------------------------------------
 
@@ -68,25 +43,11 @@ export function arbitraryEntityType(): fc.Arbitrary<EntityType> {
  */
 export function arbitraryFilterState(): fc.Arbitrary<Record<string, string>> {
   return fc
-    .record(
-      {
-        search: fc.option(fc.string({ minLength: 1, maxLength: 20 }), { nil: undefined }),
-        vendor: fc.option(fc.constantFrom('Amazon', 'Google', 'Microsoft', 'HashiCorp'), {
-          nil: undefined,
-        }),
-        certId: fc.option(arbitraryRecordId(), { nil: undefined }),
-        examId: fc.option(arbitraryRecordId(), { nil: undefined }),
-        topicId: fc.option(arbitraryRecordId(), { nil: undefined }),
-      },
-      { requiredKeys: [] },
-    )
-    .map((obj) => {
-      const result: Record<string, string> = {};
-      for (const [k, v] of Object.entries(obj)) {
-        if (v !== undefined) result[k] = v as string;
-      }
-      return result;
-    });
+    .record({
+      search: fc.string(),
+      vendor: fc.constantFrom('AWS', 'GCP', 'Azure'),
+      certId: fc.uuid(),
+    }, { requiredKeys: [] });
 }
 
 // ---------------------------------------------------------------------------
@@ -104,26 +65,6 @@ export function arbitraryUniqueIds(minLength: number, maxLength: number): fc.Arb
     .map((ids) => ids.slice(0, maxLength));
 }
 
-// ---------------------------------------------------------------------------
-// Generator: arbitraryNavigationContext
-// ---------------------------------------------------------------------------
-
-/**
- * Generates a random navigation context with 1-100 records and a valid currentId.
- *
- * **Validates: All properties**
- */
-export function arbitraryNavigationContext(): fc.Arbitrary<NavigationContext> {
-  return arbitraryUniqueIds(1, 100).chain((ids) =>
-    fc.integer({ min: 0, max: ids.length - 1 }).chain((idx) =>
-      fc.option(arbitraryFilterState(), { nil: undefined }).map((filters) => ({
-        ids,
-        currentId: ids[idx],
-        ...(filters !== undefined ? { filters } : {}),
-      })),
-    ),
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Specialized context generators
