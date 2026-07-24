@@ -293,9 +293,9 @@ export function useAdminNavigation(
   /**
    * Get cached data for a specific record ID
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const getCachedData = useCallback(
-    <T = any>(id: string): T | null => {
+    <T = unknown>(id: string): T | null => {
       return globalNavigationCache.get(getCacheKey(id)) as T | null;
     },
     [getCacheKey],
@@ -611,7 +611,7 @@ export function useAdminNavigation(
     } finally {
       setIsLoading(false);
     }
-  }, [parseContextFromURL]);
+  }, [parseContextFromURL, setContextAndRef]);
 
   /**
    * Update navigation context with new IDs.

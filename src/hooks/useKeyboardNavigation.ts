@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useKeyboardShortcuts } from '../contexts/KeyboardShortcutContext';
 
 interface UseKeyboardNavigationOptions {
   onPrevious: () => void;
@@ -24,9 +25,11 @@ export function useKeyboardNavigation({
   enabled = true,
   isSingleRecord = false,
 }: UseKeyboardNavigationOptions) {
+  const { shortcutsEnabled } = useKeyboardShortcuts();
+
   useEffect(() => {
-    // Disable keyboard shortcuts for single record context
-    if (!enabled || isSingleRecord) {
+    // Disable keyboard shortcuts if globally disabled, disabled locally, or single record context
+    if (!shortcutsEnabled || !enabled || isSingleRecord) {
       return;
     }
 
@@ -57,5 +60,5 @@ export function useKeyboardNavigation({
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onPrevious, onNext, enabled, isSingleRecord]);
+  }, [onPrevious, onNext, enabled, isSingleRecord, shortcutsEnabled]);
 }

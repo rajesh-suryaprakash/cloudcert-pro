@@ -18,7 +18,7 @@
  */
 import { useState, useCallback, useEffect, type ChangeEvent } from 'react';
 
-interface ClampedInputResult {
+export interface ClampedInputResult {
   /** Bind directly to the <input> element */
   inputProps: {
     value: string;

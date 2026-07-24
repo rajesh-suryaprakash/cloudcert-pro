@@ -1,4 +1,4 @@
-import React from 'react';
+import { useCallback } from 'react';
 import {
   BrowserRouter,
   Routes,
@@ -10,10 +10,11 @@ import {
 } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { AuthProvider } from './AuthContext';
+import { KeyboardShortcutProvider } from './contexts/KeyboardShortcutContext';
 import { useAuth } from './hooks/useAuth';
 import { useExamSession } from './hooks/useExamSession';
 import { useDocumentTitle } from './hooks/useDocumentTitle';
-import { fetchApi } from './api';
+import { fetchApi } from './api/client';
 import AdminPortal from './components/features/AdminPortal';
 import UserDashboard from './components/features/UserDashboard';
 import Quiz from './components/features/Quiz';
@@ -63,6 +64,33 @@ function MainApp() {
   // Determine if we're in admin view based on current URL
   const isAdminView = location.pathname.startsWith('/admin');
 
+  // Shared callback for resetting the exam state and returning to the relevant dashboard
+  const handleReset = useCallback(async () => {
+    reset();
+
+    try {
+      if (activeSessionId) {
+        const session = (await fetchApi(`/exam-sessions/${activeSessionId}`)) as {
+          certificationId?: string;
+        } | null;
+        if (session && session.certificationId) {
+          navigate(`/dashboard/${session.certificationId}`);
+          return;
+        }
+      }
+
+      if (activeExam?.certificationId) {
+        navigate(`/dashboard/${activeExam.certificationId}`);
+        return;
+      }
+
+      navigate('/dashboard');
+    } catch (e) {
+      console.error('Failed to get certification ID:', e);
+      navigate('/dashboard');
+    }
+  }, [reset, activeSessionId, activeExam, navigate]);
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -88,33 +116,7 @@ function MainApp() {
           navigate('/admin/certs');
         }
       }}
-      onReset={async () => {
-        reset();
-
-        // Dynamic solution: Get the source certification ID from the exam session
-        try {
-          if (activeSessionId) {
-            // Fetch the exam session to get the source certification ID
-            const session = await fetchApi(`/exam-sessions/${activeSessionId}`);
-            if (session && session.certificationId) {
-              navigate(`/dashboard/${session.certificationId}`);
-              return;
-            }
-          }
-
-          // Fallback: If we have activeExam with certificationId, use it
-          if (activeExam?.certificationId) {
-            navigate(`/dashboard/${activeExam.certificationId}`);
-            return;
-          }
-
-          // Final fallback: Go to general dashboard
-          navigate('/dashboard');
-        } catch (e) {
-          console.error('Failed to get certification ID:', e);
-          navigate('/dashboard');
-        }
-      }}
+      onReset={handleReset}
       onLogout={logout}
     >
       <Routes>
@@ -241,33 +243,7 @@ function MainApp() {
                   sessionId={activeSessionId || undefined}
                   historicalAttempt={historicalAttempt}
                   onFinish={() => {}}
-                  onReset={async () => {
-                    reset();
-
-                    // Dynamic solution: Get the source certification ID from the exam session
-                    try {
-                      if (activeSessionId) {
-                        // Fetch the exam session to get the source certification ID
-                        const session = await fetchApi(`/exam-sessions/${activeSessionId}`);
-                        if (session && session.certificationId) {
-                          navigate(`/dashboard/${session.certificationId}`);
-                          return;
-                        }
-                      }
-
-                      // Fallback: If we have activeExam with certificationId, use it
-                      if (activeExam?.certificationId) {
-                        navigate(`/dashboard/${activeExam.certificationId}`);
-                        return;
-                      }
-
-                      // Final fallback: Go to general dashboard
-                      navigate('/dashboard');
-                    } catch (e) {
-                      console.error('Failed to get certification ID:', e);
-                      navigate('/dashboard');
-                    }
-                  }}
+                  onReset={handleReset}
                   onStartTopicQuiz={startTopicQuiz}
                   onViewInsights={(certId: string, certTitle: string, sessionId?: string) => {
                     const params = new URLSearchParams({ certTitle });
@@ -451,9 +427,11 @@ function InsightsRoute({
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <MainApp />
-      </BrowserRouter>
+      <KeyboardShortcutProvider>
+        <BrowserRouter>
+          <MainApp />
+        </BrowserRouter>
+      </KeyboardShortcutProvider>
     </AuthProvider>
   );
 }
