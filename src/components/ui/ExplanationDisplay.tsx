@@ -52,7 +52,8 @@ export default function ExplanationDisplay({
   if (parsed) {
     const generalExplanation = parsed['general explanation'] ?? '';
     // Support both lowercase and capitalized variations for backward compatibility
-    const wrongOptions = parsed['why other options are wrong'] ?? parsed['Why other options are wrong'] ?? {};
+    const wrongOptions =
+      parsed['why other options are wrong'] ?? parsed['Why other options are wrong'] ?? {};
     const wrongEntries = Object.entries(wrongOptions);
 
     return (

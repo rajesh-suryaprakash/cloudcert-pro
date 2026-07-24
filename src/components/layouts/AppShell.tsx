@@ -1,5 +1,6 @@
 import React from 'react';
-import { BrainCircuit, LogOut, ShieldCheck } from 'lucide-react';
+import { BrainCircuit, LogOut, ShieldCheck, Keyboard } from 'lucide-react';
+import { useKeyboardShortcuts } from '../../contexts/KeyboardShortcutContext';
 
 export function getInitials(name: string): string {
   if (!name || !name.trim()) return '?';
@@ -28,7 +29,7 @@ interface AppShellProps {
   onLogout: () => void;
 }
 
-export const AppShell: React.FC<AppShellProps> = ({
+const AppShell: React.FC<AppShellProps> = ({
   children,
   user,
   role,
@@ -37,8 +38,10 @@ export const AppShell: React.FC<AppShellProps> = ({
   onReset,
   onLogout,
 }) => {
+  const { shortcutsEnabled, setShortcutsEnabled } = useKeyboardShortcuts();
+
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
+    <div className="min-h-screen flex flex-col bg-slate-50 overflow-x-hidden w-full">
       <header className="bg-white border-b border-slate-200 py-3 px-6 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2 cursor-pointer" onClick={onReset}>
@@ -58,6 +61,19 @@ export const AppShell: React.FC<AppShellProps> = ({
                 <ShieldCheck className="w-5 h-5" /> Admin Panel
               </button>
             )}
+
+            {/* Keyboard Shortcuts Toggle */}
+            <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-500 hover:text-slate-700 transition-colors uppercase tracking-wider select-none">
+              <input
+                type="checkbox"
+                checked={shortcutsEnabled}
+                onChange={(e) => setShortcutsEnabled(e.target.checked)}
+                className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 cursor-pointer"
+              />
+              <Keyboard className="w-4 h-4" />
+              <span className="hidden sm:inline">Shortcuts</span>
+            </label>
+
             <div className="h-6 w-px bg-slate-200" />
             <div className="flex items-center gap-3">
               <div className="text-right hidden sm:block">
@@ -96,7 +112,7 @@ export const AppShell: React.FC<AppShellProps> = ({
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto w-full p-4 overflow-y-auto">{children}</main>
+      <main className="flex-1 max-w-7xl mx-auto w-full p-4 overflow-y-auto overflow-x-hidden overscroll-x-none">{children}</main>
 
       <footer className="bg-white border-t border-slate-200 py-4 px-6 mt-auto">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
