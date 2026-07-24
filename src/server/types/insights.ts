@@ -137,15 +137,6 @@ export interface StudyListItem {
   priority: number;
 }
 
-// Answer change record
-export interface AnswerChange {
-  id: string;
-  examSessionId: string;
-  questionId: string;
-  previousAnswer: string | null;
-  newAnswer: string | null;
-  changeTimestamp: string;
-}
 
 // Filter options for analytics
 export interface FilterOptions {

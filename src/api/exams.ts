@@ -23,3 +23,21 @@ export const submitExamSession = (sessionId: string) =>
   fetchApi(`/exam-sessions/${sessionId}/submit`, { method: 'POST' });
 
 export const fetchExamSession = (sessionId: string) => fetchApi(`/exam-sessions/${sessionId}`);
+
+/**
+ * Pause an in-progress timed exam session.
+ * The server records the pause timestamp and sets status to 'paused'.
+ */
+export const pauseExamSession = (sessionId: string) =>
+  fetchApi(`/exam-sessions/${sessionId}/pause`, { method: 'POST' });
+
+/**
+ * Resume a paused exam session.
+ * The server extends autoSubmitAt by the pause duration and returns:
+ *   { ok, status, autoSubmitAt, timeLeftSeconds }
+ * so the client can sync its countdown timer.
+ */
+export const resumeExamSession = (
+  sessionId: string,
+): Promise<{ ok: boolean; status: string; autoSubmitAt: string; timeLeftSeconds: number }> =>
+  fetchApi(`/exam-sessions/${sessionId}/resume`, { method: 'POST' });

@@ -23,14 +23,3 @@ export interface Topic {
   weightPercentage?: number;
   docUrl?: string;
 }
-
-export interface SubTopic {
-  id: string;
-  topicId: string;
-  title: string;
-  description?: string;
-  orderIndex: number;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}

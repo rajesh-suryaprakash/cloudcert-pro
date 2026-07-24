@@ -18,4 +18,3 @@ export const isValidUrl = (url: string): boolean => {
 };
 
 export const ALLOWED_CERT_LEVELS = ['Foundational', 'Associate', 'Professional', 'Expert'] as const;
-export type CertLevel = (typeof ALLOWED_CERT_LEVELS)[number];
