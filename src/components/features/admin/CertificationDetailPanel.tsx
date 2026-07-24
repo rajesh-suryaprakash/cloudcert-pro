@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { fetchApi } from '../../../api/client';
 import {
   ArrowLeft,
@@ -30,7 +30,6 @@ export default function CertificationDetailPanel({
   onDelete,
   onBack,
 }: CertificationDetailPanelProps) {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [cert, setCert] = useState<any>(null);
   const [_stats, setStats] = useState<any>(null);
@@ -43,7 +42,7 @@ export default function CertificationDetailPanel({
 
   // Initialize navigation hook with error handling
   const navigation = useAdminNavigation('certifications', certificationId, {
-    onNavigationError: (error, message) => {
+    onNavigationError: (_error, message) => {
       showToast('error', message);
     },
   });
@@ -201,9 +200,6 @@ export default function CertificationDetailPanel({
     }
   };
 
-  const _navigateToSection = (section: string) => {
-    navigate(`/admin/${section}/${certificationId}`);
-  };
 
   if (loading) {
     return (

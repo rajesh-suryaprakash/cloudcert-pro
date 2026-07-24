@@ -163,7 +163,7 @@ export default function QuestionDetailPanel({
 
   // Initialize navigation hook with error handling
   const navigation = useAdminNavigation('questions', questionId, {
-    onNavigationError: (error, message) => {
+    onNavigationError: (_error, message) => {
       showToast('error', message);
     },
   });
@@ -397,7 +397,7 @@ export default function QuestionDetailPanel({
     fetchApi(`/subtopics/${editForm.subTopicId}/units`)
       .then((data: any) => setAllUnits(Array.isArray(data) ? data : []))
       .catch(() => setAllUnits([]));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [editForm.subTopicId, showEditForm]);
 
   if (loading) {

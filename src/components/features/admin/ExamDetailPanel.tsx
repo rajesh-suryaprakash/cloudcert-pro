@@ -25,7 +25,6 @@ export default function ExamDetailPanel({
   const [searchParams] = useSearchParams();
   const [exam, setExam] = useState<any>(null);
   const [allCerts, setAllCerts] = useState<any[]>([]);
-  const [topics, setTopics] = useState<any[]>([]);
   const [effectiveWeights, setEffectiveWeights] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -36,7 +35,7 @@ export default function ExamDetailPanel({
 
   // Initialize navigation hook with error handling
   const navigation = useAdminNavigation('exams', examId, {
-    onNavigationError: (error, message) => {
+    onNavigationError: (_error, message) => {
       showToast('error', message);
     },
   });
@@ -62,7 +61,6 @@ export default function ExamDetailPanel({
     if (cached) {
       setExam(cached.exam);
       setAllCerts(cached.allCerts || []);
-      setTopics(cached.topics || []);
       setEffectiveWeights(cached.effectiveWeights || []);
       // Still fetch fresh data in background
       fetchExamDetails();
@@ -101,8 +99,6 @@ export default function ExamDetailPanel({
       setExam(foundExam);
 
       if (certId) {
-        const t = await fetchApi(`/certifications/${certId}/topics`);
-        setTopics(t);
         // Load effective weights (derived from topics or explicit override)
         const w = await fetchApi(`/exams/${examId}/effective-topic-weights`).catch(() => null);
         if (w) setEffectiveWeights(w.topics ?? []);
@@ -112,7 +108,6 @@ export default function ExamDetailPanel({
       navigation.cacheCurrentData({
         exam: foundExam,
         allCerts: certs,
-        topics: certId ? await fetchApi(`/certifications/${certId}/topics`) : [],
         effectiveWeights,
       });
 
@@ -187,8 +182,6 @@ export default function ExamDetailPanel({
     }
   };
 
-  // Topics for the selected cert in edit form
-  const _editTopics = topics.filter(() => true); // already loaded for current cert
 
   if (loading) {
     return (

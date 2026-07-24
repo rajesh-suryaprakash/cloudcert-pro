@@ -35,7 +35,7 @@ export default function UnitDetailPanel({ unitId, onDelete, onBack }: UnitDetail
 
   // Initialize navigation hook with error handling
   const navigation = useAdminNavigation('units', unitId, {
-    onNavigationError: (error, message) => {
+    onNavigationError: (_error, message) => {
       showToast('error', message);
     },
   });

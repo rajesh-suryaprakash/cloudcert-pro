@@ -43,7 +43,7 @@ export default function TopicDetailPanel({ topicId, onDelete, onBack }: TopicDet
 
   // Initialize navigation hook with error handling
   const navigation = useAdminNavigation('topics', topicId, {
-    onNavigationError: (error, message) => {
+    onNavigationError: (_error, message) => {
       showToast('error', message);
     },
   });

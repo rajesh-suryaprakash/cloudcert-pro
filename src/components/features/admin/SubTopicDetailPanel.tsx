@@ -38,7 +38,7 @@ export default function SubTopicDetailPanel({
 
   // Initialize navigation hook with error handling
   const navigation = useAdminNavigation('subtopics', subtopicId, {
-    onNavigationError: (error, message) => {
+    onNavigationError: (_error, message) => {
       showToast('error', message);
     },
   });
