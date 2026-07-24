@@ -2,6 +2,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, fireEvent } from '@testing-library/react';
 import { useKeyboardNavigation } from './useKeyboardNavigation';
 
+vi.mock('../contexts/KeyboardShortcutContext', () => ({
+  useKeyboardShortcuts: () => ({
+    shortcutsEnabled: true,
+    setShortcutsEnabled: vi.fn(),
+  }),
+}));
+
 /**
  * Accessibility Tests for useKeyboardNavigation Hook
  *

@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useExamSession } from './useExamSession';
 import * as examsApi from '../api/exams';
-import * as api from '../api';
-import type { Question, ExamConfiguration, CloudProvider } from '../types';
+import * as api from '../api/client';
+import type { CloudProvider, ExamConfiguration, Question, SelectionStrategy } from '../types';
 
 /**
  * Integration tests for question selection with history tracking
@@ -42,23 +42,29 @@ describe('Feature: question-history-tracking - Question Selection Integration Te
     duration: 120,
     totalQuestions: 10,
     passingScore: 70,
-    questionSelectionStrategy: 'random',
+    questionSelectionStrategy: 'random' as SelectionStrategy,
     topicWeights: {},
     isActive: true,
+    description: '',
+    createdAt: '',
+    updatedAt: '',
   };
 
   const createMockQuestions = (count: number): Question[] => {
     return Array.from({ length: count }, (_, i) => ({
       id: `question-${i + 1}`,
       topicId: 'topic-123',
-      subTopicId: null,
+      subTopicId: undefined,
       questionText: `Question ${i + 1}`,
       options: ['A', 'B', 'C', 'D'],
       correctAnswers: ['A'],
       explanation: 'Explanation',
-      difficulty: 'easy',
+      difficulty: 'Easy' as const,
       tags: [],
+      points: 1,
       isActive: true,
+      createdAt: '',
+      updatedAt: '',
     }));
   };
 

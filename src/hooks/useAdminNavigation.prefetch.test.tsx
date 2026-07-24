@@ -344,7 +344,7 @@ describe('useAdminNavigation - Prefetching (Task 21.2)', () => {
         .mockResolvedValueOnce({ id: 'cert-2', name: 'Next' })
         .mockResolvedValueOnce({ id: 'cert-4', name: 'Next Next' });
 
-      const { result, rerender } = renderHook(
+      const { result: _result, rerender } = renderHook(
         ({ id }) =>
           useAdminNavigation('certifications', id, {
             prefetch: {

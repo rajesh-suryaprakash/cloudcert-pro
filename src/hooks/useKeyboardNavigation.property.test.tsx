@@ -13,6 +13,13 @@ import { renderHook } from '@testing-library/react';
 import * as fc from 'fast-check';
 import { useKeyboardNavigation } from './useKeyboardNavigation';
 
+vi.mock('../contexts/KeyboardShortcutContext', () => ({
+  useKeyboardShortcuts: () => ({
+    shortcutsEnabled: true,
+    setShortcutsEnabled: vi.fn(),
+  }),
+}));
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -104,8 +111,8 @@ function arbitraryEnabled(): fc.Arbitrary<boolean> {
 // ---------------------------------------------------------------------------
 
 describe('Property 16: Left Arrow Key Triggers Previous', () => {
-  let onPrevious: ReturnType<typeof vi.fn>;
-  let onNext: ReturnType<typeof vi.fn>;
+  let onPrevious: any;
+  let onNext: any;
 
   beforeEach(() => {
     onPrevious = vi.fn();
@@ -177,8 +184,8 @@ describe('Property 16: Left Arrow Key Triggers Previous', () => {
 // ---------------------------------------------------------------------------
 
 describe('Property 17: Right Arrow Key Triggers Next', () => {
-  let onPrevious: ReturnType<typeof vi.fn>;
-  let onNext: ReturnType<typeof vi.fn>;
+  let onPrevious: any;
+  let onNext: any;
 
   beforeEach(() => {
     onPrevious = vi.fn();
@@ -249,9 +256,9 @@ describe('Property 17: Right Arrow Key Triggers Next', () => {
 // Validates: Requirements 6.3
 // ---------------------------------------------------------------------------
 
-describe('Property 18: Keyboard Shortcuts Disabled During Input', () => {
-  let onPrevious: ReturnType<typeof vi.fn>;
-  let onNext: ReturnType<typeof vi.fn>;
+describe('Property 18: Arrow Navigation Respects Modal enabled State', () => {
+  let onPrevious: any;
+  let onNext: any;
 
   beforeEach(() => {
     onPrevious = vi.fn();
@@ -359,9 +366,9 @@ describe('Property 18: Keyboard Shortcuts Disabled During Input', () => {
 // Validates: Requirements 6.4
 // ---------------------------------------------------------------------------
 
-describe('Property 19: Keyboard Shortcuts Disabled During Modal', () => {
-  let onPrevious: ReturnType<typeof vi.fn>;
-  let onNext: ReturnType<typeof vi.fn>;
+describe('Property 19: Arrow Navigation Respects Input Focus State', () => {
+  let onPrevious: any;
+  let onNext: any;
 
   beforeEach(() => {
     onPrevious = vi.fn();
