@@ -87,7 +87,9 @@ export default function QuestionReviewCard({ question, questionNumber }: Questio
         try {
           const parsed = JSON.parse(question.explanation);
           const wrongOptions: Record<string, string> =
-            parsed?.['why other options are wrong'] ?? parsed?.['Why other options are wrong'] ?? {};
+            parsed?.['why other options are wrong'] ??
+            parsed?.['Why other options are wrong'] ??
+            {};
           const alreadyCovered = Object.keys(wrongOptions).some(
             (key) => key.trim().toLowerCase() === option.trim().toLowerCase(),
           );

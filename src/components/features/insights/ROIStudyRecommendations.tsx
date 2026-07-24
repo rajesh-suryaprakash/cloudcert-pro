@@ -152,7 +152,6 @@ export default function ROIStudyRecommendations({
       {/* Recommendations List */}
       <div className="space-y-4">
         {topRecommendations.map((recommendation, index) => {
-          const _gap = targetProficiency - recommendation.currentProficiency;
           const isHighPriority = index === 0;
 
           return (
