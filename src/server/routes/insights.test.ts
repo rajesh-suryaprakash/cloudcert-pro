@@ -4,7 +4,7 @@ import request from 'supertest';
 import jwt from 'jsonwebtoken';
 import { db } from '../db/connection';
 import insightsRouter from './insights';
-import { authenticate, requireAdmin } from '../middleware/auth';
+import { authenticate } from '../middleware/auth';
 import { errorHandler } from '../middleware/errorHandler';
 
 /**
@@ -373,7 +373,6 @@ describe('Insights API Integration Tests', () => {
 
     it('should prevent users from accessing other users sessions', async () => {
       // Create a session owned by a different user
-      const otherUserId = 'other-user-999';
       const sessionId = 'session-owned-by-other';
 
       // Mock database to return session owned by different user

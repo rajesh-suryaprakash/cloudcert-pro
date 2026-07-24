@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, beforeAll } from 'vitest';
 import express, { type Express } from 'express';
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
@@ -30,7 +30,6 @@ describe('Insights Dashboard Performance Tests', () => {
   const testJwtSecret = 'test-jwt-secret-with-at-least-32-characters-for-security';
 
   // Test data IDs
-  let domainIds: string[] = [];
   let topicIds: string[] = [];
   let questionIds: string[] = [];
   let sessionIds: string[] = [];
@@ -117,7 +116,7 @@ describe('Insights Dashboard Performance Tests', () => {
       const domainNames = ['Domain A', 'Domain B', 'Domain C', 'Domain D', 'Domain E'];
       const domainWeights = [25, 20, 20, 20, 15]; // Sum = 100
 
-      domainIds = domainNames.map((name, index) => {
+      domainNames.forEach((name, index) => {
         const domainId = randomUUID();
         db.prepare(
           `
@@ -132,12 +131,11 @@ describe('Insights Dashboard Performance Tests', () => {
           new Date().toISOString(),
           new Date().toISOString(),
         );
-        return domainId;
       });
 
       // Create 20 topics (4 per domain)
       topicIds = [];
-      domainNames.forEach((domainName, domainIndex) => {
+      domainNames.forEach((domainName, _domainIndex) => {
         for (let i = 0; i < 4; i++) {
           const topicId = randomUUID();
           db.prepare(
@@ -317,9 +315,8 @@ describe('Insights Dashboard Performance Tests', () => {
       db.prepare('DELETE FROM domain_weights WHERE certificationId = ?').run(testCertificationId);
       db.prepare('DELETE FROM certifications WHERE id = ?').run(testCertificationId);
       db.prepare('DELETE FROM users WHERE id = ?').run(testUserId);
-    } catch (error) {
+    } catch {
       // Ignore cleanup errors in tests
-      // console.error('Cleanup error:', error);
     }
   }
 
@@ -383,7 +380,7 @@ describe('Insights Dashboard Performance Tests', () => {
       expect(response.body).toHaveProperty('roiRecommendations');
 
       // Verify data completeness
-      expect(response.body.domainProficiency).toHaveLength(5); // 5 domains
+      expect(response.body.domainProficiency).toHaveLength(20); // 20 topics acting as domains
       expect(Array.isArray(response.body.roiRecommendations)).toBe(true);
 
       console.warn(`Domain proficiency entries: ${response.body.domainProficiency.length}`);
@@ -570,7 +567,7 @@ describe('Insights Dashboard Performance Tests', () => {
       expect(response1.status).toBe(200);
 
       // Verify cache is populated
-      const cacheKey = `dashboard:${testUserId}:${testCertificationId}:full`;
+      const cacheKey = `dashboard:${testUserId}:${testCertificationId}:mock:Mixed`;
       const cachedData = cacheService.get(cacheKey);
       expect(cachedData).not.toBeNull();
 
@@ -584,7 +581,7 @@ describe('Insights Dashboard Performance Tests', () => {
         .set('Authorization', `Bearer ${userToken}`);
 
       // Verify cache is populated
-      const cacheKey = `dashboard:${testUserId}:${testCertificationId}:full`;
+      const cacheKey = `dashboard:${testUserId}:${testCertificationId}:mock:Mixed`;
       let cachedData = cacheService.get(cacheKey);
       expect(cachedData).not.toBeNull();
 

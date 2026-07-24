@@ -15,6 +15,7 @@ import { SrsService } from '../services/srs';
 import { nowIso, nowMs } from '../utils/time';
 import { NotFoundError, ValidationError } from '../errors';
 import { validate, submitAnswerSchema, createSessionSchema } from '../middleware/validate';
+import { requireUser } from '../middleware/auth';
 import { computeAutoSubmitAt } from './exams';
 
 /**
@@ -62,7 +63,7 @@ describe('Exam Session History Integration Tests', () => {
       };
       req.user = decoded;
       next();
-    } catch (err) {
+    } catch {
       next(new Error('Invalid token'));
     }
   };
@@ -359,7 +360,7 @@ describe('Exam Session History Integration Tests', () => {
 
           sessionRepo.create({
             id,
-            userId: req.user!.id,
+            userId: requireUser(req).id,
             examConfigurationId: examConfigurationId ?? null,
             certificationId: certificationId ?? null,
             sessionName: sessionName ?? null,
@@ -383,7 +384,7 @@ describe('Exam Session History Integration Tests', () => {
             // Record history if we have a certification ID
             if (resolvedCertificationId) {
               questionHistoryService.recordQuestionsSeen(
-                req.user!.id,
+                requireUser(req).id,
                 resolvedCertificationId,
                 questions,
               );
@@ -407,7 +408,7 @@ describe('Exam Session History Integration Tests', () => {
       validate(submitAnswerSchema),
       (req: Request, res: Response, next: NextFunction) => {
         try {
-          const session = sessionRepo.findById(req.params.id, req.user!.id);
+          const session = sessionRepo.findById(req.params.id, requireUser(req).id);
           if (!session) return next(new NotFoundError('Session not found'));
 
           const {
@@ -438,7 +439,7 @@ describe('Exam Session History Integration Tests', () => {
 
     // POST /exam-sessions/:id/submit - Submit exam
     router.post('/exam-sessions/:id/submit', authenticate, (req: Request, res: Response) => {
-      const session = sessionRepo.findById(req.params.id, req.user!.id);
+      const session = sessionRepo.findById(req.params.id, requireUser(req).id);
       if (!session) return res.status(404).json({ error: 'Session not found' });
       if (session.status !== 'in_progress')
         return res.status(400).json({ error: 'Session already submitted' });
@@ -460,7 +461,7 @@ describe('Exam Session History Integration Tests', () => {
         if (answer) answerRepo.markCorrect(answer.id, detail.isCorrect);
         if (detail.userAnswer !== null)
           srsService.updateQuestionReview(
-            req.user!.id,
+            requireUser(req).id,
             detail.questionId,
             detail.isCorrect ? 5 : 1,
           );
@@ -468,14 +469,14 @@ describe('Exam Session History Integration Tests', () => {
 
       const timeTaken = Math.floor((nowMs_ - new Date(session.startTime).getTime()) / 1000);
       sessionRepo.complete(req.params.id, { ...result, endTime, timeTaken });
-      userRepo.updateXp(req.user!.id, result.xpAwarded);
+      userRepo.updateXp(requireUser(req).id, result.xpAwarded);
 
       res.json(result);
     });
 
     // POST /exam-sessions/:id/abandon - Abandon exam
     router.post('/exam-sessions/:id/abandon', authenticate, (req: Request, res: Response) => {
-      const session = sessionRepo.findById(req.params.id, req.user!.id);
+      const session = sessionRepo.findById(req.params.id, requireUser(req).id);
       if (!session) return res.status(404).json({ error: 'Session not found' });
       if (session.status !== 'in_progress') return res.json({ ok: true });
       sessionRepo.abandon(req.params.id);

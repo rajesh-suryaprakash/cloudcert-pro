@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+﻿import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
 import Database from 'better-sqlite3';
 import crypto from 'crypto';
@@ -100,10 +100,12 @@ describe('topic docUrl round-trip', () => {
           title: 'Test Topic',
         });
 
-        const before = repo.findTopicById(topicId)!;
+        const before = repo.findTopicById(topicId);
+        if (!before) return false;
         repo.updateTopic(topicId, { docUrl }, before);
 
-        const after = repo.findTopicById(topicId)!;
+        const after = repo.findTopicById(topicId);
+        if (!after) return false;
         expect(after.docUrl).toBe(docUrl);
 
         db.close();
@@ -165,6 +167,7 @@ function createQuestionHistoryTestDb() {
       id TEXT PRIMARY KEY,
       topicId TEXT NOT NULL,
       subTopicId TEXT,
+      unitId TEXT,
       questionText TEXT NOT NULL,
       questionType TEXT DEFAULT 'single',
       options TEXT NOT NULL,
