@@ -93,7 +93,7 @@ const gcpTopics = [
   },
 ];
 
-const _allTopics = [...awsTopics, ...gcpTopics];
+
 
 // Subtopics under topic-aws-iam
 const iamSubtopics = [

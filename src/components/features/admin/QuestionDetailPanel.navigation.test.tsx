@@ -1,3 +1,4 @@
+import React from 'react';
 /**
  * Integration Tests for QuestionDetailPanel Navigation
  *
