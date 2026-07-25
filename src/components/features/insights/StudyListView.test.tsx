@@ -30,7 +30,7 @@ Object.defineProperty(window, 'localStorage', {
 
 // Mock window.location
 delete (window as Window & typeof globalThis).location;
-window.location = { href: '' } as Location;
+window.location = { href: '' } as unknown as Location;
 
 describe('StudyListView', () => {
   const mockSessionId = 'session-123';

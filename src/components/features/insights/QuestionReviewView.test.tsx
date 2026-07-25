@@ -43,7 +43,7 @@ describe('QuestionReviewView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockFetch = vi.fn();
-    global.fetch = mockFetch;
+    global.fetch = mockFetch as unknown as typeof global.fetch;
   });
 
   afterEach(() => {
@@ -320,7 +320,9 @@ describe('QuestionReviewView', () => {
       await waitFor(() => {
         const buttons = screen.getAllByRole('button');
         // Find the previous button (should be disabled)
-        const prevButton = buttons.find((btn) => btn.querySelector('svg') && btn.disabled);
+        const prevButton = buttons.find(
+          (btn) => btn.querySelector('svg') && (btn as HTMLButtonElement).disabled,
+        );
         expect(prevButton).toBeDefined();
       });
     });
@@ -346,7 +348,7 @@ describe('QuestionReviewView', () => {
       await waitFor(() => {
         const buttons = screen.getAllByRole('button');
         // Find enabled buttons (should include next button)
-        const enabledButtons = buttons.filter((btn) => !btn.disabled);
+        const enabledButtons = buttons.filter((btn) => !(btn as HTMLButtonElement).disabled);
         expect(enabledButtons.length).toBeGreaterThan(1);
       });
     });

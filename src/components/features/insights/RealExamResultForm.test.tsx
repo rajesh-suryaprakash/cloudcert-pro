@@ -41,7 +41,9 @@ describe('RealExamResultForm', () => {
 
       // Submit the form directly — the submit button is disabled when no selection is made,
       // but the form's onSubmit handler still validates and sets the error state.
-      const form = document.querySelector('form')!;
+      const form = document.querySelector('form');
+      expect(form).not.toBeNull();
+      if (!form) return;
       fireEvent.submit(form);
 
       await waitFor(() => {
@@ -109,7 +111,9 @@ describe('RealExamResultForm', () => {
       render(<RealExamResultForm {...defaultProps} />);
 
       // Submit the form directly to trigger the validation error
-      const form = document.querySelector('form')!;
+      const form = document.querySelector('form');
+      expect(form).not.toBeNull();
+      if (!form) return;
       fireEvent.submit(form);
 
       await waitFor(() => {
@@ -470,7 +474,7 @@ describe('RealExamResultForm', () => {
           fc.uuid(),
           fc.boolean(),
           fc.option(
-            fc.date().map((d) => d.toISOString().split('T')[0]),
+            fc.integer({ min: 1577836800000, max: 1924905600000 }).map((ts) => new Date(ts).toISOString().split('T')[0]),
             { nil: undefined },
           ),
           async (certificationId, passed, examDate) => {
