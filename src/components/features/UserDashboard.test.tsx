@@ -5,38 +5,39 @@ import { MemoryRouter } from 'react-router-dom';
 import UserDashboard from './UserDashboard';
 
 process.on('uncaughtException', (err) => {
-  console.log('CRITICAL ERROR: Uncaught Exception:', err.message, err.stack);
+  console.warn('CRITICAL ERROR: Uncaught Exception:', err.message, err.stack);
 });
-process.on('unhandledRejection', (reason: any) => {
-  console.log('CRITICAL ERROR: Unhandled Rejection:', reason?.message || reason, reason?.stack);
+process.on('unhandledRejection', (reason: unknown) => {
+  const err = reason as Error | null | undefined;
+  console.warn('CRITICAL ERROR: Unhandled Rejection:', err?.message || reason, err?.stack);
 });
 
 vi.mock('motion/react', () => {
   const React = require('react');
   const mockMotion = (tag: string) =>
-    React.forwardRef(({ children, ...props }: any, ref: any) => {
+    React.forwardRef(({ children, ...props }: Record<string, unknown>, ref: React.Ref<unknown>) => {
       // Strip motion-only props that would cause React DOM warnings
       const {
-        initial,
-        animate,
-        exit,
-        transition,
-        whileHover,
-        whileTap,
-        whileFocus,
-        variants,
-        layout,
-        layoutId,
-        drag,
-        dragConstraints,
-        onDragEnd,
+        initial: _initial,
+        animate: _animate,
+        exit: _exit,
+        transition: _transition,
+        whileHover: _whileHover,
+        whileTap: _whileTap,
+        whileFocus: _whileFocus,
+        variants: _variants,
+        layout: _layout,
+        layoutId: _layoutId,
+        drag: _drag,
+        dragConstraints: _dragConstraints,
+        onDragEnd: _onDragEnd,
         ...domProps
       } = props;
       return React.createElement(tag, { ...domProps, ref }, children);
     });
 
-  const cache: Record<string, any> = {};
-  const motion = new Proxy({} as any, {
+  const cache: Record<string, React.ComponentType<Record<string, unknown>>> = {};
+  const motion = new Proxy({} as unknown as Record<string, React.ComponentType<Record<string, unknown>>>, {
     get: (_, prop: string) => {
       if (!cache[prop]) {
         cache[prop] = mockMotion(prop);
@@ -47,7 +48,7 @@ vi.mock('motion/react', () => {
 
   return {
     motion,
-    AnimatePresence: ({ children }: any) => children,
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
   };
 });
 
@@ -68,12 +69,12 @@ vi.mock('../../hooks/useAuth', () => ({
   useAuth: () => ({ user: mockUser }),
 }));
 
-vi.mock('../../api', () => ({
+vi.mock('../../api/client', () => ({
   fetchApi: vi.fn(),
 }));
 
 // Import fetchApi after mocking so we can configure it per-test
-import { fetchApi } from '../../api';
+import { fetchApi } from '../../api/client';
 
 // A minimal exam object that satisfies the modal rendering requirements
 const mockExam = {
