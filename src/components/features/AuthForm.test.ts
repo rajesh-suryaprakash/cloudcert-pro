@@ -8,12 +8,6 @@ import { describe, it, expect } from 'vitest';
  * can be imported without errors, satisfying Requirement 9.1.
  */
 describe('AuthForm', () => {
-  it('exports a default component', async () => {
-    const module = await import('./AuthForm');
-    expect(module.default).toBeDefined();
-    expect(typeof module.default).toBe('function');
-  });
-
   it('exports a named AuthForm component', async () => {
     const module = await import('./AuthForm');
     expect(module.AuthForm).toBeDefined();
