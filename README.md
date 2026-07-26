@@ -441,12 +441,12 @@ npx vitest
 
 ### Coverage & Test Reports
 
-* **Coverage Reports**: Available locally in the `coverage/` directory after running `npm run test:coverage`. The pipeline will fail in CI if any coverage metric falls below the gated thresholds:
-  * **Lines**: ≥ 80%
-  * **Functions**: ≥ 80%
-  * **Branches**: ≥ 80%
-  * **Statements**: ≥ 80%
-* **Test Suite Reports**: Generated inside the `test-results/` directory after running `npm run test:report`. This includes `junit.xml` (for CI integration), `results.json` (for programmatic parsing), and `index.html` (interactive local dashboard).
+- **Coverage Reports**: Available locally in the `coverage/` directory after running `npm run test:coverage`. The pipeline will fail in CI if any coverage metric falls below the gated thresholds:
+  - **Lines**: ≥ 80%
+  - **Functions**: ≥ 80%
+  - **Branches**: ≥ 80%
+  - **Statements**: ≥ 80%
+- **Test Suite Reports**: Generated inside the `test-results/` directory after running `npm run test:report`. This includes `junit.xml` (for CI integration), `results.json` (for programmatic parsing), and `index.html` (interactive local dashboard).
 
 ### Code Quality & Dead Code Gates
 
