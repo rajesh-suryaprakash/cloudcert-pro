@@ -586,7 +586,7 @@ function loadQuestionSets(certDir: string, certId: string, certSlug: string): Qu
       if (seenTexts.has(q.questionText)) {
         logger.warn(
           { certId, questionId: q.id, setNum, difficulty },
-          'Duplicate question text across sets — skipping',
+          'Duplicate question text across sets - skipping',
         );
         continue;
       }
@@ -631,7 +631,7 @@ function loadQuestionSets(certDir: string, certId: string, certSlug: string): Qu
             if (seenTexts.has(q.questionText)) {
               logger.warn(
                 { certId, questionId: q.id, setNum },
-                'Duplicate question text across sets — skipping',
+                'Duplicate question text across sets - skipping',
               );
               continue;
             }
