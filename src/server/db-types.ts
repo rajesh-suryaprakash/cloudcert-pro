@@ -17,6 +17,7 @@ export interface ExamSessionRow {
   examConfigurationId: string | null;
   topicId: string | null;
   questions: string;
+  /** in_progress | completed | abandoned | paused */
   status: string;
   score: number | null;
   totalQuestions: number;
@@ -28,11 +29,26 @@ export interface ExamSessionRow {
   endTime: string | null;
   autoSubmitAt: string;
   isPracticeMode: number;
-  isTopicQuiz: number;
+  isTopicQuiz?: number;
   isCustomQuiz: number;
-  isSRSReview: number;
+  isSRSReview?: number;
   /** Wizard-supplied passing score override. NULL means use the exam config default. */
   passingScoreOverride: number | null;
+  /**
+   * ISO timestamp of when the session was last paused.
+   * NULL when the session is not currently paused.
+   */
+  pausedAt: string | null;
+  /**
+   * Total milliseconds the session has spent in the paused state across all
+   * pause/resume cycles. Used to compute the effective remaining time on resume.
+   */
+  accumulatedPausedMs: number;
+  /**
+   * Total number of times this session has been paused.
+   * Compared against MAX_PAUSE_COUNT (3) in ExamSessionRepository.pause().
+   */
+  pauseCount: number;
 }
 
 export interface ExamAnswerRow {
@@ -63,27 +79,6 @@ export interface QuestionRow {
   isActive: number;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface TopicRow {
-  id: string;
-  certificationId: string;
-  title: string;
-  description: string | null;
-  orderIndex: number;
-  isActive: number;
-  // New fields for unified domain weight management
-  weightPercentage: number | null;
-  docUrl: string | null;
-}
-
-export interface SubTopicRow {
-  id: string;
-  topicId: string;
-  title: string;
-  description: string | null;
-  orderIndex: number;
-  isActive: number;
 }
 
 export interface UnitRow {

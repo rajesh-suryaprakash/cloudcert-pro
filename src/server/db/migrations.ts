@@ -655,6 +655,156 @@ export const migrations: Migration[] = [
       );
     },
   },
+  {
+    version: 12,
+    up: (db) => {
+      // Pause / Resume support for time-boxed exam sessions.
+      // Adds two columns to exam_sessions:
+      //   pausedAt             – ISO timestamp of when the session was last paused (NULL = active)
+      //   accumulatedPausedMs  – running total of pause durations in milliseconds
+      //
+      // Also widens the status CHECK constraint to allow 'paused' as a valid value.
+      // SQLite does not support ALTER COLUMN to change a CHECK constraint, so we
+      // recreate the table with a safe copy-and-swap.
+
+      const tableInfo = db.prepare('PRAGMA table_info(exam_sessions)').all() as Array<{
+        name: string;
+      }>;
+      const pausedAtExists = tableInfo.some((col) => col.name === 'pausedAt');
+      const accumulatedExists = tableInfo.some((col) => col.name === 'accumulatedPausedMs');
+
+      // Add columns first (idempotent guards prevent errors on re-runs)
+      if (!pausedAtExists) {
+        db.exec(`ALTER TABLE exam_sessions ADD COLUMN pausedAt DATETIME;`);
+      }
+      if (!accumulatedExists) {
+        db.exec(
+          `ALTER TABLE exam_sessions ADD COLUMN accumulatedPausedMs INTEGER NOT NULL DEFAULT 0;`,
+        );
+      }
+
+      // Widen the status CHECK constraint to include 'paused'.
+      // Only do this when the constraint still excludes 'paused'.
+      const sqlRow = db
+        .prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='exam_sessions'`)
+        .get() as { sql: string } | undefined;
+
+      if (sqlRow && !sqlRow.sql.includes("'paused'")) {
+        db.exec(`
+          -- Step 1: Replacement table with widened CHECK constraint.
+          CREATE TABLE exam_sessions_v12 (
+            id TEXT PRIMARY KEY,
+            userId TEXT NOT NULL,
+            examConfigurationId TEXT,
+            certificationId TEXT,
+            topicId TEXT,
+            sessionName TEXT,
+            questions TEXT NOT NULL,
+            status TEXT DEFAULT 'in_progress'
+              CHECK(status IN ('in_progress', 'completed', 'abandoned', 'paused')),
+            score REAL,
+            totalQuestions INTEGER NOT NULL,
+            correctAnswers INTEGER DEFAULT 0,
+            incorrectAnswers INTEGER DEFAULT 0,
+            unansweredQuestions INTEGER DEFAULT 0,
+            timeTaken INTEGER,
+            startTime DATETIME DEFAULT CURRENT_TIMESTAMP,
+            endTime DATETIME,
+            autoSubmitAt DATETIME NOT NULL,
+            isPracticeMode INTEGER DEFAULT 0,
+            isTopicQuiz INTEGER DEFAULT 0,
+            isCustomQuiz INTEGER DEFAULT 0,
+            isSRSReview INTEGER DEFAULT 0,
+            ipAddress TEXT,
+            userAgent TEXT,
+            passingScoreOverride INTEGER,
+            pausedAt DATETIME,
+            accumulatedPausedMs INTEGER NOT NULL DEFAULT 0,
+            createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY(examConfigurationId) REFERENCES exam_configurations(id) ON DELETE RESTRICT,
+            FOREIGN KEY(certificationId) REFERENCES certifications(id) ON DELETE SET NULL,
+            FOREIGN KEY(topicId) REFERENCES topics(id) ON DELETE SET NULL
+          );
+
+          -- Step 2: Copy all existing data.
+          INSERT INTO exam_sessions_v12
+          SELECT
+            id, userId, examConfigurationId, certificationId, topicId, sessionName,
+            questions, status, score, totalQuestions, correctAnswers, incorrectAnswers,
+            unansweredQuestions, timeTaken, startTime, endTime, autoSubmitAt,
+            isPracticeMode, isTopicQuiz, isCustomQuiz, isSRSReview, ipAddress, userAgent,
+            passingScoreOverride,
+            pausedAt,
+            accumulatedPausedMs,
+            createdAt, updatedAt
+          FROM exam_sessions;
+
+          -- Step 3: Swap tables.
+          DROP TABLE exam_sessions;
+          ALTER TABLE exam_sessions_v12 RENAME TO exam_sessions;
+
+          -- Step 4: Recreate indexes.
+          CREATE INDEX IF NOT EXISTS idx_exam_sessions_userId
+            ON exam_sessions(userId);
+          CREATE INDEX IF NOT EXISTS idx_exam_sessions_examConfigurationId
+            ON exam_sessions(examConfigurationId);
+          CREATE INDEX IF NOT EXISTS idx_exam_sessions_status
+            ON exam_sessions(status);
+          CREATE INDEX IF NOT EXISTS idx_exam_sessions_user_history
+            ON exam_sessions(userId, createdAt DESC);
+          CREATE INDEX IF NOT EXISTS idx_exam_sessions_auto_submit
+            ON exam_sessions(status, autoSubmitAt);
+          CREATE INDEX IF NOT EXISTS idx_exam_sessions_analytics
+            ON exam_sessions(userId, certificationId, status, createdAt DESC);
+        `);
+      }
+    },
+  },
+  {
+    version: 13,
+    up: (db) => {
+      // Add pauseCount column to track how many times a session has been paused.
+      // Used to enforce the MAX_PAUSE_COUNT=3 integrity limit in ExamSessionRepository.pause().
+      // Existing sessions default to 0 (no pauses recorded before this migration).
+      db.exec(`
+        ALTER TABLE exam_sessions ADD COLUMN pauseCount INTEGER NOT NULL DEFAULT 0;
+      `);
+    },
+  },
+  {
+    version: 14,
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS refresh_tokens (
+          id TEXT PRIMARY KEY,
+          userId TEXT NOT NULL,
+          token TEXT NOT NULL UNIQUE,
+          expiresAt INTEGER NOT NULL,
+          createdAt INTEGER NOT NULL,
+          FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token);
+        CREATE INDEX IF NOT EXISTS idx_refresh_tokens_userId ON refresh_tokens(userId);
+      `);
+    },
+  },
+  {
+    version: 15,
+    up: (db) => {
+      // Compound index covering the most common query patterns on exam_sessions:
+      //   1. GET /exam-sessions → WHERE userId = ? (ORDER BY createdAt)
+      //   2. Analytics queries → WHERE userId = ? AND certificationId = ? AND status = ?
+      // These indexes eliminate full table scans for users with many sessions.
+      db.exec(`
+        CREATE INDEX IF NOT EXISTS idx_exam_sessions_userId_status
+          ON exam_sessions(userId, status);
+        CREATE INDEX IF NOT EXISTS idx_exam_sessions_userId_certId_status_created
+          ON exam_sessions(userId, certificationId, status, createdAt);
+      `);
+    },
+  },
 ];
 
 export const runMigrations = (db: Database.Database = defaultDb) => {
