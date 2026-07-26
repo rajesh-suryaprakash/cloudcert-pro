@@ -37,6 +37,8 @@
  * Auto-discovery: cert folders are found by scanning the gcp/ directory.
  */
 
+/* eslint-disable security/detect-non-literal-fs-filename, security/detect-non-literal-regexp */
+
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';

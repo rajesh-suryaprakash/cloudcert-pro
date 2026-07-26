@@ -8,7 +8,14 @@ import {
   TrendingUp,
   Download,
 } from 'lucide-react';
-import type { QuizState, ConfidenceMatrix, HistoricalAttempt, ExamConfiguration, Certification, Topic } from '../../../types';
+import type {
+  QuizState,
+  ConfidenceMatrix,
+  HistoricalAttempt,
+  ExamConfiguration,
+  Certification,
+  Topic,
+} from '../../../types';
 import type { DetailedResult } from '../../../server/services/ExamGradingService';
 import { filterWrongAnswersByTopic } from '../../../hooks/customQuizUtils';
 import { QuestionReviewCard } from './QuestionReviewCard';
@@ -82,8 +89,9 @@ export function QuizResultsView({
           </div>
           {passed !== null && (
             <div
-              className={`inline-block px-6 py-2 rounded-full text-lg font-bold ${passed ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'
-                }`}
+              className={`inline-block px-6 py-2 rounded-full text-lg font-bold ${
+                passed ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'
+              }`}
             >
               {passed ? 'PASSED' : 'FAILED'}
             </div>
@@ -175,10 +183,11 @@ export function QuizResultsView({
                               <XCircle className="w-5 h-5 text-rose-400 shrink-0" />
                             )}
                             <span
-                              className={`text-sm font-bold ${completions.has(`${topic.topicId}:review_wrong_answers`)
+                              className={`text-sm font-bold ${
+                                completions.has(`${topic.topicId}:review_wrong_answers`)
                                   ? 'line-through text-slate-400'
                                   : 'text-slate-800'
-                                }`}
+                              }`}
                             >
                               Review wrong answers ({wrongAnswers.length})
                             </span>
@@ -240,10 +249,11 @@ export function QuizResultsView({
                                 <BookOpen className="w-5 h-5 text-blue-400 shrink-0" />
                               )}
                               <span
-                                className={`text-sm font-bold ${completions.has(`${topic.topicId}:read_docs`)
+                                className={`text-sm font-bold ${
+                                  completions.has(`${topic.topicId}:read_docs`)
                                     ? 'line-through text-slate-400'
                                     : 'text-slate-800'
-                                  }`}
+                                }`}
                               >
                                 Read the official documentation
                               </span>

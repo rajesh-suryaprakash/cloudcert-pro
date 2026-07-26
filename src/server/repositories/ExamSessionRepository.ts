@@ -241,10 +241,7 @@ export class ExamSessionRepository {
          WHERE id = ? AND status = 'paused'`,
       )
       .get(id) as
-      | Pick<
-          ExamSessionRow,
-          'pausedAt' | 'autoSubmitAt' | 'accumulatedPausedMs'
-        >
+      | Pick<ExamSessionRow, 'pausedAt' | 'autoSubmitAt' | 'accumulatedPausedMs'>
       | undefined;
 
     if (!row || !row.pausedAt) return null;

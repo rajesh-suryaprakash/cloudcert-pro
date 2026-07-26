@@ -77,7 +77,7 @@ export class QuestionRepository {
   findByTopicId(topicId: string, limit?: number, offset?: number): QuestionRow[] {
     let query = 'SELECT * FROM questions WHERE topicId = ?';
     const args: (string | number)[] = [topicId];
-    
+
     if (limit !== undefined && limit !== null) {
       query += ' LIMIT ?';
       args.push(limit);

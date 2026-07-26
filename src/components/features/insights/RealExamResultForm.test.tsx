@@ -474,7 +474,9 @@ describe('RealExamResultForm', () => {
           fc.uuid(),
           fc.boolean(),
           fc.option(
-            fc.integer({ min: 1577836800000, max: 1924905600000 }).map((ts) => new Date(ts).toISOString().split('T')[0]),
+            fc
+              .integer({ min: 1577836800000, max: 1924905600000 })
+              .map((ts) => new Date(ts).toISOString().split('T')[0]),
             { nil: undefined },
           ),
           async (certificationId, passed, examDate) => {

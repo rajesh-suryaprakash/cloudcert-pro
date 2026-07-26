@@ -397,7 +397,6 @@ export default function QuestionDetailPanel({
     fetchApi(`/subtopics/${editForm.subTopicId}/units`)
       .then((data: any) => setAllUnits(Array.isArray(data) ? data : []))
       .catch(() => setAllUnits([]));
-     
   }, [editForm.subTopicId, showEditForm]);
 
   if (loading) {

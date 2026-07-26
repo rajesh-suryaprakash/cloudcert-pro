@@ -136,6 +136,7 @@ export class CacheService {
     const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
     // Replace * with .*
     const regexPattern = escaped.replace(/\*/g, '.*');
+    // eslint-disable-next-line security/detect-non-literal-regexp
     return new RegExp(`^${regexPattern}$`);
   }
 }

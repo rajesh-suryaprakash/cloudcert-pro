@@ -48,11 +48,11 @@ describe('seedAdmin', () => {
       .get('test-admin@example.com') as { email: string; name: string; role: string } | undefined;
 
     expect(row).toBeDefined();
-     
+
     expect(row!.email).toBe('test-admin@example.com');
-     
+
     expect(row!.name).toBe('Admin User');
-     
+
     expect(row!.role).toBe('admin');
   });
 

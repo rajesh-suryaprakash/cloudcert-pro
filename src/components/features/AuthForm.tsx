@@ -185,4 +185,3 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
     </div>
   );
 };
-

@@ -111,7 +111,7 @@ describe('GCP seed data correctness properties', () => {
         'seedData.test.ts: TARGET_CERTS is empty. Add topics.json to a gcp/<cert>/ folder to enable these tests.',
       );
     });
-     
+
     return;
   }
 
@@ -152,7 +152,7 @@ describe('GCP seed data correctness properties', () => {
           if (!subtopicsByTopic.has(sub.topicId)) {
             subtopicsByTopic.set(sub.topicId, new Set());
           }
-           
+
           subtopicsByTopic.get(sub.topicId)!.add(sub.id);
         }
 

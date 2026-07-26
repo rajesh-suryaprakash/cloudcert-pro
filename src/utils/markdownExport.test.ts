@@ -13,7 +13,7 @@ describe('downloadAttemptReviewMarkdown', () => {
     global.URL.createObjectURL = vi.fn(() => createdObjectURL);
     global.URL.revokeObjectURL = vi.fn();
 
-    mockBlobConstructor = vi.fn(function(...args: any[]) {
+    mockBlobConstructor = vi.fn(function (...args: any[]) {
       // @ts-ignore
       return new originalBlob(...args);
     });
@@ -25,7 +25,7 @@ describe('downloadAttemptReviewMarkdown', () => {
       setAttribute: vi.fn(),
       click: vi.fn(),
     };
-    
+
     vi.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
       if (tagName === 'a') {
         return mockLink;
@@ -52,10 +52,12 @@ describe('downloadAttemptReviewMarkdown', () => {
       options: ['Memorystore', 'Cloud SQL', 'Datastore', 'Bigtable'],
       correctAnswers: 'Memorystore',
       explanation: JSON.stringify({
-        'general explanation': 'Memorystore provides fully managed in-memory data store services for Redis.',
+        'general explanation':
+          'Memorystore provides fully managed in-memory data store services for Redis.',
         'why other options are wrong': {
-          'Cloud SQL': 'Cloud SQL is a relational database service for MySQL, PostgreSQL, and SQL Server.',
-          'Bigtable': 'Bigtable is a NoSQL wide-column database service.',
+          'Cloud SQL':
+            'Cloud SQL is a relational database service for MySQL, PostgreSQL, and SQL Server.',
+          Bigtable: 'Bigtable is a NoSQL wide-column database service.',
         },
       }),
       difficulty: 'Easy',
@@ -99,15 +101,17 @@ describe('downloadAttemptReviewMarkdown', () => {
     expect(global.URL.createObjectURL).toHaveBeenCalled();
     expect(mockLink.setAttribute).toHaveBeenCalledWith(
       'download',
-      expect.stringMatching(/^session_session123_[a-z0-9]+\.md$/)
+      expect.stringMatching(/^session_session123_[a-z0-9]+\.md$/),
     );
     expect(mockLink.click).toHaveBeenCalled();
 
     // Verify actual markdown content structured into the Blob
     const blobCallArg = mockBlobConstructor.mock.calls[0][0][0];
-    
+
     // Check main headers
-    expect(blobCallArg).toContain('# Attempt Review: Google Cloud Professional Cloud Architect Practice Exam');
+    expect(blobCallArg).toContain(
+      '# Attempt Review: Google Cloud Professional Cloud Architect Practice Exam',
+    );
     expect(blobCallArg).toContain('**Score:** 100% (1 / 1)');
     expect(blobCallArg).toContain('**Status:** PASSED');
 
@@ -125,15 +129,19 @@ describe('downloadAttemptReviewMarkdown', () => {
 
     // Check explanation
     expect(blobCallArg).toContain('**Explanation:**');
-    expect(blobCallArg).toContain('> Memorystore provides fully managed in-memory data store services for Redis.');
-    expect(blobCallArg).toContain('- **B)** *Cloud SQL* — Cloud SQL is a relational database service for MySQL, PostgreSQL, and SQL Server.');
+    expect(blobCallArg).toContain(
+      '> Memorystore provides fully managed in-memory data store services for Redis.',
+    );
+    expect(blobCallArg).toContain(
+      '- **B)** *Cloud SQL* — Cloud SQL is a relational database service for MySQL, PostgreSQL, and SQL Server.',
+    );
   });
 
   it('should handle edge cases like whitespace trimming and SSR safety gracefully', () => {
     // 1. SSR / window check safety
     const originalWindow = global.window;
     const originalDocument = global.document;
-    
+
     // @ts-ignore
     delete global.window;
     // @ts-ignore
@@ -177,7 +185,8 @@ describe('downloadAttemptReviewMarkdown', () => {
       sessionId: 'session-123',
     });
 
-    const blobCallArg = mockBlobConstructor.mock.calls[mockBlobConstructor.mock.calls.length - 1][0][0];
+    const blobCallArg =
+      mockBlobConstructor.mock.calls[mockBlobConstructor.mock.calls.length - 1][0][0];
     expect(blobCallArg).toContain('- [x] **A)** Memorystore *(Correct Answer)*');
     expect(blobCallArg).toContain('**Explanation:**\n\n> Not JSON text explanation');
   });

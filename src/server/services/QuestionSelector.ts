@@ -18,7 +18,7 @@ function shuffle<T>(arr: T[]): T[] {
   return arr;
 }
 
-/** 
+/**
  * Selects questions prioritizing unseen ones if seenIds is provided.
  * Fills any remaining quota with seen questions.
  */
@@ -107,11 +107,7 @@ function largestRemainder(
   return allocations;
 }
 
-function selectRandom(
-  pool: QuestionRow[],
-  total: number,
-  seenIds?: Set<string>,
-): QuestionRow[] {
+function selectRandom(pool: QuestionRow[], total: number, seenIds?: Set<string>): QuestionRow[] {
   return selectWithPriority(pool, total, seenIds);
 }
 

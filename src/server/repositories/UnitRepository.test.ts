@@ -276,14 +276,22 @@ describe('UnitRepository', () => {
         orderIndex: 1,
         isActive: true,
       });
-      original = repo.findUnitById(unitId) ?? (() => { throw new Error(`Unit not found`); })();
+      original =
+        repo.findUnitById(unitId) ??
+        (() => {
+          throw new Error(`Unit not found`);
+        })();
     });
 
     // Requirement 4.4: updates only provided fields, leaves other fields unchanged
     it('updates only the title when only title is provided', () => {
       repo.updateUnit(unitId, { title: 'Updated Title' }, original);
 
-      const updated = repo.findUnitById(unitId) ?? (() => { throw new Error(`Unit not found`); })();
+      const updated =
+        repo.findUnitById(unitId) ??
+        (() => {
+          throw new Error(`Unit not found`);
+        })();
       expect(updated.title).toBe('Updated Title');
       expect(updated.description).toBe('Original Desc');
       expect(updated.orderIndex).toBe(1);
@@ -293,7 +301,11 @@ describe('UnitRepository', () => {
     it('updates only the description when only description is provided', () => {
       repo.updateUnit(unitId, { description: 'New Desc' }, original);
 
-      const updated = repo.findUnitById(unitId) ?? (() => { throw new Error(`Unit not found`); })();
+      const updated =
+        repo.findUnitById(unitId) ??
+        (() => {
+          throw new Error(`Unit not found`);
+        })();
       expect(updated.description).toBe('New Desc');
       expect(updated.title).toBe('Original Title');
       expect(updated.orderIndex).toBe(1);
@@ -302,7 +314,11 @@ describe('UnitRepository', () => {
     it('updates only the orderIndex when only orderIndex is provided', () => {
       repo.updateUnit(unitId, { orderIndex: 99 }, original);
 
-      const updated = repo.findUnitById(unitId) ?? (() => { throw new Error(`Unit not found`); })();
+      const updated =
+        repo.findUnitById(unitId) ??
+        (() => {
+          throw new Error(`Unit not found`);
+        })();
       expect(updated.orderIndex).toBe(99);
       expect(updated.title).toBe('Original Title');
       expect(updated.description).toBe('Original Desc');
@@ -311,7 +327,11 @@ describe('UnitRepository', () => {
     it('updates only isActive when only isActive is provided', () => {
       repo.updateUnit(unitId, { isActive: false }, original);
 
-      const updated = repo.findUnitById(unitId) ?? (() => { throw new Error(`Unit not found`); })();
+      const updated =
+        repo.findUnitById(unitId) ??
+        (() => {
+          throw new Error(`Unit not found`);
+        })();
       expect(updated.isActive).toBe(0);
       expect(updated.title).toBe('Original Title');
     });
@@ -319,7 +339,11 @@ describe('UnitRepository', () => {
     it('updates multiple fields at once', () => {
       repo.updateUnit(unitId, { title: 'Multi Update', orderIndex: 42 }, original);
 
-      const updated = repo.findUnitById(unitId) ?? (() => { throw new Error(`Unit not found`); })();
+      const updated =
+        repo.findUnitById(unitId) ??
+        (() => {
+          throw new Error(`Unit not found`);
+        })();
       expect(updated.title).toBe('Multi Update');
       expect(updated.orderIndex).toBe(42);
       expect(updated.description).toBe('Original Desc');
@@ -329,7 +353,11 @@ describe('UnitRepository', () => {
       // When description is not in the DTO, it should remain unchanged
       repo.updateUnit(unitId, { title: 'No Desc Change' }, original);
 
-      const updated = repo.findUnitById(unitId) ?? (() => { throw new Error(`Unit not found`); })();
+      const updated =
+        repo.findUnitById(unitId) ??
+        (() => {
+          throw new Error(`Unit not found`);
+        })();
       expect(updated.description).toBe('Original Desc');
     });
   });

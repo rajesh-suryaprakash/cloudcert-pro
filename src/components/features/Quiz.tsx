@@ -83,7 +83,7 @@ export default function Quiz({
         e.preventDefault();
       }
     };
-    
+
     // We must use passive: false to be able to call preventDefault
     window.addEventListener('wheel', handleWheel, { passive: false });
     return () => {
@@ -310,37 +310,40 @@ export default function Quiz({
     return confidence;
   };
 
-  const saveAnswer = async (
-    index: number,
-    answers: (string | string[] | null)[],
-    isFlagged: boolean,
-    confidence: number | null = null,
-  ) => {
-    if (!sessionId || isPaused) return;
-    const q = quizState.questions[index];
-    const userAns = answers[index];
+  const saveAnswer = useCallback(
+    async (
+      index: number,
+      answers: (string | string[] | null)[],
+      isFlagged: boolean,
+      confidence: number | null = null,
+    ) => {
+      if (!sessionId || isPaused) return;
+      const q = quizState.questions[index];
+      const userAns = answers[index];
 
-    const timeSpentOnQuestion = Math.floor((Date.now() - questionStartTime) / 1000);
-    const totalTimeOnQuestion = questionTimes[index] + timeSpentOnQuestion;
+      const timeSpentOnQuestion = Math.floor((Date.now() - questionStartTime) / 1000);
+      const totalTimeOnQuestion = questionTimes[index] + timeSpentOnQuestion;
 
-    const mappedConfidence = mapConfidenceLevel(confidence);
+      const mappedConfidence = mapConfidenceLevel(confidence);
 
-    try {
-      await fetchApi(`/exam-sessions/${sessionId}/answers`, {
-        method: 'POST',
-        body: JSON.stringify({
-          questionId: q.id,
-          userAnswer: userAns,
-          markedForReview: isFlagged,
-          confidenceLevel: mappedConfidence,
-          answerOrder: index,
-          timeSpent: totalTimeOnQuestion,
-        }),
-      });
-    } catch (e) {
-      console.error('Failed to save answer:', e);
-    }
-  };
+      try {
+        await fetchApi(`/exam-sessions/${sessionId}/answers`, {
+          method: 'POST',
+          body: JSON.stringify({
+            questionId: q.id,
+            userAnswer: userAns,
+            markedForReview: isFlagged,
+            confidenceLevel: mappedConfidence,
+            answerOrder: index,
+            timeSpent: totalTimeOnQuestion,
+          }),
+        });
+      } catch (e) {
+        console.error('Failed to save answer:', e);
+      }
+    },
+    [sessionId, isPaused, quizState.questions, questionStartTime, questionTimes],
+  );
 
   const handleAnswer = async (option: string) => {
     if (quizState.isFinished) return;
@@ -374,7 +377,7 @@ export default function Quiz({
     );
   };
 
-  const nextQuestion = () => {
+  const nextQuestion = useCallback(() => {
     saveAnswer(
       quizState.currentQuestionIndex,
       quizState.userAnswers,
@@ -393,9 +396,9 @@ export default function Quiz({
     } else {
       setShowReviewScreen(true);
     }
-  };
+  }, [quizState, flagged, confidenceLevels, questionStartTime, questionTimes, saveAnswer]);
 
-  const prevQuestion = () => {
+  const prevQuestion = useCallback(() => {
     saveAnswer(
       quizState.currentQuestionIndex,
       quizState.userAnswers,
@@ -412,7 +415,7 @@ export default function Quiz({
     if (quizState.currentQuestionIndex > 0) {
       setQuizState({ ...quizState, currentQuestionIndex: quizState.currentQuestionIndex - 1 });
     }
-  };
+  }, [quizState, flagged, confidenceLevels, questionStartTime, questionTimes, saveAnswer]);
 
   const stateRef = useRef({
     currentQuestionIndex: quizState.currentQuestionIndex,
@@ -477,9 +480,7 @@ export default function Quiz({
       // Don't trigger shortcuts if user is typing in an input/textarea
       const target = event.target as HTMLElement;
       const isInputFocused =
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable;
+        target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
 
       if (isInputFocused) {
         return;
@@ -520,7 +521,6 @@ export default function Quiz({
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [sessionId, isPracticeMode, shortcutsEnabled]);
-
 
   const finishQuiz = useCallback(async () => {
     const endTime = Date.now();

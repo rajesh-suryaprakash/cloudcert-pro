@@ -158,7 +158,6 @@ describe('Feature: question-history-tracking, Property 15: Active Questions Only
     return id;
   }
 
-
   it('Property 15: For any certification with both active and inactive questions, statistics should only consider active questions', () => {
     fc.assert(
       fc.property(

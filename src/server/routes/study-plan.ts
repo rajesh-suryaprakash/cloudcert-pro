@@ -55,7 +55,6 @@ function computeWeakTopics(
     .slice(0, 3);
 }
 
-
 /**
  * GET /api/exam-sessions/:id/study-plan
  * Returns the top 3 weak topics for a completed exam session,

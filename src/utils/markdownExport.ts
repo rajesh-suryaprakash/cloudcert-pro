@@ -15,15 +15,16 @@ function formatExplanation(text: string, options: string[] = []): string {
       if (general) {
         md += `${general}\n\n`;
       }
-      
-      const wrongOptions = parsed['why other options are wrong'] || parsed['Why other options are wrong'] || {};
+
+      const wrongOptions =
+        parsed['why other options are wrong'] || parsed['Why other options are wrong'] || {};
       const wrongEntries = Object.entries(wrongOptions);
       if (wrongEntries.length > 0) {
         md += `**Why other options are wrong:**\n`;
         wrongEntries.forEach(([optionText, reason], i) => {
           const safeOptionText = optionText || '';
           const optIndex = options.findIndex(
-            (o) => (o || '').trim().toLowerCase() === safeOptionText.trim().toLowerCase()
+            (o) => (o || '').trim().toLowerCase() === safeOptionText.trim().toLowerCase(),
           );
           const letter = optIndex >= 0 ? String.fromCharCode(65 + optIndex) + ')' : `${i + 1})`;
           md += `- **${letter}** *${safeOptionText}* — ${reason}\n`;
@@ -91,7 +92,7 @@ export function downloadAttemptReviewMarkdown(options: DownloadAttemptReviewMark
       confidenceMatrix.luckyGuesses > 0 ||
       confidenceMatrix.knownWeaknesses > 0 ||
       confidenceMatrix.criticalGaps > 0;
-    
+
     if (hasStats) {
       md += `## Confidence Profile\n\n`;
       md += `- **True Knowledge:** ${confidenceMatrix.trueKnowledge} (Correct + Confident)\n`;
@@ -108,20 +109,20 @@ export function downloadAttemptReviewMarkdown(options: DownloadAttemptReviewMark
     const userAnswer = quizState.userAnswers[i];
     const isCorrect = isAnswerCorrect(q, userAnswer);
     const label = isCorrect ? '✅ Correct' : '❌ Incorrect';
-    
+
     md += `### Question ${i + 1}: ${q.questionText}\n`;
     md += `*Result:* **${label}**\n\n`;
 
     md += `**Options:**\n`;
     q.options.forEach((opt, idx) => {
       const optionLetter = String.fromCharCode(65 + idx);
-      
+
       const cleanOpt = (opt || '').trim();
-      
+
       const isCorrectOption = Array.isArray(q.correctAnswers)
         ? q.correctAnswers.some((c) => (c || '').trim() === cleanOpt)
         : (q.correctAnswers || '').trim() === cleanOpt;
-        
+
       const isSelectedOption = Array.isArray(userAnswer)
         ? userAnswer.some((u) => (u || '').trim() === cleanOpt)
         : (userAnswer || '').trim() === cleanOpt;
@@ -146,7 +147,7 @@ export function downloadAttemptReviewMarkdown(options: DownloadAttemptReviewMark
       md += `**Explanation:**\n\n`;
       md += `> ${explanationFormatted.replace(/\n/g, '\n> ')}\n\n`;
     }
-    
+
     md += `---\n\n`;
   });
 
@@ -154,14 +155,17 @@ export function downloadAttemptReviewMarkdown(options: DownloadAttemptReviewMark
   const blob = new Blob([md], { type: 'text/markdown;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
-  
+
   // Create URL-safe lowercase filename matching session_<id>_<timestamp>.md convention
   const finalSessionId = historicalAttempt?.id || sessionId || 'session';
   const safeId = finalSessionId.toLowerCase().replace(/[^a-z0-9]/g, '');
   const createdAt = historicalAttempt?.createdAt || new Date(quizState.startTime).toISOString();
-  const safeTimestamp = new Date(createdAt).toISOString().toLowerCase().replace(/[^a-z0-9]/g, '');
+  const safeTimestamp = new Date(createdAt)
+    .toISOString()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
   const filename = `session_${safeId}_${safeTimestamp}.md`;
-  
+
   link.href = url;
   link.setAttribute('download', filename);
   document.body.appendChild(link);

@@ -184,7 +184,10 @@ router.post('/auth/refresh', async (req: Request, res: Response, next: NextFunct
       throw new UnauthorizedError('Invalid refresh token');
     }
 
-    const payload = typeof decoded === 'object' && decoded !== null ? decoded as { type?: string; id?: string } : null;
+    const payload =
+      typeof decoded === 'object' && decoded !== null
+        ? (decoded as { type?: string; id?: string })
+        : null;
 
     if (!payload || payload.type !== 'refresh' || !payload.id) {
       throw new UnauthorizedError('Invalid token type');

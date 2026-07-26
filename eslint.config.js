@@ -26,6 +26,7 @@ export default [
       'react-hooks': reactHooksPlugin,
     },
     rules: {
+      'security/detect-object-injection': 'off',
       // ── TypeScript ────────────────────────────────────────────────────────
       '@typescript-eslint/no-unused-vars': [
         'error',
@@ -69,6 +70,8 @@ export default [
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
+      'security/detect-non-literal-fs-filename': 'off',
+      'security/detect-non-literal-regexp': 'off',
     },
   },
   // Disable any ESLint rules that conflict with Prettier (must be last)

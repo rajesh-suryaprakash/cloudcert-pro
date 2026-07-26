@@ -293,7 +293,7 @@ export function useAdminNavigation(
   /**
    * Get cached data for a specific record ID
    */
-   
+
   const getCachedData = useCallback(
     <T = unknown>(id: string): T | null => {
       return globalNavigationCache.get(getCacheKey(id)) as T | null;

@@ -102,26 +102,30 @@ describe('Insights Dashboard Performance Tests', () => {
   async function setupLargeDataset() {
     const transaction = testDb.transaction(() => {
       // Create test user
-      testDb.prepare(
-        `
+      testDb
+        .prepare(
+          `
         INSERT OR IGNORE INTO users (id, email, password, role, createdAt)
         VALUES (?, ?, ?, ?, ?)
       `,
-      ).run(testUserId, 'perftest@test.com', 'hashed-password', 'user', new Date().toISOString());
+        )
+        .run(testUserId, 'perftest@test.com', 'hashed-password', 'user', new Date().toISOString());
 
       // Create certification
-      testDb.prepare(
-        `
+      testDb
+        .prepare(
+          `
         INSERT OR IGNORE INTO certifications (id, title, description, createdAt, updatedAt)
         VALUES (?, ?, ?, ?, ?)
       `,
-      ).run(
-        testCertificationId,
-        'Performance Test Cert',
-        'Test certification for performance testing',
-        new Date().toISOString(),
-        new Date().toISOString(),
-      );
+        )
+        .run(
+          testCertificationId,
+          'Performance Test Cert',
+          'Test certification for performance testing',
+          new Date().toISOString(),
+          new Date().toISOString(),
+        );
 
       // Create 5 domains with weights
       const domainNames = ['Domain A', 'Domain B', 'Domain C', 'Domain D', 'Domain E'];
@@ -129,19 +133,21 @@ describe('Insights Dashboard Performance Tests', () => {
 
       domainNames.forEach((name, index) => {
         const domainId = randomUUID();
-        testDb.prepare(
-          `
+        testDb
+          .prepare(
+            `
           INSERT OR IGNORE INTO domain_weights (id, certificationId, domainName, weightPercentage, createdAt, updatedAt)
           VALUES (?, ?, ?, ?, ?, ?)
         `,
-        ).run(
-          domainId,
-          testCertificationId,
-          name,
-          domainWeights[index],
-          new Date().toISOString(),
-          new Date().toISOString(),
-        );
+          )
+          .run(
+            domainId,
+            testCertificationId,
+            name,
+            domainWeights[index],
+            new Date().toISOString(),
+            new Date().toISOString(),
+          );
       });
 
       // Create 20 topics (4 per domain)
@@ -149,18 +155,20 @@ describe('Insights Dashboard Performance Tests', () => {
       domainNames.forEach((domainName, _domainIndex) => {
         for (let i = 0; i < 4; i++) {
           const topicId = randomUUID();
-          testDb.prepare(
-            `
+          testDb
+            .prepare(
+              `
             INSERT INTO topics (id, certificationId, title, description, createdAt)
             VALUES (?, ?, ?, ?, ?)
           `,
-          ).run(
-            topicId,
-            testCertificationId,
-            `${domainName} Topic ${i + 1}`,
-            `Topic description`,
-            new Date().toISOString(),
-          );
+            )
+            .run(
+              topicId,
+              testCertificationId,
+              `${domainName} Topic ${i + 1}`,
+              `Topic description`,
+              new Date().toISOString(),
+            );
           topicIds.push(topicId);
         }
       });
@@ -171,30 +179,32 @@ describe('Insights Dashboard Performance Tests', () => {
         const domainName = domainNames[Math.floor(topicIndex / 4)];
         for (let i = 0; i < 10; i++) {
           const questionId = randomUUID();
-          testDb.prepare(
-            `
+          testDb
+            .prepare(
+              `
             INSERT INTO questions (
               id, topicId, domainId, questionText, questionType,
               options, correctAnswers, explanation, difficulty, tags, points, isActive, createdAt, updatedAt
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `,
-          ).run(
-            questionId,
-            topicId,
-            domainName,
-            `Question ${i + 1} for topic ${topicIndex}`,
-            'single',
-            JSON.stringify(['Option A', 'Option B', 'Option C', 'Option D']),
-            JSON.stringify(['A']),
-            'Explanation for correct answer',
-            'Medium',
-            JSON.stringify([]),
-            1,
-            1,
-            new Date().toISOString(),
-            new Date().toISOString(),
-          );
+            )
+            .run(
+              questionId,
+              topicId,
+              domainName,
+              `Question ${i + 1} for topic ${topicIndex}`,
+              'single',
+              JSON.stringify(['Option A', 'Option B', 'Option C', 'Option D']),
+              JSON.stringify(['A']),
+              'Explanation for correct answer',
+              'Medium',
+              JSON.stringify([]),
+              1,
+              1,
+              new Date().toISOString(),
+              new Date().toISOString(),
+            );
           questionIds.push(questionId);
         }
       });
@@ -210,29 +220,31 @@ describe('Insights Dashboard Performance Tests', () => {
 
         const autoSubmitTime = new Date(sessionDate.getTime() + 3 * 60 * 60 * 1000).toISOString(); // 3 hours after start
 
-        testDb.prepare(
-          `
+        testDb
+          .prepare(
+            `
           INSERT INTO exam_sessions (
             id, userId, certificationId, questions, status, score, 
             totalQuestions, isPracticeMode, isCustomQuiz, autoSubmitAt, startTime, createdAt, updatedAt
           )
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
-        ).run(
-          sessionId,
-          testUserId,
-          testCertificationId,
-          JSON.stringify(questionIds), // Store all question IDs
-          'completed',
-          Math.floor(baseAccuracy * 100),
-          200,
-          0, // isPracticeMode
-          0, // isCustomQuiz
-          autoSubmitTime, // autoSubmitAt
-          sessionDate.toISOString(),
-          sessionDate.toISOString(),
-          new Date(sessionDate.getTime() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours later
-        );
+          )
+          .run(
+            sessionId,
+            testUserId,
+            testCertificationId,
+            JSON.stringify(questionIds), // Store all question IDs
+            'completed',
+            Math.floor(baseAccuracy * 100),
+            200,
+            0, // isPracticeMode
+            0, // isCustomQuiz
+            autoSubmitTime, // autoSubmitAt
+            sessionDate.toISOString(),
+            sessionDate.toISOString(),
+            new Date(sessionDate.getTime() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours later
+          );
 
         sessionIds.push(sessionId);
 
@@ -248,47 +260,51 @@ describe('Insights Dashboard Performance Tests', () => {
           const fatigueMultiplier = 1 + (qIndex / questionIds.length) * 0.3;
           const adjustedTimeSpent = timeSpent * fatigueMultiplier;
 
-          testDb.prepare(
-            `
+          testDb
+            .prepare(
+              `
             INSERT INTO exam_answers (
               id, examSessionId, questionId, userAnswer, 
               isCorrect, timeSpent, confidenceLevel, answerOrder, createdAt
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
           `,
-          ).run(
-            answerId,
-            sessionId,
-            questionId,
-            JSON.stringify(['A']),
-            isCorrect ? 1 : 0,
-            adjustedTimeSpent,
-            confidenceLevel,
-            qIndex,
-            sessionDate.toISOString(),
-          );
+            )
+            .run(
+              answerId,
+              sessionId,
+              questionId,
+              JSON.stringify(['A']),
+              isCorrect ? 1 : 0,
+              adjustedTimeSpent,
+              confidenceLevel,
+              qIndex,
+              sessionDate.toISOString(),
+            );
 
           // Simulate some answer changes (hesitation)
           if (Math.random() < 0.15) {
             // 15% of answers have changes
             const changeId = randomUUID();
-            testDb.prepare(
-              `
+            testDb
+              .prepare(
+                `
               INSERT INTO answer_change_history (
                 id, examSessionId, questionId, previousAnswer, 
                 newAnswer, changeTimestamp, createdAt
               )
               VALUES (?, ?, ?, ?, ?, ?, ?)
             `,
-            ).run(
-              changeId,
-              sessionId,
-              questionId,
-              JSON.stringify(['B']),
-              JSON.stringify(['A']),
-              new Date(sessionDate.getTime() + qIndex * 30000).toISOString(),
-              sessionDate.toISOString(),
-            );
+              )
+              .run(
+                changeId,
+                sessionId,
+                questionId,
+                JSON.stringify(['B']),
+                JSON.stringify(['A']),
+                new Date(sessionDate.getTime() + qIndex * 30000).toISOString(),
+                sessionDate.toISOString(),
+              );
           }
         });
       }
@@ -296,7 +312,6 @@ describe('Insights Dashboard Performance Tests', () => {
 
     transaction();
   }
-
 
   /**
    * Performance Test 1: Dashboard Load Time with Large Dataset

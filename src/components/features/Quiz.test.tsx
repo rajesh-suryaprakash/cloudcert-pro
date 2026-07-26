@@ -27,14 +27,17 @@ vi.mock('motion/react', () => {
     });
 
   const cache: Record<string, React.ComponentType<Record<string, unknown>>> = {};
-  const motion = new Proxy({} as unknown as Record<string, React.ComponentType<Record<string, unknown>>>, {
-    get: (_, prop: string) => {
-      if (!cache[prop]) {
-        cache[prop] = mockMotion(prop);
-      }
-      return cache[prop];
+  const motion = new Proxy(
+    {} as unknown as Record<string, React.ComponentType<Record<string, unknown>>>,
+    {
+      get: (_, prop: string) => {
+        if (!cache[prop]) {
+          cache[prop] = mockMotion(prop);
+        }
+        return cache[prop];
+      },
     },
-  });
+  );
 
   return {
     motion,
@@ -134,7 +137,7 @@ describe('Quiz Keyboard Navigation', () => {
         sessionId="session-123"
         onFinish={vi.fn()}
         onReset={vi.fn()}
-      />
+      />,
     );
 
     // Initial state: Question 1
@@ -161,7 +164,7 @@ describe('Quiz Keyboard Navigation', () => {
         sessionId="session-123"
         onFinish={vi.fn()}
         onReset={vi.fn()}
-      />
+      />,
     );
 
     // Toggle pause (First press)
@@ -190,7 +193,7 @@ describe('Quiz Keyboard Navigation', () => {
         sessionId="session-123"
         onFinish={vi.fn()}
         onReset={vi.fn()}
-      />
+      />,
     );
 
     const input = document.createElement('input');
@@ -225,7 +228,7 @@ describe('Quiz Keyboard Navigation', () => {
         sessionId="session-123"
         onFinish={vi.fn()}
         onReset={vi.fn()}
-      />
+      />,
     );
 
     const button = document.createElement('button');
@@ -251,7 +254,7 @@ describe('Quiz Keyboard Navigation', () => {
         sessionId="session-123"
         onFinish={vi.fn()}
         onReset={vi.fn()}
-      />
+      />,
     );
 
     // Assert initial state is question 1

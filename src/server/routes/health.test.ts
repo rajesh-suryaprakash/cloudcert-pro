@@ -27,14 +27,12 @@ function createApp() {
       db.prepare('SELECT 1').get();
       res.json({ status: 'ok', db: 'connected', timestamp: new Date().toISOString() });
     } catch (err: any) {
-      res
-        .status(503)
-        .json({
-          status: 'error',
-          db: 'disconnected',
-          error: err?.message,
-          timestamp: new Date().toISOString(),
-        });
+      res.status(503).json({
+        status: 'error',
+        db: 'disconnected',
+        error: err?.message,
+        timestamp: new Date().toISOString(),
+      });
     }
   });
 

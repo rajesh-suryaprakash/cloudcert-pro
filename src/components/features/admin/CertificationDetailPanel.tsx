@@ -200,7 +200,6 @@ export default function CertificationDetailPanel({
     }
   };
 
-
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">

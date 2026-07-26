@@ -1,8 +1,8 @@
 /**
  * @fileoverview Immutable Question Option Shuffling Engine
- * 
+ *
  * Implements a robust, statistically uniform shuffle for MCQ options to eliminate
- * the 88% index-0 bias in source data. Uses seeded Fisher-Yates algorithm for 
+ * the 88% index-0 bias in source data. Uses seeded Fisher-Yates algorithm for
  * consistent, deterministic shuffling per question while maintaining complete
  * immutability of source data.
  *
@@ -66,7 +66,7 @@ interface ShuffleResult<T extends Question | QuestionRow> {
 /**
  * Seeded random number generator using crypto.hash for deterministic results.
  * Ensures the same question ID always produces the same shuffle.
- * 
+ *
  * Optimized with buffered approach: pre-generates 1KB of deterministic random
  * data to reduce crypto calls by ~30x. This improves performance from ~18ms
  * to ~6.5ms per 100 questions (64% improvement).
@@ -77,13 +77,13 @@ class SeededRandom {
   private bufferIndex = 0;
   private static readonly UINT32_MAX = 0x100000000; // 2^32 for normalizing 32-bit hash to [0,1)
   private static readonly BUFFER_SIZE = 1024; // 1KB buffer = 256 random numbers
-  
+
   constructor(private readonly seed: string) {
     // Pre-generate initial buffer of deterministic random data
     this.buffer = Buffer.alloc(SeededRandom.BUFFER_SIZE);
     this.refillBuffer();
   }
-  
+
   /**
    * Generate next pseudo-random number in [0, 1)
    */
@@ -92,32 +92,29 @@ class SeededRandom {
     if (this.bufferIndex >= SeededRandom.BUFFER_SIZE - 4) {
       this.refillBuffer();
     }
-    
+
     // Read 4 bytes (32-bit unsigned int) from buffer
     const num = this.buffer.readUInt32BE(this.bufferIndex);
     this.bufferIndex += 4;
-    
+
     return num / SeededRandom.UINT32_MAX;
   }
-  
+
   /**
    * Generate random integer in [0, max)
    */
   nextInt(max: number): number {
     return Math.floor(this.next() * max);
   }
-  
+
   /**
    * Refill the random buffer with deterministic data derived from seed
    * Uses counter to ensure different data on each refill
    */
   private refillBuffer(): void {
     // Generate deterministic hash from seed + counter
-    const baseHash = crypto
-      .createHash('sha256')
-      .update(`${this.seed}-${this.counter++}`)
-      .digest();
-    
+    const baseHash = crypto.createHash('sha256').update(`${this.seed}-${this.counter++}`).digest();
+
     // Expand 32-byte hash to fill 1KB buffer using chain hashing
     for (let i = 0; i < SeededRandom.BUFFER_SIZE; i += 32) {
       const hash = crypto
@@ -125,12 +122,12 @@ class SeededRandom {
         .update(baseHash)
         .update(Buffer.from([Math.floor(i / 32)]))
         .digest();
-      
+
       // Copy hash to buffer (up to remaining space)
       const copyLength = Math.min(32, SeededRandom.BUFFER_SIZE - i);
       hash.copy(this.buffer, i, 0, copyLength);
     }
-    
+
     this.bufferIndex = 0;
   }
 }
@@ -138,13 +135,13 @@ class SeededRandom {
 /**
  * Deep clone an object to prevent mutation of source data.
  * Uses Node.js built-in structuredClone() for better performance and safety.
- * 
+ *
  * structuredClone() benefits:
  * - 2-3x faster than recursive cloning
  * - Built-in circular reference detection
  * - Handles more types (Map, Set, ArrayBuffer, etc.)
  * - Depth limit protection (prevents stack overflow)
- * 
+ *
  * Available in Node.js 17+ (current: v24.16.0)
  */
 function deepClone<T>(obj: T): T {
@@ -157,7 +154,7 @@ function deepClone<T>(obj: T): T {
  */
 function isFixedPositionOption(option: string, additionalPatterns?: RegExp[]): boolean {
   const allPatterns = [...FIXED_POSITION_PATTERNS, ...(additionalPatterns ?? [])];
-  return allPatterns.some(pattern => pattern.test(option.trim()));
+  return allPatterns.some((pattern) => pattern.test(option.trim()));
 }
 
 /**
@@ -165,12 +162,12 @@ function isFixedPositionOption(option: string, additionalPatterns?: RegExp[]): b
  */
 function fisherYatesShuffle<T>(array: T[], rng: SeededRandom): T[] {
   const result = [...array]; // Create copy to avoid mutating input
-  
+
   for (let i = result.length - 1; i > 0; i--) {
     const j = rng.nextInt(i + 1);
     [result[i], result[j]] = [result[j], result[i]];
   }
-  
+
   return result;
 }
 
@@ -195,25 +192,27 @@ function isQuestionRow(obj: Question | QuestionRow): obj is QuestionRow {
  */
 function shuffleQuestionCore<T extends Question | QuestionRow>(
   question: T,
-  config: ShuffleConfig = {}
+  config: ShuffleConfig = {},
 ): ShuffleResult<T> {
   const { enabled = true, seed: customSeed, additionalFixedPatterns } = config;
-  
+
   // Guard against pathological cases that could cause OOM
   const questionSize = JSON.stringify(question).length;
-  if (questionSize > 100_000) { // 100KB limit
+  if (questionSize > 100_000) {
+    // 100KB limit
     logger.warn(
       { questionId: question.id, sizeBytes: questionSize },
-      'Question exceeds size limit for shuffling'
+      'Question exceeds size limit for shuffling',
     );
     throw new ValidationError('Question data too large for shuffle operation (max: 100KB)');
   }
-  
+
   // Create deep clone to ensure immutability
   const cloned = deepClone(question);
-  
+
   if (!enabled) {
-    const optionsArray = typeof cloned.options === 'string' ? JSON.parse(cloned.options) : cloned.options;
+    const optionsArray =
+      typeof cloned.options === 'string' ? JSON.parse(cloned.options) : cloned.options;
     return {
       question: cloned,
       indexMapping: optionsArray.map((_: unknown, i: number) => i),
@@ -222,7 +221,7 @@ function shuffleQuestionCore<T extends Question | QuestionRow>(
       seed: 'disabled',
     };
   }
-  
+
   // Handle both database format (JSON strings) and API format (arrays/strings)
   let options: string[];
   if (typeof cloned.options === 'string') {
@@ -234,7 +233,7 @@ function shuffleQuestionCore<T extends Question | QuestionRow>(
     } catch (err) {
       logger.error(
         { err, questionId: cloned.id, rawOptions: cloned.options },
-        'Failed to parse question options - using fallback'
+        'Failed to parse question options - using fallback',
       );
       // Fallback: treat as single option
       options = [cloned.options];
@@ -242,7 +241,7 @@ function shuffleQuestionCore<T extends Question | QuestionRow>(
   } else {
     options = cloned.options;
   }
-  
+
   // Handle both single string and array of correct answers
   let correctAnswers: string[];
   if (typeof cloned.correctAnswers === 'string') {
@@ -253,7 +252,7 @@ function shuffleQuestionCore<T extends Question | QuestionRow>(
     } catch (err) {
       logger.error(
         { err, questionId: cloned.id, rawCorrectAnswers: cloned.correctAnswers },
-        'Failed to parse correct answers - using fallback'
+        'Failed to parse correct answers - using fallback',
       );
       // Not JSON, treat as single answer
       correctAnswers = [cloned.correctAnswers];
@@ -263,7 +262,7 @@ function shuffleQuestionCore<T extends Question | QuestionRow>(
   } else {
     correctAnswers = [cloned.correctAnswers as string];
   }
-  
+
   if (options.length <= 1) {
     // No shuffling needed for single option
     return {
@@ -274,21 +273,21 @@ function shuffleQuestionCore<T extends Question | QuestionRow>(
       seed: 'single-option',
     };
   }
-  
+
   // Guard against DoS via excessive options
   if (options.length > 100) {
     logger.warn(
       { questionId: cloned.id, optionCount: options.length },
-      'Question has excessive options (max: 100)'
+      'Question has excessive options (max: 100)',
     );
     throw new ValidationError(`Question has ${options.length} options (max: 100)`);
   }
-  
+
   // Identify fixed-position options (e.g., "All of the above")
   const fixedIndices: number[] = [];
   const fixedOptions: string[] = [];
   const shuffleableOptions: Array<{ option: string; originalIndex: number }> = [];
-  
+
   options.forEach((option, index) => {
     if (isFixedPositionOption(option, additionalFixedPatterns)) {
       fixedIndices.push(index);
@@ -297,7 +296,7 @@ function shuffleQuestionCore<T extends Question | QuestionRow>(
       shuffleableOptions.push({ option, originalIndex: index });
     }
   });
-  
+
   if (shuffleableOptions.length <= 1) {
     // All options are fixed or only one shuffleable option
     return {
@@ -308,31 +307,28 @@ function shuffleQuestionCore<T extends Question | QuestionRow>(
       seed: 'no-shuffleable-options',
     };
   }
-  
+
   // Generate seed and shuffle
   const seed = generateSeed(cloned.id, customSeed);
   const rng = new SeededRandom(seed);
   const shuffledOptions = fisherYatesShuffle(shuffleableOptions, rng);
-  
+
   // Reconstruct options array: shuffled options + fixed options at end
-  const newOptions: string[] = [
-    ...shuffledOptions.map(item => item.option),
-    ...fixedOptions,
-  ];
-  
+  const newOptions: string[] = [...shuffledOptions.map((item) => item.option), ...fixedOptions];
+
   // Build index mapping: original index → new index
   const indexMapping: number[] = new Array(options.length);
-  
+
   shuffledOptions.forEach((item, newIndex) => {
     indexMapping[item.originalIndex] = newIndex;
   });
-  
+
   fixedIndices.forEach((originalIndex, fixedIndex) => {
     indexMapping[originalIndex] = shuffledOptions.length + fixedIndex;
   });
-  
+
   // Update correct answers to match new positions
-  const newCorrectAnswers = correctAnswers.map(correctText => {
+  const newCorrectAnswers = correctAnswers.map((correctText) => {
     const originalIndex = options.indexOf(correctText);
     if (originalIndex === -1) {
       // Answer text not found in options - preserve as-is
@@ -340,18 +336,17 @@ function shuffleQuestionCore<T extends Question | QuestionRow>(
     }
     return newOptions[indexMapping[originalIndex]];
   });
-  
+
   // Update the cloned question using type-safe narrowing
   if (isQuestionRow(cloned)) {
     cloned.options = JSON.stringify(newOptions);
     cloned.correctAnswers = JSON.stringify(newCorrectAnswers);
   } else {
     cloned.options = newOptions;
-    cloned.correctAnswers = cloned.questionType === 'single' 
-      ? newCorrectAnswers[0] 
-      : newCorrectAnswers;
+    cloned.correctAnswers =
+      cloned.questionType === 'single' ? newCorrectAnswers[0] : newCorrectAnswers;
   }
-  
+
   return {
     question: cloned,
     indexMapping,
@@ -365,8 +360,8 @@ function shuffleQuestionCore<T extends Question | QuestionRow>(
  * Shuffle options for a Question object (API/Frontend format)
  */
 export function shuffleQuestion(
-  question: Question, 
-  config?: ShuffleConfig
+  question: Question,
+  config?: ShuffleConfig,
 ): ShuffleResult<Question> {
   return shuffleQuestionCore(question, config);
 }
@@ -375,8 +370,8 @@ export function shuffleQuestion(
  * Shuffle options for a QuestionRow (Database format)
  */
 export function shuffleQuestionRow(
-  questionRow: QuestionRow, 
-  config?: ShuffleConfig
+  questionRow: QuestionRow,
+  config?: ShuffleConfig,
 ): ShuffleResult<QuestionRow> {
   return shuffleQuestionCore(questionRow, config);
 }
@@ -384,28 +379,28 @@ export function shuffleQuestionRow(
 /**
  * Shuffle an array of questions - most common use case
  */
-export function shuffleQuestions(
-  questions: Question[], 
-  config?: ShuffleConfig
-): Question[] {
+export function shuffleQuestions(questions: Question[], config?: ShuffleConfig): Question[] {
   const startTime = performance.now();
   const startMemory = process.memoryUsage().heapUsed;
-  
-  const results = questions.map(q => shuffleQuestion(q, config).question);
-  
+
+  const results = questions.map((q) => shuffleQuestion(q, config).question);
+
   const durationMs = performance.now() - startTime;
   const memoryDeltaMB = (process.memoryUsage().heapUsed - startMemory) / 1_048_576;
-  
+
   // Log metrics for monitoring/alerting
-  logger.info({
-    operation: 'shuffle_questions',
-    questionCount: questions.length,
-    durationMs: durationMs.toFixed(2),
-    memoryDeltaMB: memoryDeltaMB.toFixed(2),
-    avgMsPerQuestion: (durationMs / Math.max(1, questions.length)).toFixed(3),
-    shuffleEnabled: config?.enabled !== false,
-  }, 'Question shuffle completed');
-  
+  logger.info(
+    {
+      operation: 'shuffle_questions',
+      questionCount: questions.length,
+      durationMs: durationMs.toFixed(2),
+      memoryDeltaMB: memoryDeltaMB.toFixed(2),
+      avgMsPerQuestion: (durationMs / Math.max(1, questions.length)).toFixed(3),
+      shuffleEnabled: config?.enabled !== false,
+    },
+    'Question shuffle completed',
+  );
+
   return results;
 }
 
@@ -413,10 +408,10 @@ export function shuffleQuestions(
  * Shuffle an array of question rows
  */
 export function shuffleQuestionRows(
-  questionRows: QuestionRow[], 
-  config?: ShuffleConfig
+  questionRows: QuestionRow[],
+  config?: ShuffleConfig,
 ): QuestionRow[] {
-  return questionRows.map(qr => shuffleQuestionRow(qr, config).question);
+  return questionRows.map((qr) => shuffleQuestionRow(qr, config).question);
 }
 
 /**
@@ -435,19 +430,19 @@ export interface ShuffleStats {
  */
 export function analyzeShuffleDistribution(
   questions: Question[],
-  config?: ShuffleConfig
+  config?: ShuffleConfig,
 ): ShuffleStats {
   const indexCounts: Record<string, number> = {};
   let totalOptions = 0;
-  let shufflingEnabled = config?.enabled !== false;
-  
+  const shufflingEnabled = config?.enabled !== false;
+
   for (const question of questions) {
     const shuffleResult = shuffleQuestion(question, config);
     const correctAnswers = Array.isArray(shuffleResult.question.correctAnswers)
       ? shuffleResult.question.correctAnswers
       : [shuffleResult.question.correctAnswers];
-    
-    correctAnswers.forEach(answer => {
+
+    correctAnswers.forEach((answer) => {
       const index = shuffleResult.question.options.indexOf(answer);
       if (index !== -1) {
         indexCounts[index.toString()] = (indexCounts[index.toString()] || 0) + 1;
@@ -455,15 +450,15 @@ export function analyzeShuffleDistribution(
       }
     });
   }
-  
+
   // Calculate uniformity score (0 = perfect, 1 = maximally biased)
   const expectedPerIndex = totalOptions / Math.max(1, Object.keys(indexCounts).length);
   const variance = Object.values(indexCounts)
-    .map(count => Math.pow(count - expectedPerIndex, 2))
+    .map((count) => Math.pow(count - expectedPerIndex, 2))
     .reduce((sum, sq) => sum + sq, 0);
-  
+
   const uniformityScore = Math.sqrt(variance) / Math.max(1, expectedPerIndex);
-  
+
   return {
     totalQuestions: questions.length,
     totalOptions,

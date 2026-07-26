@@ -190,7 +190,6 @@ export default function UserDashboard({
     navigate(`/dashboard/${cert.id}`);
   };
 
-
   // Filter sessions to only those explicitly linked to the selected cert
   const certExamIds = new Set(certExams.map((e) => e.id));
   const certId = selectedCertForExams?.id;
@@ -229,7 +228,7 @@ export default function UserDashboard({
           (h.examConfigurationId && certExamIds.has(h.examConfigurationId));
 
         const isInProgress = h.status === 'in_progress' || h.status === 'paused';
-        
+
         // Hide all "In Progress" or "Paused" exams from the dashboard history
         if (isInProgress) {
           return false;
@@ -310,7 +309,6 @@ export default function UserDashboard({
       </div>
     );
   }
-
 
   return (
     <div className="space-y-10">

@@ -19,7 +19,9 @@ export const KeyboardShortcutProvider: React.FC<{ children: React.ReactNode }> =
   };
 
   return (
-    <KeyboardShortcutContext.Provider value={{ shortcutsEnabled, setShortcutsEnabled: toggleShortcuts }}>
+    <KeyboardShortcutContext.Provider
+      value={{ shortcutsEnabled, setShortcutsEnabled: toggleShortcuts }}
+    >
       {children}
     </KeyboardShortcutContext.Provider>
   );

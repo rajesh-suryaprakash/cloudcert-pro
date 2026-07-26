@@ -137,7 +137,6 @@ export interface StudyListItem {
   priority: number;
 }
 
-
 // Filter options for analytics
 export interface FilterOptions {
   examType?: 'mock' | 'practice';

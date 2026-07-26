@@ -112,7 +112,9 @@ const AppShell: React.FC<AppShellProps> = ({
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto w-full p-4 overflow-y-auto overflow-x-hidden overscroll-x-none">{children}</main>
+      <main className="flex-1 max-w-7xl mx-auto w-full p-4 overflow-y-auto overflow-x-hidden overscroll-x-none">
+        {children}
+      </main>
 
       <footer className="bg-white border-t border-slate-200 py-4 px-6 mt-auto">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">

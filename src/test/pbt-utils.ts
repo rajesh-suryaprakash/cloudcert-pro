@@ -13,7 +13,6 @@ import * as fc from 'fast-check';
 // ---------------------------------------------------------------------------
 // Entity types
 
-
 // ---------------------------------------------------------------------------
 // Generator: arbitraryRecordId
 // ---------------------------------------------------------------------------
@@ -42,12 +41,14 @@ export function arbitraryRecordId(): fc.Arbitrary<string> {
  * **Validates: Requirements 2.1, 2.2, 7.1, 7.2**
  */
 export function arbitraryFilterState(): fc.Arbitrary<Record<string, string>> {
-  return fc
-    .record({
+  return fc.record(
+    {
       search: fc.string(),
       vendor: fc.constantFrom('AWS', 'GCP', 'Azure'),
       certId: fc.uuid(),
-    }, { requiredKeys: [] });
+    },
+    { requiredKeys: [] },
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -64,7 +65,6 @@ export function arbitraryUniqueIds(minLength: number, maxLength: number): fc.Arb
     .filter((ids) => ids.length >= minLength)
     .map((ids) => ids.slice(0, maxLength));
 }
-
 
 // ---------------------------------------------------------------------------
 // Specialized context generators

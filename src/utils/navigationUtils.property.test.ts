@@ -140,7 +140,7 @@ describe('Property 14: Navigation Context Round-Trip', () => {
           const decoded = decodeNavigationContext(params);
 
           expect(decoded).not.toBeNull();
-        if (!decoded) return;
+          if (!decoded) return;
           // No filters should be present (or empty)
           const hasFilters =
             decoded.filters !== undefined && Object.keys(decoded.filters).length > 0;

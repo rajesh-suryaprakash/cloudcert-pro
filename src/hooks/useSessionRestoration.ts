@@ -17,7 +17,8 @@ export function useSessionRestoration(state: SessionState) {
       const sessionQuestionIds: string[] = session.questions;
       const sessionQuestions = questions.filter((q: Question) => sessionQuestionIds.includes(q.id));
       sessionQuestions.sort(
-        (a: Question, b: Question) => sessionQuestionIds.indexOf(a.id) - sessionQuestionIds.indexOf(b.id),
+        (a: Question, b: Question) =>
+          sessionQuestionIds.indexOf(a.id) - sessionQuestionIds.indexOf(b.id),
       );
 
       let vendor: CloudProvider | null = null;
@@ -84,7 +85,7 @@ export function useSessionRestoration(state: SessionState) {
     } else {
       state.setRestoringSession(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional mount-only effect; re-running on state changes would cause infinite loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional mount-only effect; re-running on state changes would cause infinite loops
   }, []);
 
   return {

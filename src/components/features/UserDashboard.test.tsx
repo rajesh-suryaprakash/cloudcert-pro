@@ -37,14 +37,17 @@ vi.mock('motion/react', () => {
     });
 
   const cache: Record<string, React.ComponentType<Record<string, unknown>>> = {};
-  const motion = new Proxy({} as unknown as Record<string, React.ComponentType<Record<string, unknown>>>, {
-    get: (_, prop: string) => {
-      if (!cache[prop]) {
-        cache[prop] = mockMotion(prop);
-      }
-      return cache[prop];
+  const motion = new Proxy(
+    {} as unknown as Record<string, React.ComponentType<Record<string, unknown>>>,
+    {
+      get: (_, prop: string) => {
+        if (!cache[prop]) {
+          cache[prop] = mockMotion(prop);
+        }
+        return cache[prop];
+      },
     },
-  });
+  );
 
   return {
     motion,
@@ -158,7 +161,9 @@ describe('UserDashboard - Exam History Rendering', () => {
             totalQuestions: fc.integer({ min: 10, max: 100 }),
             correctAnswers: fc.integer({ min: 0, max: 100 }),
             incorrectAnswers: fc.integer({ min: 0, max: 100 }),
-            createdAt: fc.date({ min: new Date('2020-01-01'), max: new Date('2030-01-01') }).map((d) => d.toISOString()),
+            createdAt: fc
+              .date({ min: new Date('2020-01-01'), max: new Date('2030-01-01') })
+              .map((d) => d.toISOString()),
           }),
           { minLength: 1, maxLength: 10 },
         ),

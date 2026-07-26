@@ -2393,225 +2393,233 @@ describe('Feature: question-history-tracking, Property 19: Backfill Idempotency'
     );
   }, 30000);
 
-  it('Property 19 Edge Case: Backfill with existing manual history records should not create duplicates', { timeout: 90000 }, () => {
-    fc.assert(
-      fc.property(
-        // Generate questions for manual recording and session recording
-        fc.record({
-          manualQuestions: fc.integer({ min: 1, max: 10 }),
-          sessionQuestions: fc.integer({ min: 1, max: 10 }),
-          overlapCount: fc.integer({ min: 0, max: 5 }), // Number of overlapping questions
-        }),
-        ({ manualQuestions, sessionQuestions, overlapCount }) => {
-          // Setup: Create user, certification, topic, and questions
-          const userId = createUser();
-          const certificationId = createCertification();
-          const topicId = createTopic(certificationId);
+  it(
+    'Property 19 Edge Case: Backfill with existing manual history records should not create duplicates',
+    { timeout: 90000 },
+    () => {
+      fc.assert(
+        fc.property(
+          // Generate questions for manual recording and session recording
+          fc.record({
+            manualQuestions: fc.integer({ min: 1, max: 10 }),
+            sessionQuestions: fc.integer({ min: 1, max: 10 }),
+            overlapCount: fc.integer({ min: 0, max: 5 }), // Number of overlapping questions
+          }),
+          ({ manualQuestions, sessionQuestions, overlapCount }) => {
+            // Setup: Create user, certification, topic, and questions
+            const userId = createUser();
+            const certificationId = createCertification();
+            const topicId = createTopic(certificationId);
 
-          // Create question pool
-          const totalQuestions = Math.max(manualQuestions, sessionQuestions) + overlapCount;
-          const questionPool: string[] = [];
-          for (let i = 0; i < totalQuestions; i++) {
-            questionPool.push(createQuestion(topicId, 1));
-          }
-
-          // Manually record some questions (simulating existing history)
-          const manualQuestionIds = questionPool.slice(0, manualQuestions);
-          service.recordQuestionsSeen(userId, certificationId, manualQuestionIds);
-
-          // Create exam session with some overlapping questions
-          const sessionQuestionIds = questionPool.slice(
-            Math.max(0, manualQuestions - overlapCount),
-            Math.max(0, manualQuestions - overlapCount) + sessionQuestions,
-          );
-
-          const sessionId = uuidv4();
-          testDb
-            .prepare(
-              'INSERT INTO exam_sessions (id, userId, certificationId, questions, totalQuestions) VALUES (?, ?, ?, ?, ?)',
-            )
-            .run(
-              sessionId,
-              userId,
-              certificationId,
-              JSON.stringify(sessionQuestionIds),
-              sessionQuestionIds.length,
-            );
-
-          // Calculate expected unique questions
-          const expectedUniqueQuestions = new Set([...manualQuestionIds, ...sessionQuestionIds]);
-
-          // Get history count before backfill
-          const historyBeforeBackfill = testDb
-            .prepare(
-              'SELECT COUNT(*) as count FROM question_history WHERE userId = ? AND certificationId = ?',
-            )
-            .get(userId, certificationId) as { count: number };
-
-          expect(historyBeforeBackfill.count).toBe(manualQuestionIds.length);
-
-          // Act: Run backfill multiple times
-          const result1 = service.backfillFromExistingSessions();
-          const result2 = service.backfillFromExistingSessions();
-          const result3 = service.backfillFromExistingSessions();
-
-          // Assert: First backfill should only create records for new questions
-          const newQuestionsFromSession = sessionQuestionIds.filter(
-            (qId) => !manualQuestionIds.includes(qId),
-          ).length;
-
-          expect(result1.recordsCreated).toBe(newQuestionsFromSession);
-
-          // Property: Subsequent backfills should create no new records
-          expect(result2.recordsCreated).toBe(0);
-          expect(result3.recordsCreated).toBe(0);
-
-          // Property: Total history records should equal unique questions
-          const historyAfterBackfill = testDb
-            .prepare(
-              'SELECT COUNT(*) as count FROM question_history WHERE userId = ? AND certificationId = ?',
-            )
-            .get(userId, certificationId) as { count: number };
-
-          expect(historyAfterBackfill.count).toBe(expectedUniqueQuestions.size);
-
-          // Property: Each unique question should have exactly one record
-          for (const questionId of expectedUniqueQuestions) {
-            const records = testDb
-              .prepare(
-                'SELECT COUNT(*) as count FROM question_history WHERE userId = ? AND certificationId = ? AND questionId = ?',
-              )
-              .get(userId, certificationId, questionId) as { count: number };
-
-            expect(records.count).toBe(1);
-          }
-        },
-      ),
-      { numRuns: 20 },
-    );
-  }, 90000);
-
-  it('Property 19 Edge Case: Backfill with sessions using examConfigurationId should be idempotent', { timeout: 90000 }, () => {
-    fc.assert(
-      fc.property(
-        // Generate number of sessions with examConfigurationId
-        fc.record({
-          numSessions: fc.integer({ min: 1, max: 10 }),
-          questionsPerSession: fc.integer({ min: 1, max: 20 }),
-        }),
-        ({ numSessions, questionsPerSession }) => {
-          // Setup: Create user, certification, exam configuration, topic, and questions
-          const userId = createUser();
-          const certificationId = createCertification();
-          const topicId = createTopic(certificationId);
-
-          // Create exam configuration
-          const configId = uuidv4();
-          testDb
-            .prepare(
-              'INSERT INTO exam_configurations (id, certificationId, name, duration, totalQuestions, passingScore) VALUES (?, ?, ?, ?, ?, ?)',
-            )
-            .run(configId, certificationId, 'Test Exam', 60, 50, 70);
-
-          // Create question pool
-          const questionPool: string[] = [];
-          for (let i = 0; i < questionsPerSession * 2; i++) {
-            questionPool.push(createQuestion(topicId, 1));
-          }
-
-          // Create sessions with examConfigurationId (not certificationId)
-          const expectedUniqueQuestions = new Set<string>();
-
-          for (let i = 0; i < numSessions; i++) {
-            const sessionId = uuidv4();
-            const sessionQuestions: string[] = [];
-
-            for (let j = 0; j < questionsPerSession; j++) {
-              const randomIndex = Math.floor(Math.random() * questionPool.length);
-              const questionId = questionPool[randomIndex];
-              sessionQuestions.push(questionId);
-              expectedUniqueQuestions.add(questionId);
+            // Create question pool
+            const totalQuestions = Math.max(manualQuestions, sessionQuestions) + overlapCount;
+            const questionPool: string[] = [];
+            for (let i = 0; i < totalQuestions; i++) {
+              questionPool.push(createQuestion(topicId, 1));
             }
 
-            // Create session with examConfigurationId instead of certificationId
+            // Manually record some questions (simulating existing history)
+            const manualQuestionIds = questionPool.slice(0, manualQuestions);
+            service.recordQuestionsSeen(userId, certificationId, manualQuestionIds);
+
+            // Create exam session with some overlapping questions
+            const sessionQuestionIds = questionPool.slice(
+              Math.max(0, manualQuestions - overlapCount),
+              Math.max(0, manualQuestions - overlapCount) + sessionQuestions,
+            );
+
+            const sessionId = uuidv4();
             testDb
               .prepare(
-                'INSERT INTO exam_sessions (id, userId, examConfigurationId, questions, totalQuestions) VALUES (?, ?, ?, ?, ?)',
+                'INSERT INTO exam_sessions (id, userId, certificationId, questions, totalQuestions) VALUES (?, ?, ?, ?, ?)',
               )
               .run(
                 sessionId,
                 userId,
-                configId,
-                JSON.stringify(sessionQuestions),
-                sessionQuestions.length,
+                certificationId,
+                JSON.stringify(sessionQuestionIds),
+                sessionQuestionIds.length,
               );
-          }
 
-          // Count sessions for this specific user before backfill
-          const userSessionsCount = testDb
-            .prepare('SELECT COUNT(*) as count FROM exam_sessions WHERE userId = ?')
-            .get(userId) as { count: number };
+            // Calculate expected unique questions
+            const expectedUniqueQuestions = new Set([...manualQuestionIds, ...sessionQuestionIds]);
 
-          expect(userSessionsCount.count).toBe(numSessions);
+            // Get history count before backfill
+            const historyBeforeBackfill = testDb
+              .prepare(
+                'SELECT COUNT(*) as count FROM question_history WHERE userId = ? AND certificationId = ?',
+              )
+              .get(userId, certificationId) as { count: number };
 
-          // Act: Run backfill multiple times
-          const result1 = service.backfillFromExistingSessions();
-          const result2 = service.backfillFromExistingSessions();
-          const result3 = service.backfillFromExistingSessions();
+            expect(historyBeforeBackfill.count).toBe(manualQuestionIds.length);
 
-          // Assert: First backfill should create records
-          expect(result1.recordsCreated).toBeGreaterThan(0);
+            // Act: Run backfill multiple times
+            const result1 = service.backfillFromExistingSessions();
+            const result2 = service.backfillFromExistingSessions();
+            const result3 = service.backfillFromExistingSessions();
 
-          // Property: Subsequent backfills should create no new records (idempotency)
-          expect(result2.recordsCreated).toBe(0);
-          expect(result3.recordsCreated).toBe(0);
+            // Assert: First backfill should only create records for new questions
+            const newQuestionsFromSession = sessionQuestionIds.filter(
+              (qId) => !manualQuestionIds.includes(qId),
+            ).length;
 
-          // Property: All backfill runs should process at least our sessions
-          // (may process more if there are sessions from previous test iterations)
-          expect(result1.sessionsProcessed).toBeGreaterThanOrEqual(numSessions);
-          expect(result2.sessionsProcessed).toBeGreaterThanOrEqual(numSessions);
-          expect(result3.sessionsProcessed).toBeGreaterThanOrEqual(numSessions);
+            expect(result1.recordsCreated).toBe(newQuestionsFromSession);
 
-          // Property: Total history records should equal unique questions
-          const totalHistoryRecords = testDb
-            .prepare(
-              'SELECT COUNT(*) as count FROM question_history WHERE userId = ? AND certificationId = ?',
-            )
-            .get(userId, certificationId) as { count: number };
+            // Property: Subsequent backfills should create no new records
+            expect(result2.recordsCreated).toBe(0);
+            expect(result3.recordsCreated).toBe(0);
 
-          expect(totalHistoryRecords.count).toBeLessThanOrEqual(questionPool.length);
-          expect(totalHistoryRecords.count).toBeGreaterThan(0);
+            // Property: Total history records should equal unique questions
+            const historyAfterBackfill = testDb
+              .prepare(
+                'SELECT COUNT(*) as count FROM question_history WHERE userId = ? AND certificationId = ?',
+              )
+              .get(userId, certificationId) as { count: number };
 
-          // Property: No duplicate records should exist
-          const duplicateCheck = testDb
-            .prepare(
-              `
+            expect(historyAfterBackfill.count).toBe(expectedUniqueQuestions.size);
+
+            // Property: Each unique question should have exactly one record
+            for (const questionId of expectedUniqueQuestions) {
+              const records = testDb
+                .prepare(
+                  'SELECT COUNT(*) as count FROM question_history WHERE userId = ? AND certificationId = ? AND questionId = ?',
+                )
+                .get(userId, certificationId, questionId) as { count: number };
+
+              expect(records.count).toBe(1);
+            }
+          },
+        ),
+        { numRuns: 20 },
+      );
+    },
+  );
+
+  it(
+    'Property 19 Edge Case: Backfill with sessions using examConfigurationId should be idempotent',
+    { timeout: 90000 },
+    () => {
+      fc.assert(
+        fc.property(
+          // Generate number of sessions with examConfigurationId
+          fc.record({
+            numSessions: fc.integer({ min: 1, max: 10 }),
+            questionsPerSession: fc.integer({ min: 1, max: 20 }),
+          }),
+          ({ numSessions, questionsPerSession }) => {
+            // Setup: Create user, certification, exam configuration, topic, and questions
+            const userId = createUser();
+            const certificationId = createCertification();
+            const topicId = createTopic(certificationId);
+
+            // Create exam configuration
+            const configId = uuidv4();
+            testDb
+              .prepare(
+                'INSERT INTO exam_configurations (id, certificationId, name, duration, totalQuestions, passingScore) VALUES (?, ?, ?, ?, ?, ?)',
+              )
+              .run(configId, certificationId, 'Test Exam', 60, 50, 70);
+
+            // Create question pool
+            const questionPool: string[] = [];
+            for (let i = 0; i < questionsPerSession * 2; i++) {
+              questionPool.push(createQuestion(topicId, 1));
+            }
+
+            // Create sessions with examConfigurationId (not certificationId)
+            const expectedUniqueQuestions = new Set<string>();
+
+            for (let i = 0; i < numSessions; i++) {
+              const sessionId = uuidv4();
+              const sessionQuestions: string[] = [];
+
+              for (let j = 0; j < questionsPerSession; j++) {
+                const randomIndex = Math.floor(Math.random() * questionPool.length);
+                const questionId = questionPool[randomIndex];
+                sessionQuestions.push(questionId);
+                expectedUniqueQuestions.add(questionId);
+              }
+
+              // Create session with examConfigurationId instead of certificationId
+              testDb
+                .prepare(
+                  'INSERT INTO exam_sessions (id, userId, examConfigurationId, questions, totalQuestions) VALUES (?, ?, ?, ?, ?)',
+                )
+                .run(
+                  sessionId,
+                  userId,
+                  configId,
+                  JSON.stringify(sessionQuestions),
+                  sessionQuestions.length,
+                );
+            }
+
+            // Count sessions for this specific user before backfill
+            const userSessionsCount = testDb
+              .prepare('SELECT COUNT(*) as count FROM exam_sessions WHERE userId = ?')
+              .get(userId) as { count: number };
+
+            expect(userSessionsCount.count).toBe(numSessions);
+
+            // Act: Run backfill multiple times
+            const result1 = service.backfillFromExistingSessions();
+            const result2 = service.backfillFromExistingSessions();
+            const result3 = service.backfillFromExistingSessions();
+
+            // Assert: First backfill should create records
+            expect(result1.recordsCreated).toBeGreaterThan(0);
+
+            // Property: Subsequent backfills should create no new records (idempotency)
+            expect(result2.recordsCreated).toBe(0);
+            expect(result3.recordsCreated).toBe(0);
+
+            // Property: All backfill runs should process at least our sessions
+            // (may process more if there are sessions from previous test iterations)
+            expect(result1.sessionsProcessed).toBeGreaterThanOrEqual(numSessions);
+            expect(result2.sessionsProcessed).toBeGreaterThanOrEqual(numSessions);
+            expect(result3.sessionsProcessed).toBeGreaterThanOrEqual(numSessions);
+
+            // Property: Total history records should equal unique questions
+            const totalHistoryRecords = testDb
+              .prepare(
+                'SELECT COUNT(*) as count FROM question_history WHERE userId = ? AND certificationId = ?',
+              )
+              .get(userId, certificationId) as { count: number };
+
+            expect(totalHistoryRecords.count).toBeLessThanOrEqual(questionPool.length);
+            expect(totalHistoryRecords.count).toBeGreaterThan(0);
+
+            // Property: No duplicate records should exist
+            const duplicateCheck = testDb
+              .prepare(
+                `
               SELECT userId, certificationId, questionId, COUNT(*) as count
               FROM question_history
               WHERE userId = ? AND certificationId = ?
               GROUP BY userId, certificationId, questionId
               HAVING count > 1
             `,
-            )
-            .all(userId, certificationId);
+              )
+              .all(userId, certificationId);
 
-          expect(duplicateCheck).toHaveLength(0);
+            expect(duplicateCheck).toHaveLength(0);
 
-          // Property: All questions in history should be from the question pool
-          const historyQuestionIds = testDb
-            .prepare(
-              'SELECT DISTINCT questionId FROM question_history WHERE userId = ? AND certificationId = ?',
-            )
-            .all(userId, certificationId) as Array<{ questionId: string }>;
+            // Property: All questions in history should be from the question pool
+            const historyQuestionIds = testDb
+              .prepare(
+                'SELECT DISTINCT questionId FROM question_history WHERE userId = ? AND certificationId = ?',
+              )
+              .all(userId, certificationId) as Array<{ questionId: string }>;
 
-          for (const record of historyQuestionIds) {
-            expect(questionPool).toContain(record.questionId);
-          }
-        },
-      ),
-      { numRuns: 20 },
-    );
-  }, 90000);
+            for (const record of historyQuestionIds) {
+              expect(questionPool).toContain(record.questionId);
+            }
+          },
+        ),
+        { numRuns: 20 },
+      );
+    },
+  );
 
   it('Property 19 Stress Test: Backfill with large number of sessions and questions should remain idempotent', () => {
     // Setup: Create user, certification, topic, and large question pool
