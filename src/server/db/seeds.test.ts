@@ -48,11 +48,11 @@ describe('seedAdmin', () => {
       .get('test-admin@example.com') as { email: string; name: string; role: string } | undefined;
 
     expect(row).toBeDefined();
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+     
     expect(row!.email).toBe('test-admin@example.com');
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+     
     expect(row!.name).toBe('Admin User');
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+     
     expect(row!.role).toBe('admin');
   });
 
