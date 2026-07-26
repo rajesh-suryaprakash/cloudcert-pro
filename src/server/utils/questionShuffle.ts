@@ -364,7 +364,7 @@ function shuffleQuestionCore<T extends Question | QuestionRow>(
 /**
  * Shuffle options for a Question object (API/Frontend format)
  */
-function shuffleQuestion(
+export function shuffleQuestion(
   question: Question, 
   config?: ShuffleConfig
 ): ShuffleResult<Question> {
@@ -374,7 +374,7 @@ function shuffleQuestion(
 /**
  * Shuffle options for a QuestionRow (Database format)
  */
-function shuffleQuestionRow(
+export function shuffleQuestionRow(
   questionRow: QuestionRow, 
   config?: ShuffleConfig
 ): ShuffleResult<QuestionRow> {
@@ -422,7 +422,7 @@ export function shuffleQuestionRows(
 /**
  * Statistical verification: analyze distribution across multiple questions
  */
-interface ShuffleStats {
+export interface ShuffleStats {
   totalQuestions: number;
   totalOptions: number;
   indexDistribution: Record<string, number>;

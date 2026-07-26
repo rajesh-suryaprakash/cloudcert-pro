@@ -47,6 +47,7 @@ interface DownloadAttemptReviewMarkdownOptions {
   confidenceMatrix: ConfidenceMatrix | null;
   examConfig?: ExamConfiguration & { isTopicQuiz?: boolean; isCustomQuiz?: boolean };
   historicalAttempt?: HistoricalAttempt | null;
+  sessionId?: string;
 }
 
 /**
@@ -67,9 +68,10 @@ export function downloadAttemptReviewMarkdown(options: DownloadAttemptReviewMark
     confidenceMatrix,
     examConfig,
     historicalAttempt,
+    sessionId,
   } = options;
 
-  const examName = examConfig?.name || historicalAttempt?.examName || quizState.sessionName || 'Exam Attempt';
+  const examName = examConfig?.name || historicalAttempt?.sessionName || 'Exam Attempt';
   const dateStr = historicalAttempt?.createdAt
     ? new Date(historicalAttempt.createdAt).toLocaleDateString()
     : new Date().toLocaleDateString();
@@ -154,8 +156,8 @@ export function downloadAttemptReviewMarkdown(options: DownloadAttemptReviewMark
   const link = document.createElement('a');
   
   // Create URL-safe lowercase filename matching session_<id>_<timestamp>.md convention
-  const sessionId = historicalAttempt?.id || quizState.sessionId || 'session';
-  const safeId = sessionId.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const finalSessionId = historicalAttempt?.id || sessionId || 'session';
+  const safeId = finalSessionId.toLowerCase().replace(/[^a-z0-9]/g, '');
   const createdAt = historicalAttempt?.createdAt || new Date(quizState.startTime).toISOString();
   const safeTimestamp = new Date(createdAt).toISOString().toLowerCase().replace(/[^a-z0-9]/g, '');
   const filename = `session_${safeId}_${safeTimestamp}.md`;

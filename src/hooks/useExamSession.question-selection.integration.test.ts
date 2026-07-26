@@ -56,6 +56,7 @@ describe('Feature: question-history-tracking - Question Selection Integration Te
       topicId: 'topic-123',
       subTopicId: undefined,
       questionText: `Question ${i + 1}`,
+      questionType: 'single' as const,
       options: ['A', 'B', 'C', 'D'],
       correctAnswers: ['A'],
       explanation: 'Explanation',

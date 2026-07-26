@@ -1,3 +1,4 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as fc from 'fast-check';
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
@@ -13,7 +14,6 @@ process.on('unhandledRejection', (reason: unknown) => {
 });
 
 vi.mock('motion/react', () => {
-  const React = require('react');
   const mockMotion = (tag: string) =>
     React.forwardRef(({ children, ...props }: Record<string, unknown>, ref: React.Ref<unknown>) => {
       // Strip motion-only props that would cause React DOM warnings

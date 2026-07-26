@@ -38,7 +38,7 @@ export function ExamHistoryTable({
   const iterMap = new Map<string, number>();
 
   allReversed.forEach((a: HistoricalAttempt) => {
-    const name = a.sessionName ?? a.examName ?? 'Exam Attempt';
+    const name = a.sessionName ?? 'Exam Attempt';
     counters[name] = (counters[name] || 0) + 1;
     iterMap.set(a.id, counters[name]);
   });
@@ -82,7 +82,7 @@ export function ExamHistoryTable({
             </thead>
             <tbody className="divide-y divide-slate-50">
               {displayed.map((attempt: HistoricalAttempt, i: number) => {
-                const baseName = attempt.sessionName ?? attempt.examName ?? 'Exam Attempt';
+                const baseName = attempt.sessionName ?? 'Exam Attempt';
                 const iter = iterMap.get(attempt.id) ?? 1;
                 const totalForName = counters[baseName] ?? 1;
                 const displayName = totalForName > 1 ? `${baseName} #${iter}` : baseName;

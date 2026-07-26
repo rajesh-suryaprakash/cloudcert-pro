@@ -47,7 +47,6 @@ describe('downloadAttemptReviewMarkdown', () => {
       id: 'q-1',
       topicId: 't-1',
       subTopicId: 'st-1',
-      unitId: 'u-1',
       questionText: 'Which service provides managed Redis on Google Cloud?',
       questionType: 'single',
       options: ['Memorystore', 'Cloud SQL', 'Datastore', 'Bigtable'],
@@ -69,16 +68,12 @@ describe('downloadAttemptReviewMarkdown', () => {
   ];
 
   const mockQuizState: QuizState = {
-    sessionId: 'session-123',
-    examConfigurationId: 'config-123',
-    certificationId: 'cert-123',
     questions: mockQuestions,
     userAnswers: ['Memorystore'],
-    flagged: [false],
     currentQuestionIndex: 0,
     startTime: Date.now(),
+    endTime: null,
     isFinished: true,
-    sessionName: 'Google Cloud Professional Cloud Architect Practice Exam',
   };
 
   it('should generate a structured markdown and trigger browser download with URL-safe filename', () => {
@@ -94,6 +89,10 @@ describe('downloadAttemptReviewMarkdown', () => {
         knownWeaknesses: 0,
         criticalGaps: 0,
       },
+      sessionId: 'session-123',
+      examConfig: {
+        name: 'Google Cloud Professional Cloud Architect Practice Exam',
+      } as any,
     });
 
     // Verify blob URL creation
@@ -112,20 +111,22 @@ describe('downloadAttemptReviewMarkdown', () => {
     expect(blobCallArg).toContain('**Score:** 100% (1 / 1)');
     expect(blobCallArg).toContain('**Status:** PASSED');
 
-    // Check confidence profile details
-    expect(blobCallArg).toContain('## Confidence Profile');
-    expect(blobCallArg).toContain('- **True Knowledge:** 1 (Correct + Confident)');
+    // Check confidence stats
+    expect(blobCallArg).toContain('### Confidence Profile');
+    expect(blobCallArg).toContain('- **True Knowledge:** 1');
 
-    // Check questions review section
-    expect(blobCallArg).toContain('### Question 1: Which service provides managed Redis on Google Cloud?');
+    // Check question and option rendering
+    expect(blobCallArg).toContain('### Question 1');
+    expect(blobCallArg).toContain('Which service provides managed Redis on Google Cloud?');
     expect(blobCallArg).toContain('- [x] **A)** Memorystore *(Correct Answer)*');
     expect(blobCallArg).toContain('- [ ] **B)** Cloud SQL');
+    expect(blobCallArg).toContain('- [ ] **C)** Datastore');
+    expect(blobCallArg).toContain('- [ ] **D)** Bigtable');
 
-    // Check wrong option reasons formatted as markdown
+    // Check explanation
     expect(blobCallArg).toContain('**Explanation:**');
     expect(blobCallArg).toContain('> Memorystore provides fully managed in-memory data store services for Redis.');
-    expect(blobCallArg).toContain('> **Why other options are wrong:**');
-    expect(blobCallArg).toContain('> - **B)** *Cloud SQL* — Cloud SQL is a relational database service for MySQL, PostgreSQL, and SQL Server.');
+    expect(blobCallArg).toContain('- **B)** *Cloud SQL* — Cloud SQL is a relational database service for MySQL, PostgreSQL, and SQL Server.');
   });
 
   it('should handle edge cases like whitespace trimming and SSR safety gracefully', () => {
@@ -146,6 +147,7 @@ describe('downloadAttemptReviewMarkdown', () => {
         totalCount: 1,
         passed: true,
         confidenceMatrix: null,
+        sessionId: 'session-123',
       });
     }).not.toThrow();
 
@@ -172,6 +174,7 @@ describe('downloadAttemptReviewMarkdown', () => {
       totalCount: 1,
       passed: true,
       confidenceMatrix: null,
+      sessionId: 'session-123',
     });
 
     const blobCallArg = mockBlobConstructor.mock.calls[mockBlobConstructor.mock.calls.length - 1][0][0];

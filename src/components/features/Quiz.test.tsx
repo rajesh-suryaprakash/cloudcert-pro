@@ -1,10 +1,10 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import Quiz from './Quiz';
 import { pauseExamSession, resumeExamSession } from '../../api/exams';
 
 vi.mock('motion/react', () => {
-  const React = require('react');
   const mockMotion = (tag: string) =>
     React.forwardRef(({ children, ...props }: Record<string, unknown>, ref: React.Ref<unknown>) => {
       const {
@@ -71,14 +71,16 @@ const mockQuestions = [
     subTopicId: 'st-1',
     unitId: 'u-1',
     questionText: 'Question 1 Content',
-    questionType: 'single',
+    questionType: 'single' as const,
     options: ['Option A', 'Option B', 'Option C', 'Option D'],
     correctAnswers: 'Option A',
     explanation: 'Explanation 1',
-    difficulty: 'Easy',
+    difficulty: 'Easy' as const,
     tags: ['General'],
     points: 1,
     isActive: true,
+    createdAt: '2026-07-02T02:00:00Z',
+    updatedAt: '2026-07-02T02:00:00Z',
   },
   {
     id: 'q-2',
@@ -86,14 +88,16 @@ const mockQuestions = [
     subTopicId: 'st-1',
     unitId: 'u-1',
     questionText: 'Question 2 Content',
-    questionType: 'single',
+    questionType: 'single' as const,
     options: ['Option A', 'Option B', 'Option C', 'Option D'],
     correctAnswers: 'Option B',
     explanation: 'Explanation 2',
-    difficulty: 'Medium',
+    difficulty: 'Medium' as const,
     tags: ['General'],
     points: 1,
     isActive: true,
+    createdAt: '2026-07-02T02:00:00Z',
+    updatedAt: '2026-07-02T02:00:00Z',
   },
 ];
 
@@ -103,10 +107,11 @@ const mockExamConfig = {
   name: 'Mock Exam',
   duration: 60,
   passingScore: 70,
-  questionSelectionStrategy: 'random',
+  questionSelectionStrategy: 'random' as const,
   topicWeights: {},
   isActive: true,
   isPracticeMode: false,
+  totalQuestions: 2,
   createdAt: '2026-07-02T02:00:00Z',
   updatedAt: '2026-07-02T02:00:00Z',
 };

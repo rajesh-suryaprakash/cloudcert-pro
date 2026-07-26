@@ -292,6 +292,7 @@ export function QuizResultsView({
                     confidenceMatrix,
                     examConfig,
                     historicalAttempt,
+                    sessionId,
                   })
                 }
                 className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all select-none border border-indigo-100 shadow-sm"

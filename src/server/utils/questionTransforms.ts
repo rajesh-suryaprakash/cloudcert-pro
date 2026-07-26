@@ -88,7 +88,7 @@ export function questionRowsToQuestions(rows: QuestionRow[]): Question[] {
  * const tags = safeParseQuestionField(row.tags, []);
  * ```
  */
-function safeParseQuestionField<T>(
+export function safeParseQuestionField<T>(
   value: string | null | undefined,
   fallback: T
 ): T {
