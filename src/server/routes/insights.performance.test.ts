@@ -68,6 +68,9 @@ describe('Insights Dashboard Performance Tests', () => {
     // Clear cache before each test
     cacheService.clear();
 
+    // Pre-clean to ensure a fresh slate regardless of previous afterEach failures
+    cleanupTestData();
+
     // Set up test data
     await setupLargeDataset();
   });
@@ -120,7 +123,7 @@ describe('Insights Dashboard Performance Tests', () => {
         const domainId = randomUUID();
         db.prepare(
           `
-          INSERT INTO domain_weights (id, certificationId, domainName, weightPercentage, createdAt, updatedAt)
+          INSERT OR IGNORE INTO domain_weights (id, certificationId, domainName, weightPercentage, createdAt, updatedAt)
           VALUES (?, ?, ?, ?, ?, ?)
         `,
         ).run(
@@ -290,34 +293,29 @@ describe('Insights Dashboard Performance Tests', () => {
    * Clean up test data after tests
    */
   function cleanupTestData() {
-    try {
-      // Delete in reverse order of foreign key dependencies
-      // Use simpler queries to avoid issues
-      const sessionIdsToDelete = db
-        .prepare('SELECT id FROM exam_sessions WHERE userId = ?')
-        .all(testUserId) as Array<{ id: string }>;
+    // Delete in reverse order of foreign key dependencies
+    const sessionIdsToDelete = db
+      .prepare('SELECT id FROM exam_sessions WHERE userId = ?')
+      .all(testUserId) as Array<{ id: string }>;
 
-      for (const session of sessionIdsToDelete) {
-        db.prepare('DELETE FROM answer_change_history WHERE examSessionId = ?').run(session.id);
-        db.prepare('DELETE FROM exam_answers WHERE examSessionId = ?').run(session.id);
-      }
-
-      db.prepare('DELETE FROM exam_sessions WHERE userId = ?').run(testUserId);
-
-      const topicsToDelete = db
-        .prepare('SELECT id FROM topics WHERE certificationId = ?')
-        .all(testCertificationId) as Array<{ id: string }>;
-      for (const topic of topicsToDelete) {
-        db.prepare('DELETE FROM questions WHERE topicId = ?').run(topic.id);
-      }
-
-      db.prepare('DELETE FROM topics WHERE certificationId = ?').run(testCertificationId);
-      db.prepare('DELETE FROM domain_weights WHERE certificationId = ?').run(testCertificationId);
-      db.prepare('DELETE FROM certifications WHERE id = ?').run(testCertificationId);
-      db.prepare('DELETE FROM users WHERE id = ?').run(testUserId);
-    } catch {
-      // Ignore cleanup errors in tests
+    for (const session of sessionIdsToDelete) {
+      db.prepare('DELETE FROM answer_change_history WHERE examSessionId = ?').run(session.id);
+      db.prepare('DELETE FROM exam_answers WHERE examSessionId = ?').run(session.id);
     }
+
+    db.prepare('DELETE FROM exam_sessions WHERE userId = ?').run(testUserId);
+
+    const topicsToDelete = db
+      .prepare('SELECT id FROM topics WHERE certificationId = ?')
+      .all(testCertificationId) as Array<{ id: string }>;
+    for (const topic of topicsToDelete) {
+      db.prepare('DELETE FROM questions WHERE topicId = ?').run(topic.id);
+    }
+
+    db.prepare('DELETE FROM topics WHERE certificationId = ?').run(testCertificationId);
+    db.prepare('DELETE FROM domain_weights WHERE certificationId = ?').run(testCertificationId);
+    db.prepare('DELETE FROM certifications WHERE id = ?').run(testCertificationId);
+    db.prepare('DELETE FROM users WHERE id = ?').run(testUserId);
   }
 
   /**
