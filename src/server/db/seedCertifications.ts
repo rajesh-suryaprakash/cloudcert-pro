@@ -95,7 +95,7 @@ const NS_BYTES = nsToBytes(CLOUDCERT_NS);
  *
  * The same slug always produces the same UUID — enabling idempotent seeding.
  */
-export function slugToUuid(slug: string): string {
+function slugToUuid(slug: string): string {
   const nameBytes = Buffer.from(slug, 'utf8');
   const hash = crypto.createHash('sha1').update(NS_BYTES).update(nameBytes).digest();
 

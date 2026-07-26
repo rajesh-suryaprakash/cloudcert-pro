@@ -186,4 +186,3 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
   );
 };
 
-export default AuthForm;

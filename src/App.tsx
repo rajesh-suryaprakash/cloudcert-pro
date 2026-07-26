@@ -18,7 +18,7 @@ import { fetchApi } from './api/client';
 import AdminPortal from './components/features/AdminPortal';
 import UserDashboard from './components/features/UserDashboard';
 import Quiz from './components/features/Quiz';
-import AuthForm from './components/features/AuthForm';
+import { AuthForm } from './components/features/AuthForm';
 import InsightDashboard from './components/features/InsightDashboard';
 import AppShell from './components/layouts/AppShell';
 

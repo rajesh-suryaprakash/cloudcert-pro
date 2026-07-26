@@ -19,9 +19,4 @@ describe('AuthForm', () => {
     expect(module.AuthForm).toBeDefined();
     expect(typeof module.AuthForm).toBe('function');
   });
-
-  it('default and named exports are the same component', async () => {
-    const module = await import('./AuthForm');
-    expect(module.default).toBe(module.AuthForm);
-  });
 });
