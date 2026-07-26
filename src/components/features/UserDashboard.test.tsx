@@ -158,7 +158,7 @@ describe('UserDashboard - Exam History Rendering', () => {
             totalQuestions: fc.integer({ min: 10, max: 100 }),
             correctAnswers: fc.integer({ min: 0, max: 100 }),
             incorrectAnswers: fc.integer({ min: 0, max: 100 }),
-            createdAt: fc.date().map((d) => d.toISOString()),
+            createdAt: fc.date({ min: new Date('2020-01-01'), max: new Date('2030-01-01') }).map((d) => d.toISOString()),
           }),
           { minLength: 1, maxLength: 10 },
         ),

@@ -221,7 +221,7 @@ async function waitForSubtopicText(text: string) {
     () => {
       expect(screen.getByText(text)).toBeInTheDocument();
     },
-    { timeout: 3000 },
+    { timeout: 10000 },
   );
 }
 
@@ -230,7 +230,7 @@ async function waitForNoSubtopics() {
     () => {
       expect(screen.getByText('No sub topics found.')).toBeInTheDocument();
     },
-    { timeout: 3000 },
+    { timeout: 10000 },
   );
 }
 

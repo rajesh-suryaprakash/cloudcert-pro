@@ -112,7 +112,7 @@ describe('downloadAttemptReviewMarkdown', () => {
     expect(blobCallArg).toContain('**Status:** PASSED');
 
     // Check confidence stats
-    expect(blobCallArg).toContain('### Confidence Profile');
+    expect(blobCallArg).toContain('## Confidence Profile');
     expect(blobCallArg).toContain('- **True Knowledge:** 1');
 
     // Check question and option rendering

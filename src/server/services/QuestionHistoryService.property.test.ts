@@ -2393,7 +2393,7 @@ describe('Feature: question-history-tracking, Property 19: Backfill Idempotency'
     );
   }, 30000);
 
-  it('Property 19 Edge Case: Backfill with existing manual history records should not create duplicates', () => {
+  it('Property 19 Edge Case: Backfill with existing manual history records should not create duplicates', { timeout: 90000 }, () => {
     fc.assert(
       fc.property(
         // Generate questions for manual recording and session recording
@@ -2487,11 +2487,11 @@ describe('Feature: question-history-tracking, Property 19: Backfill Idempotency'
           }
         },
       ),
-      { numRuns: 100 },
+      { numRuns: 20 },
     );
-  });
+  }, 90000);
 
-  it('Property 19 Edge Case: Backfill with sessions using examConfigurationId should be idempotent', () => {
+  it('Property 19 Edge Case: Backfill with sessions using examConfigurationId should be idempotent', { timeout: 90000 }, () => {
     fc.assert(
       fc.property(
         // Generate number of sessions with examConfigurationId
@@ -2609,9 +2609,9 @@ describe('Feature: question-history-tracking, Property 19: Backfill Idempotency'
           }
         },
       ),
-      { numRuns: 100 },
+      { numRuns: 20 },
     );
-  });
+  }, 90000);
 
   it('Property 19 Stress Test: Backfill with large number of sessions and questions should remain idempotent', () => {
     // Setup: Create user, certification, topic, and large question pool

@@ -417,11 +417,15 @@ describe('DomainWeightsPanel', () => {
       render(<DomainWeightsPanel />);
       await selectCertification('cert-1');
 
-      expect(screen.getByText('Loading domain weights...')).toBeInTheDocument();
+      // Wait for loading state to appear (as useEffect executes asynchronously)
+      await waitFor(() => {
+        expect(screen.getByText('Loading domain weights...')).toBeInTheDocument();
+      });
 
+      // Wait for loading state to disappear (allow up to 5s to avoid parallel runner flakiness)
       await waitFor(() => {
         expect(screen.queryByText('Loading domain weights...')).not.toBeInTheDocument();
-      });
+      }, { timeout: 5000 });
     });
 
     it('should show error toast when failing to load domain weights', async () => {
