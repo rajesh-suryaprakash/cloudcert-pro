@@ -3,7 +3,9 @@ import express, { type Express } from 'express';
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
-import { db } from '../db/connection';
+import Database from 'better-sqlite3';
+import { overrideDb } from '../db/connection';
+import { runMigrations } from '../db/migrations';
 import insightsRouter from './insights';
 import { authenticate } from '../middleware/auth';
 import { errorHandler } from '../middleware/errorHandler';
@@ -24,6 +26,7 @@ import { cacheService } from '../services/CacheService';
 
 describe('Insights Dashboard Performance Tests', () => {
   let app: Express;
+  let testDb: Database.Database;
   let userToken: string;
   const testUserId = 'perf-test-user-' + randomUUID();
   const testCertificationId = 'perf-test-cert-' + randomUUID();
@@ -42,6 +45,13 @@ describe('Insights Dashboard Performance Tests', () => {
   });
 
   beforeEach(async () => {
+    // Create a fresh isolated in-memory database for each test — never touches cloudcert.db
+    testDb = new Database(':memory:');
+    testDb.pragma('journal_mode = WAL');
+    testDb.pragma('foreign_keys = ON');
+    runMigrations(testDb);
+    overrideDb(testDb);
+
     // Create Express app with middleware
     app = express();
     app.use(express.json());
@@ -68,17 +78,15 @@ describe('Insights Dashboard Performance Tests', () => {
     // Clear cache before each test
     cacheService.clear();
 
-    // Pre-clean to ensure a fresh slate regardless of previous afterEach failures
-    cleanupTestData();
-
     // Set up test data
     await setupLargeDataset();
   });
 
   afterEach(() => {
-    // Clean up test data
-    cleanupTestData();
     cacheService.clear();
+    // Restore default DB and close the in-memory instance — this destroys all test data automatically
+    overrideDb(null);
+    testDb.close();
   });
 
   /**
@@ -92,9 +100,9 @@ describe('Insights Dashboard Performance Tests', () => {
    * - 20,000 exam answers (200 per session)
    */
   async function setupLargeDataset() {
-    const transaction = db.transaction(() => {
+    const transaction = testDb.transaction(() => {
       // Create test user
-      db.prepare(
+      testDb.prepare(
         `
         INSERT OR IGNORE INTO users (id, email, password, role, createdAt)
         VALUES (?, ?, ?, ?, ?)
@@ -102,7 +110,7 @@ describe('Insights Dashboard Performance Tests', () => {
       ).run(testUserId, 'perftest@test.com', 'hashed-password', 'user', new Date().toISOString());
 
       // Create certification
-      db.prepare(
+      testDb.prepare(
         `
         INSERT OR IGNORE INTO certifications (id, title, description, createdAt, updatedAt)
         VALUES (?, ?, ?, ?, ?)
@@ -121,7 +129,7 @@ describe('Insights Dashboard Performance Tests', () => {
 
       domainNames.forEach((name, index) => {
         const domainId = randomUUID();
-        db.prepare(
+        testDb.prepare(
           `
           INSERT OR IGNORE INTO domain_weights (id, certificationId, domainName, weightPercentage, createdAt, updatedAt)
           VALUES (?, ?, ?, ?, ?, ?)
@@ -141,7 +149,7 @@ describe('Insights Dashboard Performance Tests', () => {
       domainNames.forEach((domainName, _domainIndex) => {
         for (let i = 0; i < 4; i++) {
           const topicId = randomUUID();
-          db.prepare(
+          testDb.prepare(
             `
             INSERT INTO topics (id, certificationId, title, description, createdAt)
             VALUES (?, ?, ?, ?, ?)
@@ -163,7 +171,7 @@ describe('Insights Dashboard Performance Tests', () => {
         const domainName = domainNames[Math.floor(topicIndex / 4)];
         for (let i = 0; i < 10; i++) {
           const questionId = randomUUID();
-          db.prepare(
+          testDb.prepare(
             `
             INSERT INTO questions (
               id, topicId, domainId, questionText, questionType,
@@ -202,7 +210,7 @@ describe('Insights Dashboard Performance Tests', () => {
 
         const autoSubmitTime = new Date(sessionDate.getTime() + 3 * 60 * 60 * 1000).toISOString(); // 3 hours after start
 
-        db.prepare(
+        testDb.prepare(
           `
           INSERT INTO exam_sessions (
             id, userId, certificationId, questions, status, score, 
@@ -240,7 +248,7 @@ describe('Insights Dashboard Performance Tests', () => {
           const fatigueMultiplier = 1 + (qIndex / questionIds.length) * 0.3;
           const adjustedTimeSpent = timeSpent * fatigueMultiplier;
 
-          db.prepare(
+          testDb.prepare(
             `
             INSERT INTO exam_answers (
               id, examSessionId, questionId, userAnswer, 
@@ -264,7 +272,7 @@ describe('Insights Dashboard Performance Tests', () => {
           if (Math.random() < 0.15) {
             // 15% of answers have changes
             const changeId = randomUUID();
-            db.prepare(
+            testDb.prepare(
               `
               INSERT INTO answer_change_history (
                 id, examSessionId, questionId, previousAnswer, 
@@ -289,34 +297,6 @@ describe('Insights Dashboard Performance Tests', () => {
     transaction();
   }
 
-  /**
-   * Clean up test data after tests
-   */
-  function cleanupTestData() {
-    // Delete in reverse order of foreign key dependencies
-    const sessionIdsToDelete = db
-      .prepare('SELECT id FROM exam_sessions WHERE userId = ?')
-      .all(testUserId) as Array<{ id: string }>;
-
-    for (const session of sessionIdsToDelete) {
-      db.prepare('DELETE FROM answer_change_history WHERE examSessionId = ?').run(session.id);
-      db.prepare('DELETE FROM exam_answers WHERE examSessionId = ?').run(session.id);
-    }
-
-    db.prepare('DELETE FROM exam_sessions WHERE userId = ?').run(testUserId);
-
-    const topicsToDelete = db
-      .prepare('SELECT id FROM topics WHERE certificationId = ?')
-      .all(testCertificationId) as Array<{ id: string }>;
-    for (const topic of topicsToDelete) {
-      db.prepare('DELETE FROM questions WHERE topicId = ?').run(topic.id);
-    }
-
-    db.prepare('DELETE FROM topics WHERE certificationId = ?').run(testCertificationId);
-    db.prepare('DELETE FROM domain_weights WHERE certificationId = ?').run(testCertificationId);
-    db.prepare('DELETE FROM certifications WHERE id = ?').run(testCertificationId);
-    db.prepare('DELETE FROM users WHERE id = ?').run(testUserId);
-  }
 
   /**
    * Performance Test 1: Dashboard Load Time with Large Dataset

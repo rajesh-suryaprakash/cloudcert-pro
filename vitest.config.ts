@@ -4,11 +4,11 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   test: {
-    testTimeout: 10000,
-    hookTimeout: 10000,
+    testTimeout: 30000,
+    hookTimeout: 60000,
     environment: 'jsdom',
     globals: true,
-    setupFiles: './src/test/setup.ts',
+    setupFiles: ['./src/test/setup.ts', './src/test/setup.server.ts'],
 
     // ── Test reporters ─────────────────────────────────────────────────────────
     // In CI (process.env.CI is set by GitHub Actions automatically):

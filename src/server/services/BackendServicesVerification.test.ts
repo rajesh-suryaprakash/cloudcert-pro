@@ -36,22 +36,52 @@ describe('Backend Services Verification', () => {
     studyListService = new StudyListService(db);
     cacheService = new CacheService(300);
 
-    // Get test data from actual database
-    const user = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: string } | undefined;
-    const cert = db.prepare('SELECT id FROM certifications LIMIT 1').get() as
-      | { id: string }
-      | undefined;
-    const session = db
-      .prepare('SELECT id FROM exam_sessions WHERE status = ? LIMIT 1')
-      .get('completed') as { id: string } | undefined;
+    // Seed minimal data required by analytics and benchmark services
+    userId = 'user-123';
+    certificationId = 'cert-123';
+    sessionId = 'session-123';
 
-    if (!user || !cert) {
-      throw new Error('No test data found in database. Please run migrations and seed data first.');
-    }
+    // Insert user
+    db.prepare(`
+      INSERT OR IGNORE INTO users (id, email, password, name, role, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(userId, 'test@example.com', 'hash', 'Test User', 'user', '2026-06-28T07:00:00Z');
 
-    userId = user.id;
-    certificationId = cert.id;
-    sessionId = session?.id || '';
+    // Insert certification
+    db.prepare(`
+      INSERT OR IGNORE INTO certifications (id, title, description, level, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(certificationId, 'AWS Certified Solutions Architect', 'AWS CSA', 'Associate', '2026-06-28T07:00:00Z', '2026-06-28T07:00:00Z');
+
+    // Insert topic
+    db.prepare(`
+      INSERT OR IGNORE INTO topics (id, certificationId, title, orderIndex, isActive, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run('topic-123', certificationId, 'Design Resilient Architectures', 1, 1, '2026-06-28T07:00:00Z');
+
+    // Insert subtopic
+    db.prepare(`
+      INSERT OR IGNORE INTO subtopics (id, topicId, title, description, orderIndex, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run('subtopic-123', 'topic-123', 'Design resilient storage', 'Storage options', 1, '2026-06-28T07:00:00Z');
+
+    // Insert question
+    db.prepare(`
+      INSERT OR IGNORE INTO questions (id, topicId, subTopicId, questionText, questionType, options, correctAnswers, difficulty, tags, points, isActive, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run('q-123', 'topic-123', 'subtopic-123', 'Which storage option is most resilient?', 'single', '["S3", "EBS"]', '["S3"]', 'Medium', '[]', 1, 1, '2026-06-28T07:00:00Z', '2026-06-28T07:00:00Z');
+
+    // Insert exam session
+    db.prepare(`
+      INSERT OR IGNORE INTO exam_sessions (id, userId, certificationId, questions, status, score, totalQuestions, correctAnswers, incorrectAnswers, unansweredQuestions, startTime, autoSubmitAt, isPracticeMode, isTopicQuiz, isCustomQuiz, isSRSReview, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(sessionId, userId, certificationId, '["q-123"]', 'completed', 100, 1, 1, 0, 0, '2026-06-28T07:00:00Z', '2026-06-28T09:00:00Z', 1, 0, 0, 0, '2026-06-28T07:00:00Z', '2026-06-28T07:00:00Z');
+
+    // Insert exam answer
+    db.prepare(`
+      INSERT OR IGNORE INTO exam_answers (id, examSessionId, questionId, userAnswer, isCorrect, timeSpent, confidenceLevel, answerOrder, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run('ans-123', sessionId, 'q-123', '["S3"]', 1, 45, 'High', 0, '2026-06-28T07:00:00Z');
   });
 
   beforeEach(() => {

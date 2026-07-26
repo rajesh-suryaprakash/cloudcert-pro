@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it } from 'vitest';
 import * as fc from 'fast-check';
 import Database from 'better-sqlite3';
