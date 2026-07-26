@@ -50,7 +50,7 @@ export interface ShuffleConfig {
 /**
  * Result of shuffle operation with metadata for verification
  */
-export interface ShuffleResult<T extends Question | QuestionRow> {
+interface ShuffleResult<T extends Question | QuestionRow> {
   /** The shuffled question object */
   question: T;
   /** Mapping from original index to new index */
@@ -364,7 +364,7 @@ function shuffleQuestionCore<T extends Question | QuestionRow>(
 /**
  * Shuffle options for a Question object (API/Frontend format)
  */
-export function shuffleQuestion(
+function shuffleQuestion(
   question: Question, 
   config?: ShuffleConfig
 ): ShuffleResult<Question> {
@@ -374,7 +374,7 @@ export function shuffleQuestion(
 /**
  * Shuffle options for a QuestionRow (Database format)
  */
-export function shuffleQuestionRow(
+function shuffleQuestionRow(
   questionRow: QuestionRow, 
   config?: ShuffleConfig
 ): ShuffleResult<QuestionRow> {
@@ -422,7 +422,7 @@ export function shuffleQuestionRows(
 /**
  * Statistical verification: analyze distribution across multiple questions
  */
-export interface ShuffleStats {
+interface ShuffleStats {
   totalQuestions: number;
   totalOptions: number;
   indexDistribution: Record<string, number>;

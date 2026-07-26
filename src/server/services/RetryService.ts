@@ -9,12 +9,12 @@ import { NotFoundError, ValidationError } from '../errors';
  * Requirements: 14.1, 14.2, 14.3, 14.4, 14.5
  */
 
-export interface RetrySessionResult {
+interface RetrySessionResult {
   newSessionId: string;
   questionCount: number;
 }
 
-export class RetryService {
+class RetryService {
   private db: Database;
 
   constructor(db?: Database) {

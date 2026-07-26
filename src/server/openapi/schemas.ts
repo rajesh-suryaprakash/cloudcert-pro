@@ -201,7 +201,7 @@ registry.register('NotFoundErrorResponse', NotFoundErrorResponseSchema);
  * - createdAt: Account creation timestamp (Unix seconds)
  * - updatedAt: Last profile update timestamp (Unix seconds)
  */
-export const UserSchema = z
+const UserSchema = z
   .object({
     id: z.string().uuid().describe('Unique user identifier'),
     email: z.string().email().describe('User email address'),
@@ -455,7 +455,7 @@ export const QuestionSchema = z
  * - createdAt: When the achievement was created
  * - updatedAt: When the achievement was last updated
  */
-export const AchievementSchema = z
+const AchievementSchema = z
   .object({
     id: z.number().int().describe('Unique achievement identifier'),
     key: z.string().describe('Unique achievement key'),

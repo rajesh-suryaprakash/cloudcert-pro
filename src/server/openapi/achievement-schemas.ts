@@ -10,7 +10,7 @@ extendZodWithOpenApi(z);
 /**
  * Achievement schema
  */
-export const AchievementSchema = z
+const AchievementSchema = z
   .object({
     id: z.number().int().describe('Achievement ID'),
     key: z.string().describe('Unique achievement key'),
@@ -48,7 +48,7 @@ export const AchievementSchema = z
 /**
  * User achievement schema (achievement with user progress)
  */
-export const UserAchievementSchema = z
+const UserAchievementSchema = z
   .object({
     id: z.number().int().describe('Achievement ID'),
     key: z.string().describe('Unique achievement key'),

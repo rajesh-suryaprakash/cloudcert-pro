@@ -1,6 +1,6 @@
 import type { QuestionRow } from '../db-types';
 
-export type SelectionStrategy = 'random' | 'difficulty_balanced' | 'topic_based';
+type SelectionStrategy = 'random' | 'difficulty_balanced' | 'topic_based';
 
 export interface SelectionConfig {
   strategy: SelectionStrategy;
@@ -50,7 +50,7 @@ function selectWithPriority(
  * proportionally, capping each group at its available count and redistributing
  * freed slots until the target is met or no more slots can be filled.
  */
-export function largestRemainder(
+function largestRemainder(
   groups: { weight: number; available: number }[],
   total: number,
 ): number[] {
@@ -107,7 +107,7 @@ export function largestRemainder(
   return allocations;
 }
 
-export function selectRandom(
+function selectRandom(
   pool: QuestionRow[],
   total: number,
   seenIds?: Set<string>,
@@ -115,7 +115,7 @@ export function selectRandom(
   return selectWithPriority(pool, total, seenIds);
 }
 
-export function selectDifficultyBalanced(
+function selectDifficultyBalanced(
   pool: QuestionRow[],
   total: number,
   seenIds?: Set<string>,
@@ -131,7 +131,7 @@ export function selectDifficultyBalanced(
   return tiers.flatMap((_, i) => selectWithPriority([...grouped[i]], allocations[i], seenIds));
 }
 
-export function selectTopicBased(
+function selectTopicBased(
   pool: QuestionRow[],
   total: number,
   topicWeights: Record<string, number>,

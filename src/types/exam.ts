@@ -1,6 +1,6 @@
 export type SelectionStrategy = 'random' | 'difficulty_balanced' | 'topic_based';
 
-export type ExamStatus = 'in_progress' | 'completed' | 'abandoned';
+type ExamStatus = 'in_progress' | 'completed' | 'abandoned';
 
 export interface Question {
   id: string;

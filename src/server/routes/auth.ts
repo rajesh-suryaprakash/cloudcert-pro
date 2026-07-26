@@ -222,7 +222,7 @@ router.post('/auth/refresh', async (req: Request, res: Response, next: NextFunct
  * Returns a random 32-byte nonce (sent to the user) and its HMAC-SHA256 digest
  * (stored in the database). The raw nonce is never stored.
  */
-export function generateResetToken(): { nonce: string; digest: string } {
+function generateResetToken(): { nonce: string; digest: string } {
   const nonce = crypto.randomBytes(32).toString('hex');
   const digest = crypto.createHmac('sha256', config.resetTokenSecret).update(nonce).digest('hex');
   return { nonce, digest };
@@ -233,7 +233,7 @@ export function generateResetToken(): { nonce: string; digest: string } {
  * Recomputes the HMAC of the submitted nonce and compares using timingSafeEqual
  * to prevent timing attacks.
  */
-export function verifyResetToken(submitted: string, storedDigest: string): boolean {
+function verifyResetToken(submitted: string, storedDigest: string): boolean {
   const submittedDigest = crypto
     .createHmac('sha256', config.resetTokenSecret)
     .update(submitted)
@@ -249,7 +249,7 @@ export function verifyResetToken(submitted: string, storedDigest: string): boole
  * The response body is always the same generic message regardless of user existence.
  * Exported for property-based testing.
  */
-export function buildForgotResponseBody(): { message: string } {
+function buildForgotResponseBody(): { message: string } {
   return { message: 'If that email exists, a reset link has been sent.' };
 }
 

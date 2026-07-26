@@ -53,7 +53,7 @@ export const StreakResponseSchema = z
 /**
  * Due review item schema
  */
-export const DueReviewItemSchema = z
+const DueReviewItemSchema = z
   .object({
     id: z.string().uuid().describe('Review record ID'),
     userId: z.string().uuid().describe('User ID'),

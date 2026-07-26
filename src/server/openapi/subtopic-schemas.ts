@@ -10,7 +10,7 @@ extendZodWithOpenApi(z);
 /**
  * Subtopic schema
  */
-export const SubtopicSchema = z
+const SubtopicSchema = z
   .object({
     id: z.string().uuid().describe('Unique subtopic identifier'),
     topicId: z.string().uuid().describe('Associated topic ID'),
@@ -134,7 +134,7 @@ export const SuccessResponseSchema = z
 /**
  * Certification ID path parameter schema
  */
-export const CertificationIdParamSchema = z
+const CertificationIdParamSchema = z
   .object({
     certId: z.string().uuid().describe('Certification ID'),
   })

@@ -14,14 +14,14 @@ import { filterWrongAnswersByTopic } from '../../../hooks/customQuizUtils';
 import { QuestionReviewCard } from './QuestionReviewCard';
 import { downloadAttemptReviewMarkdown } from '../../../utils/markdownExport';
 
-export interface WeakTopic {
+interface WeakTopic {
   topicId: string;
   topicTitle: string;
   incorrectCount: number;
   docUrl: string | null;
 }
 
-export type TaskType = 'review_wrong_answers' | 'practice_quiz' | 'read_docs';
+type TaskType = 'review_wrong_answers' | 'practice_quiz' | 'read_docs';
 
 export interface QuizResultsViewProps {
   historicalAttempt: HistoricalAttempt | null;

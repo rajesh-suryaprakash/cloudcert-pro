@@ -127,7 +127,7 @@ export interface FilterState {
 /**
  * Navigation context containing the sequence of IDs and current position
  */
-export interface NavigationContext {
+interface NavigationContext {
   ids: string[]; // Ordered list of record IDs in navigation sequence
   currentId: string; // Currently displayed record ID
   filters?: FilterState; // Optional filter state for context reconstruction
@@ -136,7 +136,7 @@ export interface NavigationContext {
 /**
  * Navigation error types
  */
-export type NavigationError =
+type NavigationError =
   | 'record_not_found'
   | 'network_failure'
   | 'invalid_context'
@@ -146,7 +146,7 @@ export type NavigationError =
 /**
  * Prefetching configuration
  */
-export interface PrefetchConfig {
+interface PrefetchConfig {
   enabled: boolean;
   prefetchNext: boolean;
   prefetchPrevious: boolean;
@@ -164,7 +164,7 @@ export interface NavigationOptions {
 /**
  * Navigation state exposed by the hook
  */
-export interface NavigationState {
+interface NavigationState {
   context: NavigationContext | null;
   currentIndex: number;
   total: number;
@@ -178,7 +178,7 @@ export interface NavigationState {
 /**
  * Navigation actions exposed by the hook
  */
-export interface NavigationActions {
+interface NavigationActions {
   goNext: () => void;
   goPrevious: () => void;
   initializeFromList: (ids: string[], currentId: string, filters?: FilterState) => void;

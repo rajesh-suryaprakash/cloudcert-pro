@@ -5,7 +5,7 @@ import { type Difficulty } from '../../../hooks/customQuizUtils';
 import type { ExamConfiguration } from '../../../types';
 import type { ClampedInputResult } from '../../../hooks/useClampedInput';
 
-export type TestType = 'mock' | 'practice';
+type TestType = 'mock' | 'practice';
 
 export interface QuizWizardProps {
   examToStart: ExamConfiguration;

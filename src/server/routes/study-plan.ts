@@ -6,21 +6,21 @@ import type { ExamSessionRow } from '../db-types';
 
 const router = express.Router();
 
-export type TaskType = 'review_wrong_answers' | 'practice_quiz' | 'read_docs';
+type TaskType = 'review_wrong_answers' | 'practice_quiz' | 'read_docs';
 
-export interface WeakTopic {
+interface WeakTopic {
   topicId: string;
   topicTitle: string;
   incorrectCount: number;
   docUrl: string | null;
 }
 
-export interface StudyPlanCompletion {
+interface StudyPlanCompletion {
   topicId: string;
   taskType: TaskType;
 }
 
-export interface StudyPlanResponse {
+interface StudyPlanResponse {
   weakTopics: WeakTopic[];
   message: string;
   completions: StudyPlanCompletion[];
@@ -31,7 +31,7 @@ export interface StudyPlanResponse {
  * Returns true when the requesting user owns the session, false otherwise.
  * Requirements: 5.3
  */
-export function isSessionOwner(sessionUserId: string, requestingUserId: string): boolean {
+function isSessionOwner(sessionUserId: string, requestingUserId: string): boolean {
   return sessionUserId === requestingUserId;
 }
 
@@ -41,7 +41,7 @@ export function isSessionOwner(sessionUserId: string, requestingUserId: string):
  *
  * @param topicCounts - map of topicId -> { topicTitle, incorrectCount, docUrl }
  */
-export function computeWeakTopics(
+function computeWeakTopics(
   topicCounts: Map<string, { topicTitle: string; incorrectCount: number; docUrl: string | null }>,
 ): WeakTopic[] {
   return Array.from(topicCounts.entries())

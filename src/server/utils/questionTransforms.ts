@@ -33,7 +33,7 @@ import type { Question } from '../../types';
  * const questions = questionRows.map(questionRowToQuestion);
  * ```
  */
-export function questionRowToQuestion(row: QuestionRow): Question {
+function questionRowToQuestion(row: QuestionRow): Question {
   // Parse JSON fields
   const options = JSON.parse(row.options) as string[];
   const correctAnswers = JSON.parse(row.correctAnswers) as string | string[];
@@ -88,7 +88,7 @@ export function questionRowsToQuestions(rows: QuestionRow[]): Question[] {
  * const tags = safeParseQuestionField(row.tags, []);
  * ```
  */
-export function safeParseQuestionField<T>(
+function safeParseQuestionField<T>(
   value: string | null | undefined,
   fallback: T
 ): T {

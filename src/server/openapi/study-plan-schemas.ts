@@ -32,7 +32,7 @@ export const StudyPlanCompletionRequestSchema = z
 /**
  * Weak topic schema
  */
-export const WeakTopicSchema = z
+const WeakTopicSchema = z
   .object({
     topicId: z.string().uuid().describe('Topic ID'),
     topicTitle: z.string().describe('Topic title'),
@@ -52,7 +52,7 @@ export const WeakTopicSchema = z
 /**
  * Study plan completion schema
  */
-export const StudyPlanCompletionSchema = z
+const StudyPlanCompletionSchema = z
   .object({
     topicId: z.string().uuid().describe('Topic ID'),
     taskType: z

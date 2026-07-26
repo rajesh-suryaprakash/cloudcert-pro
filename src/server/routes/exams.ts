@@ -52,7 +52,7 @@ export function computeAutoSubmitAt(startTime: number, durationMinutes: number):
  * Returns an integer 0–100 representing the percentage of prior scores strictly
  * lower than the target score, or null when there are no prior scores.
  */
-export function computePercentileRank(priorScores: number[], targetScore: number): number | null {
+function computePercentileRank(priorScores: number[], targetScore: number): number | null {
   if (priorScores.length === 0) return null;
   const lowerCount = priorScores.filter((s) => s < targetScore).length;
   return Math.round((lowerCount / priorScores.length) * 100);
