@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import { runMigrations } from './src/server/db/migrations';
+import { db, closeDb } from './src/server/db/connection';
 import { seedAdmin, seedAchievements, seedLearner } from './src/server/db/seeds';
 import { seedGcpCertifications } from './src/server/db/seedCertifications';
 import authRoutes from './src/server/routes/auth';
@@ -22,6 +23,7 @@ import { correlationId } from './src/server/middleware/correlationId';
 import { httpLogger } from './src/server/middleware/httpLogger';
 import { logger } from './src/server/logger';
 import { config } from './src/server/config';
+import { apiLimiter } from './src/server/middleware/rateLimiter';
 import { registerAuthRoutes } from './src/server/openapi/auth-routes';
 import { registerCertificationRoutes } from './src/server/openapi/certification-routes';
 import { registerExamRoutes } from './src/server/openapi/exam-routes';
@@ -53,7 +55,7 @@ const app = express();
 app.disable('x-powered-by');
 
 // Additional middleware to ensure X-Powered-By is removed from all responses
-app.use((req, res, next) => {
+app.use((_req, res, next) => {
   res.removeHeader('X-Powered-By');
   next();
 });
@@ -132,14 +134,36 @@ seedGcpCertifications();
 app.use('/api-docs', openapiRoutes);
 
 // API Routes
-app.use('/api', authRoutes);
-app.use('/api', certificationRoutes);
-app.use('/api', examRoutes);
-app.use('/api/srs', srsRoutes);
-app.use('/api/achievements', achievementRoutes);
-app.use('/api', studyPlanRoutes);
-app.use('/api', insightsRoutes);
-app.use('/api', unitsRoutes);
+const apiRouter = express.Router();
+
+// Apply base rate-limiting to all API routes
+apiRouter.use(apiLimiter);
+
+// Health check — used by the Docker HEALTHCHECK directive and Kubernetes probes.
+// Verifies the DB connection is alive so orchestrators get accurate readiness signals.
+// better-sqlite3 is synchronous — no await needed.
+apiRouter.get('/health', (_req, res) => {
+  try {
+    db.prepare('SELECT 1').get();
+    res.json({ status: 'ok', db: 'connected', timestamp: new Date().toISOString() });
+  } catch {
+    res
+      .status(503)
+      .json({ status: 'error', db: 'disconnected', timestamp: new Date().toISOString() });
+  }
+});
+
+apiRouter.use(authRoutes);
+apiRouter.use(certificationRoutes);
+apiRouter.use(examRoutes);
+apiRouter.use('/srs', srsRoutes);
+apiRouter.use('/achievements', achievementRoutes);
+apiRouter.use(studyPlanRoutes);
+apiRouter.use(insightsRoutes);
+apiRouter.use(unitsRoutes);
+
+app.use('/api', apiRouter);
+app.use('/api/v1', apiRouter);
 
 // Centralized error handling (must be last middleware)
 app.use(errorHandler);
@@ -155,14 +179,35 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
-    app.get('*', (req, res) => {
+    app.get('*', (_req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
 
-  app.listen(config.port, '0.0.0.0', () => {
+  const server = app.listen(config.port, '0.0.0.0', () => {
     logger.info(`Server running on http://localhost:${config.port}`);
   });
+
+  // Graceful shutdown — flush in-flight requests and close the DB before exit.
+  // Using SIGTERM (Docker/Kubernetes) and SIGINT (Ctrl+C / local dev).
+  const shutdown = (signal: string) => {
+    logger.info({ signal }, 'Shutdown signal received, closing server...');
+    server.close(() => {
+      logger.info('HTTP server closed. Closing database...');
+      closeDb();
+      logger.info('Database closed. Exiting.');
+      process.exit(0);
+    });
+
+    // Force-exit after 10s if graceful shutdown stalls
+    setTimeout(() => {
+      logger.error('Graceful shutdown timed out. Forcing exit.');
+      process.exit(1);
+    }, 10_000).unref();
+  };
+
+  process.once('SIGTERM', () => shutdown('SIGTERM'));
+  process.once('SIGINT', () => shutdown('SIGINT'));
 }
 
 startServer();
