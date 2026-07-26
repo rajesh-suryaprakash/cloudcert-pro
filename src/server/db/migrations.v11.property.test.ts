@@ -260,7 +260,7 @@ describe('Migration V11 property tests', () => {
               expectedAncestry.push({
                 id: q.id,
                 subTopicId: group.subtopicId,
-                topicId: topicId,
+                topicId,
                 expectedUnitId: `default-unit-${group.subtopicId}`,
               });
             }

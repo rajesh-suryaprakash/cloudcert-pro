@@ -40,6 +40,7 @@ describe('runMigrations', () => {
       'question_reports',
       'question_reviews',
       'questions',
+      'refresh_tokens',
       'schema_migrations',
       'study_plan_completions',
       'subtopics',
@@ -61,7 +62,8 @@ describe('runMigrations', () => {
       version: number;
     }[];
 
-    expect(versions.map((r) => r.version)).toEqual([1, 2, 3, 4, 5]);
+    const defined = migrations.map((m) => m.version).sort((a, b) => a - b);
+    expect(versions.map((r) => r.version)).toEqual(defined);
   });
 
   it('is idempotent — running twice leaves the db unchanged', () => {
@@ -172,5 +174,16 @@ describe('runMigrations', () => {
       }),
       { numRuns: 100 },
     );
+  });
+  it('migration 15: creates compound indexes on exam_sessions for query performance', () => {
+    runMigrations(db);
+
+    const indexes = db
+      .prepare(`SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='exam_sessions'`)
+      .all() as { name: string }[];
+    const indexNames = indexes.map((r) => r.name);
+
+    expect(indexNames).toContain('idx_exam_sessions_userId_status');
+    expect(indexNames).toContain('idx_exam_sessions_userId_certId_status_created');
   });
 });
