@@ -5,10 +5,8 @@ import type { Question } from '../../types';
 describe('questionShuffle', () => {
   const createMockQuestion = (overrides: Partial<Question> = {}): Question => ({
     id: 'q-shuffle-1',
-    certificationId: 'cert-1',
     topicId: 'topic-1',
-    subtopicId: 'subtopic-1',
-    unitId: 'unit-1',
+    subTopicId: 'subtopic-1',
     questionText: 'Which GCP compute service is serverless?',
     questionType: 'single',
     options: ['Compute Engine', 'Cloud Run', 'GKE', 'Bare Metal'],
@@ -34,7 +32,9 @@ describe('questionShuffle', () => {
       // The options should contain the same set of items
       expect(result.question.options.sort()).toEqual([...q.options].sort());
       // The remapped correct answer must align with the new option position
-      const newCorrectIndex = result.question.options.indexOf(result.question.correctAnswers as string);
+      const newCorrectIndex = result.question.options.indexOf(
+        result.question.correctAnswers as string,
+      );
       expect(newCorrectIndex).toBeGreaterThanOrEqual(0);
     });
 
@@ -48,7 +48,7 @@ describe('questionShuffle', () => {
 
       expect(result.wasShuffled).toBe(true);
       expect(result.question.options.sort()).toEqual([...q.options].sort());
-      
+
       const newAnswers = result.question.correctAnswers as string[];
       expect(newAnswers.length).toBe(2);
       newAnswers.forEach((ans) => {
@@ -88,10 +88,7 @@ describe('questionShuffle', () => {
 
   describe('shuffleQuestions', () => {
     it('shuffles a list of questions in bulk', () => {
-      const questions = [
-        createMockQuestion({ id: 'q-1' }),
-        createMockQuestion({ id: 'q-2' }),
-      ];
+      const questions = [createMockQuestion({ id: 'q-1' }), createMockQuestion({ id: 'q-2' })];
       const shuffled = shuffleQuestions(questions);
       expect(shuffled.length).toBe(2);
       expect(shuffled[0].id).toBe('q-1');

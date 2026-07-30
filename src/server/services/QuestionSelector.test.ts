@@ -5,9 +5,8 @@ import type { QuestionRow } from '../db-types';
 describe('QuestionSelector', () => {
   const createMockQuestion = (overrides: Partial<QuestionRow> = {}): QuestionRow => ({
     id: 'q-1',
-    certificationId: 'cert-1',
     topicId: 'topic-1',
-    subtopicId: 'subtopic-1',
+    subTopicId: 'subtopic-1',
     unitId: 'unit-1',
     questionText: 'Mock question text',
     questionType: 'single',
@@ -83,7 +82,10 @@ describe('QuestionSelector', () => {
     it('distributes selected questions proportionally across difficulty tiers', () => {
       // 2 Easy, 2 Medium, 2 Hard.
       // Requesting 3 questions should allocate exactly 1 from each tier.
-      const selected = selectQuestions(pool, { strategy: 'difficulty_balanced', totalQuestions: 3 });
+      const selected = selectQuestions(pool, {
+        strategy: 'difficulty_balanced',
+        totalQuestions: 3,
+      });
       expect(selected.length).toBe(3);
 
       const easy = selected.filter((q) => q.difficulty === 'Easy');

@@ -23,9 +23,8 @@ describe('questionTransforms', () => {
   describe('questionRowsToQuestions', () => {
     const mockRow = (overrides: Partial<QuestionRow> = {}): QuestionRow => ({
       id: 'q-1',
-      certificationId: 'cert-1',
       topicId: 'topic-1',
-      subtopicId: 'subtopic-1',
+      subTopicId: 'subtopic-1',
       unitId: 'unit-1',
       questionText: 'Which GCP service is a NoSQL database?',
       questionType: 'single',
