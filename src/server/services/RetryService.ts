@@ -14,7 +14,7 @@ interface RetrySessionResult {
   questionCount: number;
 }
 
-class RetryService {
+export class RetryService {
   private db: Database;
 
   constructor(db?: Database) {
