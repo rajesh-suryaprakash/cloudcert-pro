@@ -416,11 +416,6 @@ jobs:
           name: dist-${{ github.sha }}
           path: dist/
 
-      - name: Fix workspace permissions for ZAP Docker container
-        # ZAP runs as UID 1000 inside Docker. Without this the container cannot
-        # write the SARIF/HTML report to the workspace directory, causing exit code 3.
-        run: sudo chown -R 1000:1000 ${{ github.workspace }}
-
       - name: Start Express server (background)
         # Start the server with dummy secrets — ZAP only inspects HTTP responses,
         # it does not need valid JWT secrets or a real database.
@@ -434,21 +429,29 @@ jobs:
           SEED_LEARNER_EMAIL="learner@example.com" \
           SEED_LEARNER_PASSWORD="ZapCiPassword1!" \
           PORT=3000 \
-          node_modules/.bin/tsx server.ts &
+          node_modules/.bin/tsx server.ts > server.log 2>&1 &
           echo "SERVER_PID=$!" >> "$GITHUB_ENV"
 
       - name: Wait for server to be ready
-        # Poll /api/health (or /) until the server responds, max 30 seconds.
+        # Poll /api/health until the server responds, max 60 seconds.
         run: |
-          for i in $(seq 1 30); do
+          for i in $(seq 1 60); do
             if curl -sf http://localhost:3000/api/health > /dev/null 2>&1; then
               echo "Server is ready after ${i}s"
               exit 0
             fi
             sleep 1
           done
-          echo "::error::Server did not start within 30 seconds"
+          echo "::error::Server did not start within 60 seconds"
+          cat server.log
           exit 1
+
+      - name: Fix workspace permissions for ZAP Docker container
+        # ZAP runs as UID 1000 inside Docker. Without this the container cannot
+        # write the SARIF/HTML report to the workspace directory, causing exit code 3.
+        # This MUST run after the server starts, otherwise the runner (UID 1001) 
+        # gets 'Permission denied' when trying to write the SQLite database.
+        run: sudo chown -R 1000:1000 ${{ github.workspace }}
 
       - name: Run ZAP Baseline Scan
         # zaproxy/action-baseline v0.15.0 — pinned to immutable SHA
